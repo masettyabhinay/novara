@@ -32,6 +32,11 @@ async function run() {
   const distDir = path.resolve('dist');
   assert(fs.existsSync(distDir), 'Production dist/ bundle directory exists');
 
+  // Launch standalone production server
+  const { startServer } = await import('file:///f:/NOVARA/server/server.js');
+  const server = await startServer();
+  await new Promise((r) => setTimeout(r, 500));
+
   // Test GET /
   console.log('[1] Testing GET / (SPA index.html delivery)...');
   const indexRes = await testEndpoint('http://localhost:3000/', 200);
@@ -60,6 +65,7 @@ async function run() {
   assert(swRes.statusCode === 200, 'GET /sw.js returns 200');
   assert(swRes.body.includes('novara-app-shell'), 'Service worker cache identifier present');
 
+  server.close();
   console.log('\n================================================================');
   console.log('🎉 STANDALONE PRODUCTION SERVER TESTS PASSED!');
   console.log('================================================================');
