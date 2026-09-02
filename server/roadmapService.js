@@ -381,7 +381,10 @@ export function parseDocumentTextToRoadmap(rawText, fileName = '', targetRole = 
     let topicName = line
       .replace(TOPIC_PREFIX_REGEX, '')
       .replace(/\((?:easy|medium|hard|beginner|advanced|intermediate)\)/gi, '')
+      .replace(/(?:[-–—:]\s*)?\b\d+\s*(?:problems|questions|tasks|drills|probs|qns)\b/gi, '')
+      .replace(/(?:[-–—:]\s*)?\b\d+\s*(?:h|hours|hrs)\b/gi, '')
       .replace(/\[.*?\]/g, '')
+      .replace(/\s*[-–—:]\s*$/, '')
       .trim();
 
     // Guard against residual PDF garbage or excessively long text
