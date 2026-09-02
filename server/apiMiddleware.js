@@ -178,7 +178,9 @@ export async function apiMiddlewareHandler(req, res, next) {
           return sendJson(res, 200, {
             status: 'healthy',
             timestamp: new Date().toISOString(),
-            version: '1.0.0',
+            version: '1.0.2',
+            buildCommit: '1.0.2-roadmap-pipeline-fixed',
+            uptime: Math.round(process.uptime()),
             environment: process.env.NODE_ENV || 'development',
             services: {
               server: 'online',
@@ -1006,8 +1008,22 @@ export async function apiMiddlewareHandler(req, res, next) {
               }, req);
             }
 
+            console.log('[Roadmap Analyze Request Received]', {
+              safeFileName,
+              targetRole,
+              bufferBytes: buffer.length,
+              isPdfSignature: buffer.length >= 4 && buffer[0] === 0x25 && buffer[1] === 0x50
+            });
+
             const extractedText = await extractTextFromBuffer(buffer, safeFileName);
             const extractedRoadmap = parseDocumentTextToRoadmap(extractedText, safeFileName, targetRole);
+
+            console.log('[Roadmap Analyze Extraction Outcome]', {
+              phasesExtracted: extractedRoadmap.phases?.length || 0,
+              totalTopics: extractedRoadmap.phases?.reduce((acc, p) => acc + (p.topics?.length || 0), 0) || 0,
+              confidence: extractedRoadmap.confidence,
+              needsReview: extractedRoadmap.needsReview
+            });
 
             const validation = validateRoadmapSchema(extractedRoadmap);
             if (!validation.valid) {

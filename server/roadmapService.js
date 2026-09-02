@@ -51,73 +51,156 @@ export function validateRoadmapSchema(data) {
   return { valid: true, error: null };
 }
 
+import zlib from 'zlib';
+
+/**
+ * Extracts visible text pieces from decompressed PDF streams (Tj and TJ operators)
+ * without ever touching PDF object metadata, dictionaries, or coordinates.
+ */
+function extractTextFromPdfStreams(buffer) {
+  const rawString = buffer.toString('latin1');
+  const textPieces = [];
+  const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
+  let match;
+
+  while ((match = streamRegex.exec(rawString)) !== null) {
+    const streamRaw = match[1];
+    let decompressed = '';
+
+    // Attempt zlib inflation for FlateDecode compressed streams
+    try {
+      const streamBuf = Buffer.from(streamRaw, 'latin1');
+      decompressed = zlib.inflateSync(streamBuf).toString('utf8');
+    } catch {
+      try {
+        const streamBuf = Buffer.from(streamRaw, 'latin1');
+        decompressed = zlib.inflateRawSync(streamBuf).toString('utf8');
+      } catch {
+        // Stream was uncompressed plain text
+        decompressed = streamRaw;
+      }
+    }
+
+    if (decompressed) {
+      // 1. Extract strings from array TJ text operator: [(Phase 1) 10 ( - ) 10 (Programming)] TJ
+      const tjArrayRegex = /\[([^\]]+)\]\s*TJ/g;
+      let arrayMatch;
+      while ((arrayMatch = tjArrayRegex.exec(decompressed)) !== null) {
+        const innerStrings = arrayMatch[1].match(/\(([^)]+)\)/g) || [];
+        const combined = innerStrings.map(s => s.slice(1, -1)).join('');
+        if (combined.trim().length > 1) {
+          textPieces.push(combined.trim());
+        }
+      }
+
+      // 2. Extract strings from single Tj operator: (Phase 1) Tj
+      const tjRegex = /\(([^)]+)\)\s*T[jJ]/g;
+      let tjMatch;
+      while ((tjMatch = tjRegex.exec(decompressed)) !== null) {
+        if (tjMatch[1].trim().length > 1) {
+          textPieces.push(tjMatch[1].trim());
+        }
+      }
+    }
+  }
+
+  return textPieces.join('\n');
+}
+
 /**
  * Extracts visible human-readable text from binary document buffer.
- * Supports: PDF (pdf-parse / Mozilla PDF.js), DOCX (mammoth), TXT/MD/JSON/CSV.
+ * Supports: PDF (pdf-parse / Mozilla PDF.js & zlib stream decompression), DOCX (mammoth), TXT/MD/JSON/CSV.
  */
 export async function extractTextFromBuffer(buffer, fileName = '') {
   if (!buffer || buffer.length === 0) return '';
   const ext = fileName.split('.').pop().toLowerCase();
+  const isPdfHeader = buffer.length >= 4 && buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46;
+
+  let extractionMethod = 'unknown';
+  let pdfParseSuccess = false;
+  let text = '';
 
   // 1. Text-based formats
-  if (['txt', 'md', 'json', 'csv', 'markdown'].includes(ext)) {
-    return buffer.toString('utf8');
-  }
-
-  // 2. PDF extraction using pdf-parse (Mozilla PDF.js engine)
-  if (ext === 'pdf') {
+  if (['txt', 'md', 'json', 'csv', 'markdown'].includes(ext) && !isPdfHeader) {
+    extractionMethod = 'plain_text';
+    text = buffer.toString('utf8');
+  } else if (isPdfHeader || ext === 'pdf') {
+    // 2. PDF extraction using pdf-parse (Mozilla PDF.js engine)
     if (PdfParse) {
       try {
         const data = await PdfParse(buffer);
         if (data && typeof data.text === 'string' && data.text.trim().length > 0) {
-          return data.text;
+          extractionMethod = 'pdf_parse_mozilla_engine';
+          pdfParseSuccess = true;
+          text = data.text;
         }
       } catch (pdfErr) {
-        console.warn('[RoadmapService] pdf-parse extraction failed, falling back:', pdfErr.message);
+        console.warn(`[RoadmapService][PDF] pdf-parse extraction notice: ${pdfErr.message}. Trying stream decompression.`);
       }
     }
 
-    // Defensive stream extraction fallback without dumping PDF object dictionary tokens
-    const rawString = buffer.toString('latin1');
-    const textMatches = [];
-    const streamRegex = /stream[\r\n]+([\s\S]*?)[\r\n]+endstream/g;
-    let match;
-    while ((match = streamRegex.exec(rawString)) !== null) {
-      const streamContent = match[1];
-      const tjRegex = /\(([^)]+)\)\s*T[jJ]/g;
-      let tjMatch;
-      while ((tjMatch = tjRegex.exec(streamContent)) !== null) {
-        textMatches.push(tjMatch[1]);
+    // Secondary fallback: zlib stream decompression for FlateDecode / uncompressed streams
+    if (!text) {
+      try {
+        const streamText = extractTextFromPdfStreams(buffer);
+        if (streamText && streamText.trim().length > 0) {
+          extractionMethod = 'pdf_flate_stream_decompression';
+          text = streamText;
+        }
+      } catch (streamErr) {
+        console.warn(`[RoadmapService][PDF] stream decompression error: ${streamErr.message}`);
       }
     }
-    if (textMatches.length > 0) {
-      return textMatches.join('\n');
-    }
-    return '';
-  }
 
-  // 3. Word DOCX extraction using mammoth
-  if (ext === 'docx' || ext === 'doc') {
+    // Strict guard for PDF: NEVER dump raw PDF dictionaries or ASCII garbage
+    if (!text) {
+      extractionMethod = 'pdf_no_readable_streams';
+      text = '';
+    }
+  } else if (ext === 'docx' || ext === 'doc') {
+    // 3. Word DOCX extraction using mammoth
     if (mammoth) {
       try {
         const result = await mammoth.extractRawText({ buffer });
         if (result && typeof result.value === 'string') {
-          return result.value;
+          extractionMethod = 'mammoth_docx';
+          text = result.value;
         }
       } catch (docxErr) {
         console.warn('[RoadmapService] mammoth extraction failed:', docxErr.message);
       }
     }
-    const rawString = buffer.toString('utf8');
-    const xmlParagraphs = rawString.match(/<w:t[^>]*>([^<]+)<\/w:t>/g);
-    if (xmlParagraphs) {
-      return xmlParagraphs.map(p => p.replace(/<[^>]+>/g, '')).join('\n');
+    if (!text) {
+      const rawString = buffer.toString('utf8');
+      const xmlParagraphs = rawString.match(/<w:t[^>]*>([^<]+)<\/w:t>/g);
+      if (xmlParagraphs) {
+        extractionMethod = 'docx_xml_regex';
+        text = xmlParagraphs.map(p => p.replace(/<[^>]+>/g, '')).join('\n');
+      }
     }
-    return '';
+  } else {
+    // Non-binary safe text fallback (only if NOT binary PDF/DOCX)
+    if (!isPdfHeader && buffer.slice(0, 512).indexOf(0x00) === -1) {
+      extractionMethod = 'utf8_text_fallback';
+      text = buffer.toString('utf8').replace(/[^\x20-\x7E\n\r\t]/g, ' ');
+    } else {
+      extractionMethod = 'unsupported_binary';
+      text = '';
+    }
   }
 
-  // 4. Default fallback
-  return buffer.toString('utf8').replace(/[^\x20-\x7E\n\r\t]/g, ' ');
+  // Safe diagnostic logging (strictly metadata, NO user text, tokens, or secrets)
+  console.log('[RoadmapUpload Diagnostics]', {
+    fileExtension: ext,
+    isPdfSignature: isPdfHeader,
+    extractionMethod: extractionMethod,
+    pdfParseSuccess: pdfParseSuccess,
+    legacyAsciiFallbackInvoked: false,
+    rawBufferBytes: buffer.length,
+    extractedCharsLength: text.length
+  });
+
+  return text;
 }
 
 /**
