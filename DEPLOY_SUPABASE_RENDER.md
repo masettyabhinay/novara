@@ -145,19 +145,55 @@ Under the **Environment Variables** tab in Render, add the following key-value p
    ```
 2. If using a custom domain (e.g. `https://novara.app`), add the domain in Render **Custom Domains** and configure DNS CNAME/A records.
 
-### Step 12: Configure Google OAuth Production Origin
-1. Open the [Google Cloud Console](https://console.cloud.google.com).
-2. Navigate to **APIs & Services** > **Credentials**.
-3. Select your **OAuth 2.0 Client ID**.
-4. Under **Authorized JavaScript origins**, add:
-   - `https://novara-app.onrender.com` (and your custom domain if applicable)
-   - Keep `http://localhost:3000` for local development.
-5. Under **Authorized redirect URIs**, add:
-   - `https://novara-app.onrender.com`
-6. Click **Save**.
+### Step 12: Configure Google OAuth 2.0 Web Application Credentials
 
-### Step 13: Verify and Update ALLOWED_ORIGINS & APP_BASE_URL
-Ensure the `ALLOWED_ORIGINS` and `APP_BASE_URL` in the Render Environment Variables match your exact Render HTTPS URL or custom domain.
+Production Google Sign-In requires an **OAuth 2.0 Web Application Client ID** configured with your exact Render domain.
+
+#### 1. Open Google Cloud Console
+1. Navigate to the [Google Cloud Console Credentials Page](https://console.cloud.google.com/apis/credentials).
+2. Ensure you have selected your project (e.g. `NOVARA` or your placement prep project).
+
+#### 2. Verify or Create Web Application OAuth Client
+1. Under **OAuth 2.0 Client IDs**, check if you have an entry with **Application type: Web application**.
+   > [!IMPORTANT]
+   > The Client ID **must** be created as a **Web application** (not Android, iOS, or Desktop app).
+2. If creating a new one: Click **Create Credentials** > **OAuth client ID** > Select **Web application** as the application type. Name it (e.g. `NOVARA Production Web`).
+3. Click into your Web client ID to view its settings.
+
+#### 3. Add Authorized JavaScript Origins
+Under **Authorized JavaScript origins**, click **+ Add URI** and add:
+- `https://novara-qzce.onrender.com` (Your live Render HTTPS URL)
+- `http://localhost:3000` (For local development)
+
+> [!CAUTION]
+> **Zero Trailing Slash Rule:** Google Cloud strictly requires origins without trailing slashes. Use `https://novara-qzce.onrender.com` (NOT `https://novara-qzce.onrender.com/`).
+
+#### 4. Add Authorized Redirect URIs
+Under **Authorized redirect URIs**, click **+ Add URI** and add:
+- `https://novara-qzce.onrender.com`
+- `https://novara-qzce.onrender.com/api/auth/google`
+- `http://localhost:3000`
+- `http://localhost:3000/api/auth/google`
+
+5. Click **Save** at the bottom of the page.
+   *(Note: Google changes propagate within 1–5 minutes across Google's distributed authentication network).*
+
+#### 5. Configure Environment Variables on Render
+1. Copy the **Client ID** from Google Cloud Console. It follows the format:
+   ```text
+   <NUMERIC-PROJECT-ID>-<ALPHANUMERIC-HASH>.apps.googleusercontent.com
+   ```
+   *(Example: `939390230171-qnrmttdtha9e52hc0v6kebiaede68ssc.apps.googleusercontent.com`)*
+2. In your **Render Dashboard** > **NOVARA Web Service** > **Environment** tab:
+   - Set `GOOGLE_CLIENT_ID` to your copied Client ID.
+   - Set `VITE_GOOGLE_CLIENT_ID` to your copied Client ID.
+   - Set `APP_BASE_URL` to `https://novara-qzce.onrender.com`
+   - Set `API_BASE_URL` to `https://novara-qzce.onrender.com/api`
+   - Set `ALLOWED_ORIGINS` to `https://novara-qzce.onrender.com`
+3. Click **Save Changes**. Render will automatically redeploy the service.
+
+### Step 13: Verify Environment Variables
+Ensure all frontend and backend URLs in Render Environment Variables match your live URL `https://novara-qzce.onrender.com`.
 
 ### Step 14: Test Health Endpoint
 Open a terminal and run:
@@ -231,3 +267,25 @@ curl -i https://your-service-name.onrender.com/api/health
 ### 5. Connection Timeout with Direct Connection (`db.[project-ref].supabase.co`)
 - **Cause:** Supabase free-tier direct domains resolve to IPv6 only. Render web services communicate over IPv4.
 - **Fix:** Use the Supabase Connection Pooler (`aws-0-[region].pooler.supabase.com:6543`), which provides native IPv4 support.
+
+---
+
+## Troubleshooting Production Google OAuth
+
+### 6. Error: `Error 401: invalid_client / The OAuth client was not found`
+- **Cause:** The Google Client ID configured in Render is either a placeholder (e.g. `your_google_oauth_client_id.apps.googleusercontent.com`), has an invalid/malformed format, is from a deleted project, or was created as the wrong application type (e.g. Android instead of Web application).
+- **Explanation:** Google's OAuth server checks the `client_id` query parameter against all registered client IDs. If it does not find an exact match in Google Cloud, it responds with `401: invalid_client`.
+- **Fix:** 
+  1. Open [Google Cloud Console Credentials](https://console.cloud.google.com/apis/credentials).
+  2. Verify you have a client under **OAuth 2.0 Client IDs** with type **Web application**.
+  3. Copy the full Client ID (`<numbers>-<hash>.apps.googleusercontent.com`).
+  4. In Render Dashboard > Environment, paste this value into both `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID`.
+  5. Click **Save Changes**.
+
+### 7. Error: `Error 400: redirect_uri_mismatch`
+- **Cause:** `https://novara-qzce.onrender.com` is missing from the client's Authorized origins or redirect URIs in Google Cloud Console.
+- **Fix:**
+  1. In Google Cloud Console, click your Web Client ID to edit it.
+  2. Under **Authorized JavaScript origins**, add `https://novara-qzce.onrender.com` (no trailing slash).
+  3. Under **Authorized redirect URIs**, add `https://novara-qzce.onrender.com` and `https://novara-qzce.onrender.com/api/auth/google`.
+  4. Click **Save**. Wait 1–3 minutes for Google's servers to sync.

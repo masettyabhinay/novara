@@ -3,6 +3,31 @@
  * Verifies Google ID tokens or Access Tokens directly against official Google OAuth endpoints.
  */
 
+/**
+ * Validates whether a given string is a genuine Google OAuth Web Client ID
+ * Format: <project-number>-<alphanumeric-hash>.apps.googleusercontent.com
+ * @param {string} id - Google Client ID
+ * @returns {boolean}
+ */
+export function isValidGoogleClientId(id) {
+  if (!id || typeof id !== 'string') return false;
+  const trimmed = id.trim();
+  if (
+    trimmed === '' ||
+    trimmed.includes('your_google') ||
+    trimmed.includes('your-google') ||
+    trimmed.includes('your_client') ||
+    trimmed.includes('your-client') ||
+    trimmed.includes('example') ||
+    trimmed.includes('placeholder') ||
+    trimmed.includes('<') ||
+    trimmed.includes('[')
+  ) {
+    return false;
+  }
+  return /^\d+-[a-zA-Z0-9_\-]+\.apps\.googleusercontent\.com$/.test(trimmed);
+}
+
 export async function verifyGoogleToken({ credential, idToken, accessToken }) {
   const token = credential || idToken;
 
@@ -33,9 +58,9 @@ export async function verifyGoogleToken({ credential, idToken, accessToken }) {
 
     // Check aud if configured
     const configuredClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
-    if (configuredClientId && configuredClientId.trim() !== '' && !configuredClientId.includes('YOUR_GOOGLE_CLIENT_ID')) {
+    if (isValidGoogleClientId(configuredClientId)) {
       if (data.aud !== configuredClientId.trim()) {
-        console.warn(`[Google Auth Warning] Token aud (${data.aud}) does not match configured GOOGLE_CLIENT_ID (${configuredClientId})`);
+        console.warn('[Google Auth Warning] Token aud does not match configured GOOGLE_CLIENT_ID.');
       }
     }
 

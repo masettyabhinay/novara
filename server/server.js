@@ -9,6 +9,7 @@ import path from 'path';
 import { apiMiddlewareHandler } from './apiMiddleware.js';
 import { dbAdapter } from './db/dbAdapter.js';
 import { logger } from './logger.js';
+import { isValidGoogleClientId } from './authGoogle.js';
 
 const PORT = process.env.PORT || 3000;
 const DIST_DIR = path.resolve(process.cwd(), 'dist');
@@ -30,6 +31,27 @@ const MIME_TYPES = {
   '.ttf': 'font/ttf'
 };
 
+function serveIndexHtml(res) {
+  const indexPath = path.join(DIST_DIR, 'index.html');
+  if (!fs.existsSync(indexPath)) {
+    res.statusCode = 404;
+    return res.end('Index Not Found');
+  }
+
+  const rawClientId = (process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+  let html = fs.readFileSync(indexPath, 'utf8');
+
+  // If a valid Google Client ID is configured on the server, inject it at runtime
+  if (isValidGoogleClientId(rawClientId)) {
+    const scriptTag = `<script>window.NOVARA_GOOGLE_CLIENT_ID = ${JSON.stringify(rawClientId)};</script>\n  </head>`;
+    html = html.replace('</head>', scriptTag);
+  }
+
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.end(html);
+}
+
 async function startServer() {
   await dbAdapter.init();
 
@@ -48,7 +70,11 @@ async function startServer() {
 
     // 2. Route Static Assets from dist/
     if (fs.existsSync(DIST_DIR)) {
-      let filePath = path.join(DIST_DIR, pathname === '/' ? 'index.html' : pathname);
+      if (pathname === '/' || pathname === '/index.html') {
+        return serveIndexHtml(res);
+      }
+
+      let filePath = path.join(DIST_DIR, pathname);
 
       // Path traversal security check
       if (!filePath.startsWith(DIST_DIR)) {
@@ -76,12 +102,7 @@ async function startServer() {
 
       // SPA Fallback: Serve index.html for non-asset GET requests
       if (req.method === 'GET') {
-        const indexPath = path.join(DIST_DIR, 'index.html');
-        if (fs.existsSync(indexPath)) {
-          res.setHeader('Content-Type', 'text/html; charset=utf-8');
-          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-          return fs.createReadStream(indexPath).pipe(res);
-        }
+        return serveIndexHtml(res);
       }
     }
 

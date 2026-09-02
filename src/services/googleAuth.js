@@ -3,13 +3,40 @@
  * Supports Google One Tap and Google OAuth2 Token Client Popups
  */
 
-export const getGoogleClientId = () => {
-  const envId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  if (envId && envId.trim() !== '' && !envId.includes('your-google-client-id')) {
-    return envId.trim();
+/**
+ * Validates whether a given string is a genuine Google OAuth Web Client ID
+ * Format: <project-number>-<alphanumeric-hash>.apps.googleusercontent.com
+ * @param {string} id - Google Client ID
+ * @returns {boolean}
+ */
+export const isValidGoogleClientId = (id) => {
+  if (!id || typeof id !== 'string') return false;
+  const trimmed = id.trim();
+  if (
+    trimmed === '' ||
+    trimmed.includes('your_google') ||
+    trimmed.includes('your-google') ||
+    trimmed.includes('your_client') ||
+    trimmed.includes('your-client') ||
+    trimmed.includes('example') ||
+    trimmed.includes('placeholder') ||
+    trimmed.includes('<') ||
+    trimmed.includes('[')
+  ) {
+    return false;
   }
-  if (typeof window !== 'undefined' && window.NOVARA_GOOGLE_CLIENT_ID) {
+  return /^\d+-[a-zA-Z0-9_\-]+\.apps\.googleusercontent\.com$/.test(trimmed);
+};
+
+export const getGoogleClientId = () => {
+  // 1. Check runtime window configuration injected by server into index.html
+  if (typeof window !== 'undefined' && isValidGoogleClientId(window.NOVARA_GOOGLE_CLIENT_ID)) {
     return window.NOVARA_GOOGLE_CLIENT_ID.trim();
+  }
+  // 2. Check build-time Vite environment variable
+  const envId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  if (isValidGoogleClientId(envId)) {
+    return envId.trim();
   }
   return '';
 };
@@ -46,11 +73,27 @@ export const loadGoogleSdk = () => {
  * Returns Promise resolving to { accessToken } or { credential }
  */
 export const triggerGoogleSignIn = async () => {
-  const clientId = getGoogleClientId();
+  let clientId = getGoogleClientId();
+
+  // Runtime fallback: fetch from backend config endpoint if not already in window/bundle
+  if (!clientId && typeof window !== 'undefined') {
+    try {
+      const res = await fetch('/api/auth/config');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.googleClientId && isValidGoogleClientId(data.googleClientId)) {
+          window.NOVARA_GOOGLE_CLIENT_ID = data.googleClientId;
+          clientId = data.googleClientId;
+        }
+      }
+    } catch {
+      // Non-critical network error fetching config, continue with check
+    }
+  }
 
   if (!clientId) {
     throw new Error(
-      'Google sign-in is not configured. Please set VITE_GOOGLE_CLIENT_ID in your .env file.'
+      'Google sign-in is not configured with a valid Web Application Client ID. Please set GOOGLE_CLIENT_ID in your Render Environment Variables.'
     );
   }
 

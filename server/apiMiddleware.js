@@ -55,7 +55,7 @@ import {
   generateDailyPlanFromRoadmap 
 } from './roadmapService.js';
 
-import { verifyGoogleToken } from './authGoogle.js';
+import { verifyGoogleToken, isValidGoogleClientId } from './authGoogle.js';
 
 import {
   startFocusSession,
@@ -233,6 +233,16 @@ export async function apiMiddlewareHandler(req, res, next) {
           } catch (err) {
             return sendJson(res, 401, { success: false, error: err.message }, req);
           }
+        }
+
+        if (req.method === 'GET' && pathname === '/api/auth/config') {
+          const rawId = (process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+          const valid = isValidGoogleClientId(rawId);
+          return sendJson(res, 200, {
+            success: true,
+            googleClientId: valid ? rawId : '',
+            isConfigured: valid
+          }, req);
         }
 
         if (req.method === 'POST' && pathname === '/api/auth/google') {
