@@ -1,0 +1,43 @@
+const Pdf = require('pdf-parse/lib/pdf-parse.js');
+
+const samplePdf = `%PDF-1.4
+1 0 obj <</Type /Catalog /Pages 2 0 R>> endobj
+2 0 obj <</Type /Pages /Kids [3 0 R] /Count 1>> endobj
+3 0 obj <</Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources <</Font <</F1 5 0 R>>>>>> endobj
+4 0 obj <</Length 180>>
+stream
+BT
+/F1 14 Tf
+72 720 Td
+(Phase 1 - Programming Foundations) Tj
+0 -24 Td
+/F1 10 Tf
+(- Big O Notation) Tj
+0 -18 Td
+(- Arrays and Strings) Tj
+ET
+endstream
+endobj
+5 0 obj <</Type /Font /Subtype /Type1 /BaseFont /Helvetica>> endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000060 00000 n 
+0000000117 00000 n 
+0000000228 00000 n 
+0000000458 00000 n 
+trailer <</Size 6 /Root 1 0 R>>
+startxref
+527
+%%EOF`;
+
+async function test() {
+  const result = await Pdf(Buffer.from(samplePdf));
+  console.log('--- EXTRACTED TEXT ---');
+  console.log(result.text);
+  console.log('--- END EXTRACTED TEXT ---');
+  console.log('Num pages:', result.numpages);
+}
+
+test().catch(console.error);

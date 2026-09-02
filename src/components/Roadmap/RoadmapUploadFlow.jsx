@@ -597,9 +597,15 @@ export const RoadmapUploadFlow = ({ onCancel, onComplete }) => {
           {/* Header */}
           <div style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-              <span className="pill-badge pill-terracotta">
-                <Check size={11} /> Extraction Ready
-              </span>
+              {extractedRoadmap.needsReview ? (
+                <span className="pill-badge pill-amber" style={{ fontSize: '10.5px' }}>
+                  <AlertTriangle size={11} /> Needs Review
+                </span>
+              ) : (
+                <span className="pill-badge pill-terracotta">
+                  <Check size={11} /> Extraction Ready
+                </span>
+              )}
               {/* Real vs Demo Source Badge */}
               {!isDemoFallback ? (
                 <span className="pill-badge pill-sage" style={{ fontSize: '10.5px' }}>
@@ -641,6 +647,51 @@ export const RoadmapUploadFlow = ({ onCancel, onComplete }) => {
                 <span style={{ color: 'var(--text-secondary)' }}>
                   Sample roadmap data is being used for development.
                 </span>
+              </div>
+            </div>
+          )}
+
+          {/* Extraction Needs Review Banner (Low Confidence / Corrupted Document Safeguard) */}
+          {extractedRoadmap.needsReview && (
+            <div style={{
+              backgroundColor: 'var(--accent-amber-light)',
+              border: '1px solid rgba(217, 130, 43, 0.35)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '12px 14px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+              fontSize: '12.5px'
+            }}>
+              <AlertTriangle size={17} color="var(--accent-amber)" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div style={{ flex: 1 }}>
+                <strong style={{ color: 'var(--text-charcoal)', display: 'block', marginBottom: '2px' }}>
+                  Extraction Needs Review
+                </strong>
+                <span style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>
+                  {extractedRoadmap.reviewReason || 'Some sections of this document may be low quality or formatted irregularly. Please review and adjust the extracted topics.'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsEditorOpen(true)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
+                    color: 'var(--accent-amber)',
+                    backgroundColor: 'transparent',
+                    border: '1px solid var(--accent-amber)',
+                    borderRadius: '6px',
+                    padding: '3px 8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Edit3 size={12} />
+                  Edit Roadmap Topics
+                </button>
               </div>
             </div>
           )}

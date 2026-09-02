@@ -110,7 +110,15 @@ export const parseRoadmapDocument = async (file, options = {}) => {
     }
 
     return {
-      roadmap: data.roadmap,
+      roadmap: {
+        ...data.roadmap,
+        confidence: data.confidence || data.roadmap?.confidence || 'high',
+        needsReview: !!(data.needsReview || data.roadmap?.needsReview),
+        reviewReason: data.reviewReason || data.roadmap?.reviewReason || null
+      },
+      confidence: data.confidence || data.roadmap?.confidence || 'high',
+      needsReview: !!(data.needsReview || data.roadmap?.needsReview),
+      reviewReason: data.reviewReason || data.roadmap?.reviewReason || null,
       isDemoFallback: false,
       source: 'extracted_from_document'
     };

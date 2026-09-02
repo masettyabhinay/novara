@@ -1006,7 +1006,7 @@ export async function apiMiddlewareHandler(req, res, next) {
               }, req);
             }
 
-            const extractedText = extractTextFromBuffer(buffer, safeFileName);
+            const extractedText = await extractTextFromBuffer(buffer, safeFileName);
             const extractedRoadmap = parseDocumentTextToRoadmap(extractedText, safeFileName, targetRole);
 
             const validation = validateRoadmapSchema(extractedRoadmap);
@@ -1021,6 +1021,9 @@ export async function apiMiddlewareHandler(req, res, next) {
             return sendJson(res, 200, {
               success: true,
               roadmap: extractedRoadmap,
+              confidence: extractedRoadmap.confidence || 'high',
+              needsReview: !!extractedRoadmap.needsReview,
+              reviewReason: extractedRoadmap.reviewReason || null,
               source: 'extracted_from_document',
               isDemo: false
             }, req);

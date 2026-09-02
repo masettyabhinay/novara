@@ -20,7 +20,7 @@ async function run() {
   assert(validateFileSignature(pdfHeader) === true, 'PDF magic bytes signature validated');
 
   // 2. Text Extraction
-  const extractedText = extractTextFromBuffer(pdfHeader, 'my_roadmap.pdf');
+  const extractedText = await extractTextFromBuffer(pdfHeader, 'my_roadmap.pdf');
   assert(typeof extractedText === 'string', 'Text extracted from document buffer');
 
   // 3. Document Parsing
