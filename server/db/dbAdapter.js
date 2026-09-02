@@ -66,7 +66,12 @@ class DatabaseAdapter {
   async init() {
     if (this.initialized) return;
 
-    this.databaseUrl = process.env.DATABASE_URL || '';
+    let rawUrl = (process.env.DATABASE_URL || '').trim();
+    // Strip surrounding quotes if accidentally included in environment variable
+    if ((rawUrl.startsWith('"') && rawUrl.endsWith('"')) || (rawUrl.startsWith("'") && rawUrl.endsWith("'"))) {
+      rawUrl = rawUrl.slice(1, -1).trim();
+    }
+    this.databaseUrl = rawUrl;
     this.isPostgresConfigured = Boolean(this.databaseUrl && this.databaseUrl.startsWith('postgres'));
     const isProduction = process.env.NODE_ENV === 'production';
 
@@ -77,6 +82,28 @@ class DatabaseAdapter {
     }
 
     if (this.isPostgresConfigured) {
+      // Check for unreplaced placeholder strings in production
+      const placeholderPatterns = [
+        'yourprojectref',
+        '[project-ref]',
+        '<project-ref>',
+        'your_secure_password',
+        '[YOUR-PASSWORD]',
+        '<YOUR-PASSWORD>',
+        'aws-0-[region]',
+        'aws-0-<region>'
+      ];
+      const detectedPlaceholder = placeholderPatterns.find(placeholder => 
+        this.databaseUrl.toLowerCase().includes(placeholder.toLowerCase())
+      );
+
+      if (detectedPlaceholder && isProduction) {
+        console.error(`[DatabaseAdapter] CRITICAL: DATABASE_URL contains unreplaced placeholder token: "${detectedPlaceholder}".`);
+        console.error('[DatabaseAdapter] ACTION: In your Render Dashboard under Environment Variables, update DATABASE_URL with your actual Supabase project reference and password.');
+        throw new Error(`PRODUCTION_DATABASE_CONNECTION_FAILED: process.env.DATABASE_URL contains placeholder token "${detectedPlaceholder}". Please configure your actual Supabase connection string in Render.`);
+      }
+
+      let parsed = null;
       try {
         const isSslNeeded = isProduction || 
                             this.databaseUrl.includes('supabase') || 
@@ -84,8 +111,8 @@ class DatabaseAdapter {
                             Boolean(process.env.DATABASE_SSL_CA);
 
         // Strip sslmode query param so pg-connection-string does not override our ssl config with empty object
-        const cleanUrl = this.databaseUrl.replace(/([?&])sslmode=[^&]+(&|$)/, '$1').replace(/\?$/, '');
-        const parsed = parseConnectionString(cleanUrl);
+        const cleanUrl = this.databaseUrl.replace(/([?&])sslmode=[^&]+(&|$)/, '$1').replace(/[?&]$/, '');
+        parsed = parseConnectionString(cleanUrl);
         delete parsed.ssl;
         delete parsed.sslmode;
 
@@ -131,6 +158,16 @@ class DatabaseAdapter {
           if (err.message.includes('self-signed certificate') || err.code === 'DEPTH_ZERO_SELF_SIGNED_CERT') {
             console.error('[DatabaseAdapter] CRITICAL: Supabase SSL certificate verification failed.');
             console.error('[DatabaseAdapter] ACTION: Set the DATABASE_SSL_CA environment variable on Render with the Supabase CA certificate (from Supabase Dashboard > Project Settings > Database).');
+          } else if (err.message.includes('tenant/user') && err.message.includes('not found')) {
+            console.error('[DatabaseAdapter] CRITICAL: Supabase connection pooler could not find the specified tenant/project reference.');
+            console.error('[DatabaseAdapter] CAUSE: The database username in DATABASE_URL has an invalid or placeholder Supabase project reference (e.g. postgres.yourprojectref).');
+            console.error('[DatabaseAdapter] ACTION: In Render Dashboard > Environment, update DATABASE_URL with your actual Supabase connection string from Supabase Dashboard > Connect > Transaction pooler (or Session pooler / Direct connection). Ensure postgres.[project-ref] uses your real Supabase project reference ID, not a placeholder.');
+          } else if (err.code === 'ENOTFOUND' && err.syscall === 'getaddrinfo') {
+            console.error('[DatabaseAdapter] CRITICAL: DNS hostname resolution failed for database host:', parsed?.host || 'unknown');
+            console.error('[DatabaseAdapter] ACTION: Ensure the database hostname in DATABASE_URL on Render is correct and resolvable.');
+          } else if (err.code === 'ERR_INVALID_URL') {
+            console.error('[DatabaseAdapter] CRITICAL: Malformed DATABASE_URL connection string.');
+            console.error('[DatabaseAdapter] ACTION: If your database password contains special characters (e.g. #, @, %, &, ?), they must be URL-encoded (percent-encoded) in DATABASE_URL.');
           }
           console.error('[DatabaseAdapter] CRITICAL: PostgreSQL connection failed in production:', err.message);
           throw new Error(`PRODUCTION_DATABASE_CONNECTION_FAILED: ${err.message}`);

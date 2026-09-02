@@ -98,8 +98,38 @@ async function testAdapter() {
   assert(missingUrlFailed, 'Production must throw when DATABASE_URL is missing');
   console.log('✅ Production strictly rejects missing DATABASE_URL.');
 
-  // 5. Test Development Fallback
-  console.log('\n[5] Testing Non-Production Development Behavior...');
+  // 5. Test Production Fail-Fast on Unreplaced Placeholder DATABASE_URL
+  console.log('\n[5] Testing Production Fail-Fast on Placeholder DATABASE_URL...');
+  process.env.NODE_ENV = 'production';
+  process.env.DATABASE_URL = 'postgresql://postgres.yourprojectref:your_secure_password@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require';
+  dbAdapter.initialized = false;
+  let placeholderFailed = false;
+  try {
+    await dbAdapter.init();
+  } catch (err) {
+    placeholderFailed = true;
+    assert(err.message.includes('PRODUCTION_DATABASE_CONNECTION_FAILED'), 'Must fail with connection failed error');
+    assert(err.message.includes('placeholder token "yourprojectref"'), 'Must mention the exact placeholder token');
+  }
+  assert(placeholderFailed, 'Production must throw when DATABASE_URL contains placeholders');
+  console.log('✅ Production strictly rejects unreplaced placeholders in DATABASE_URL.');
+
+  // 6. Test Whitespace and Surrounding Quotes Trimming in DATABASE_URL
+  console.log('\n[6] Testing Whitespace & Quotes Trimming in DATABASE_URL...');
+  process.env.NODE_ENV = 'production';
+  process.env.DATABASE_URL = '  "postgresql://postgres.testref:secretpass@127.0.0.1:54321/postgres?sslmode=require"  \n';
+  dbAdapter.initialized = false;
+  try {
+    await dbAdapter.init();
+  } catch (err) {
+    // Should fail with connection refused at 127.0.0.1:54321, NOT invalid url or host 'base'
+    assert(err.message.includes('ECONNREFUSED'), `Expected ECONNREFUSED, got: ${err.message}`);
+  }
+  assert.strictEqual(dbAdapter.databaseUrl, 'postgresql://postgres.testref:secretpass@127.0.0.1:54321/postgres?sslmode=require');
+  console.log('✅ DATABASE_URL is properly trimmed and surrounding quotes are stripped.');
+
+  // 7. Test Development Fallback
+  console.log('\n[7] Testing Non-Production Development Behavior...');
   process.env.NODE_ENV = 'development';
   delete process.env.DATABASE_URL;
   dbAdapter.initialized = false;

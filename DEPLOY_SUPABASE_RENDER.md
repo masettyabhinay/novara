@@ -27,17 +27,42 @@ This step-by-step guide walks you through deploying NOVARA to **Render** (Applic
 3. Choose an Organization, name the project (e.g. `novara-production`), enter a strong Database Password (store safely in your password manager), and choose a region close to your primary audience (e.g. `US East (North Virginia)`).
 4. Wait for the database provisioning to complete (takes ~1-2 minutes).
 
-### Step 2: Obtain PostgreSQL Connection String
-1. In your Supabase project dashboard, navigate to **Project Settings** (gear icon) > **Database**.
-2. Scroll to the **Connection parameters** section.
-3. Under **Connection string**, select **URI**.
-4. Choose the **Transaction Pooler** (recommended for serverless/PaaS compute) on port `6543`, or Direct Connection on port `5432`.
-5. Copy the connection string format:
+### Step 2: Obtain PostgreSQL Connection String from Supabase
+
+There are two easy ways to access your connection parameters in the Supabase Dashboard:
+
+#### Method A: The Supabase "Connect" Panel (Recommended)
+1. At the top of your Supabase Dashboard, click the green **Connect** button in the header bar.
+2. In the modal that opens, select:
+   - **Type:** `Transaction pooler` (Port `6543`) or `Session pooler` (Port `5432`). Both connect via Supabase's high-performance connection pooler (Supavisor) over IPv4, which is required for reliable connectivity from Render.
+   - **Mode:** `URI`.
+3. You will see a connection string formatted as:
+   ```text
+   postgresql://postgres.[YOUR-PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
    ```
-   postgresql://postgres.[project-ref]:[YOUR-PASSWORD]@aws-0-[region].pooler.supabase.com:6543/postgres?sslmode=require
-   ```
-6. Replace `[YOUR-PASSWORD]` with your actual database password. This is your `DATABASE_URL`.
-7. In the same **Database** settings page, scroll to **SSL Certificate** and click **Download Certificate** (`prod-ca-2021.crt`). Open it in any text editor to copy its contents for the `DATABASE_SSL_CA` variable on Render.
+   > [!NOTE]
+   > Supabase automatically populates `[YOUR-PROJECT-REF]` (your project's unique 20-character alphanumeric ID) and `[REGION]`. The only value you need to supply is your actual database password!
+
+#### Method B: Project Settings > Database
+1. Navigate to **Project Settings** (gear icon) > **Database**.
+2. Scroll down to the **Connection parameters** section.
+3. Under **Connection string**, select the **URI** tab.
+4. Select **Transaction Pooler** (port `6543`, recommended) or **Session Pooler** (port `5432`).
+
+#### Critical Connection String Rules:
+- **Tenant Username Structure:** In the pooler URI, the username is `postgres.[project-ref]` (e.g. `postgres.vbyqxzabcdefghijklmn`). The suffix after `postgres.` tells the pooler which project to connect to.
+  > [!CAUTION]
+  > **DO NOT** leave the literal string `yourprojectref` or `[project-ref]` in your `DATABASE_URL`. If you do, the Supabase pooler will reject the connection with:
+  > `[DatabaseAdapter] CRITICAL: PostgreSQL connection failed in production: (ENOTFOUND) tenant/user postgres.yourprojectref not found`
+  > Note that despite the `(ENOTFOUND)` text, this is a **Supabase pooler tenant lookup error**, NOT a DNS hostname resolution failure.
+- **Password URL-Encoding:** If your database password contains special characters (such as `@`, `#`, `%`, `&`, `?`, `/`, etc.), you **MUST** URL-encode (percent-encode) them. For example, `#` becomes `%23`, `@` becomes `%40`, `%` becomes `%25`.
+- **SSL Mode:** You may append `?sslmode=require` to the URI, but NOVARA's `dbAdapter.js` automatically enforces strict TLS encryption and CA certificate verification in production regardless.
+- **Direct Connection Caveat:** While Direct Connection (`db.[project-ref].supabase.co:5432`) is supported by NOVARA, Supabase free-tier direct domains resolve exclusively to IPv6. Render web services operate on IPv4, so using Direct Connection may result in timeouts. Always use the **Transaction Pooler** or **Session Pooler** on Render.
+
+#### Download the SSL CA Certificate:
+1. In the same **Database** settings page (**Project Settings > Database**), scroll down to the **SSL Certificate** section.
+2. Click **Download Certificate** to save `prod-ca-2021.crt`.
+3. Open `prod-ca-2021.crt` in any text editor. You will need this entire PEM text (including `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`) for the `DATABASE_SSL_CA` variable on Render.
 
 ### Step 3: Run Database Schema Initialization
 1. In the Supabase dashboard, go to the **SQL Editor** (left navigation).
@@ -93,7 +118,7 @@ Under the **Environment Variables** tab in Render, add the following key-value p
 | Variable Name | Type | Value / Source |
 | :--- | :--- | :--- |
 | `NODE_ENV` | Server | `production` |
-| `DATABASE_URL` | Server | Your Supabase PostgreSQL Connection String |
+| `DATABASE_URL` | Server | Supabase Transaction Pooler URI (`postgresql://postgres.[PROJECT-REF]:[ENCODED-PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres`) |
 | `DATABASE_SSL_CA` | Server | Supabase CA Certificate contents (`prod-ca-2021.crt`) |
 | `JWT_SECRET` | Server | Generate a 64+ character random hex string |
 | `AI_API_KEY` | Server | Your Google Gemini API Key |
@@ -181,3 +206,28 @@ curl -i https://your-service-name.onrender.com/api/health
 - [x] Strict CORS origin validation enabled (`ALLOWED_ORIGINS`).
 - [x] Rate limiting active on authentication and AI endpoints.
 - [x] Automated daily PostgreSQL backups enabled in Supabase.
+
+---
+
+## Troubleshooting Production Database Connections
+
+### 1. Error: `(ENOTFOUND) tenant/user postgres.yourprojectref not found`
+- **Cause:** The database username in your `DATABASE_URL` contains an unreplaced placeholder (`yourprojectref` or `[project-ref]`).
+- **Explanation:** In Supabase's pooler architecture, all connections go through `aws-0-[region].pooler.supabase.com`. Supavisor inspects the username `postgres.[project-ref]` to look up your tenant. If it does not recognize the project ref, it returns this error. Note: **This is NOT a DNS error**, despite the `(ENOTFOUND)` text.
+- **Fix:** In Render Dashboard > Environment, edit `DATABASE_URL`. Replace `postgres.yourprojectref` with `postgres.<YOUR_ACTUAL_20_CHAR_PROJECT_REF>` (from Supabase Dashboard > Connect).
+
+### 2. Error: `PRODUCTION_DATABASE_CONNECTION_FAILED: process.env.DATABASE_URL contains placeholder token ...`
+- **Cause:** One of the documentation placeholder strings (e.g. `[YOUR-PASSWORD]`, `your_secure_password`, `aws-0-[region]`, `yourprojectref`) was pasted literally into Render.
+- **Fix:** Double check all segments of `DATABASE_URL` in the Render Environment Variables tab and ensure each placeholder has been replaced with your actual values.
+
+### 3. Error: `self-signed certificate` or `DEPTH_ZERO_SELF_SIGNED_CERT`
+- **Cause:** The Supabase SSL CA certificate is missing or invalid on Render.
+- **Fix:** In Supabase Dashboard > Project Settings > Database > SSL Certificate, download `prod-ca-2021.crt`. Copy the entire PEM text into the `DATABASE_SSL_CA` environment variable on Render.
+
+### 4. Error: `ERR_INVALID_URL` or connection fails with authentication error
+- **Cause:** The database password contains special characters like `#`, `@`, `%`, `&`, `?`, `/`, which breaks URI parsing if not URL-encoded.
+- **Fix:** URL-encode the password. For example, if your password is `Secret#123@!`, encode it as `Secret%23123%40!`.
+
+### 5. Connection Timeout with Direct Connection (`db.[project-ref].supabase.co`)
+- **Cause:** Supabase free-tier direct domains resolve to IPv6 only. Render web services communicate over IPv4.
+- **Fix:** Use the Supabase Connection Pooler (`aws-0-[region].pooler.supabase.com:6543`), which provides native IPv4 support.
