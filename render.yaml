@@ -1,0 +1,43 @@
+# ==============================================================================
+# NOVARA — Render Cloud Deployment Blueprint
+# Configures a high-performance Web Service serving Vite static assets & API routes.
+# ==============================================================================
+
+services:
+  - type: web
+    name: novara
+    runtime: node
+    plan: starter
+    region: oregon
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # Set in Render Dashboard from Supabase connection string
+      - key: JWT_SECRET
+        generateValue: true # Render will generate a secure random 32/64 char secret
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
+      - key: AI_API_KEY
+        sync: false
+      - key: STORAGE_BUCKET
+        sync: false # Supabase Storage bucket name (e.g. novara-user-roadmaps)
+      - key: STORAGE_ENDPOINT
+        sync: false # Supabase S3 endpoint (https://<project-ref>.supabase.co/storage/v1/s3)
+      - key: STORAGE_REGION
+        value: us-east-1
+      - key: STORAGE_ACCESS_KEY
+        sync: false # Supabase S3 Access Key ID
+      - key: STORAGE_SECRET_KEY
+        sync: false # Supabase S3 Secret Access Key
+      - key: APP_BASE_URL
+        sync: false # https://<your-service-name>.onrender.com or custom domain
+      - key: API_BASE_URL
+        sync: false # https://<your-service-name>.onrender.com/api
+      - key: ALLOWED_ORIGINS
+        sync: false # https://<your-service-name>.onrender.com
