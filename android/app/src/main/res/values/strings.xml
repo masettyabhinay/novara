@@ -4,4 +4,5 @@
     <string name="title_activity_main">NOVARA</string>
     <string name="package_name">com.novara.placement</string>
     <string name="custom_url_scheme">com.novara.placement</string>
+    <string name="server_client_id">939390230171-qnrmttdtha9e52hc0v6kebiaede68ssc.apps.googleusercontent.com</string>
 </resources>

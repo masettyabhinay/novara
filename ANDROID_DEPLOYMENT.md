@@ -104,6 +104,17 @@ Inside an Android WebView, Google blocks OAuth popup flows if identified as an e
 keytool -list -v -keystore path/to/your/release.keystore -alias your-key-alias
 ```
 
+### C. Native Google Play Services Authentication
+- NOVARA uses `@codetrix-studio/capacitor-google-auth` on Android.
+- Tapping "Continue with Google" summons the native Android Google Play Services account picker directly over the app (zero WebView popup issues, zero `disallowed_useragent` errors).
+- On Web, NOVARA continues to use the Google Identity Services (`gsi/client`) token popup.
+- Both flows deliver the verified Google token to `POST /api/auth/google` for server-side verification and session creation.
+
+> [!IMPORTANT]
+> **Render Environment Variables Requirement:**
+> In the Render Dashboard under **Environment**, ensure `GOOGLE_CLIENT_ID` and `VITE_GOOGLE_CLIENT_ID` are configured with your valid Web Application Client ID (`939390230171-...apps.googleusercontent.com`).
+> When configured, Render serves this ID to both the Web application and the Android app via `GET /api/auth/config`.
+
 > [!SECURITY]
 > **Zero Client Secrets in APK:** Android OAuth client IDs require NO client secret. Never put OAuth secrets, Supabase service-role keys, database passwords, or JWT secrets inside the Android application.
 

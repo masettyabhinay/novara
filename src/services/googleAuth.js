@@ -68,9 +68,11 @@ export const loadGoogleSdk = () => {
   });
 };
 
+import { isNativePlatform } from './nativeBridge.js';
+
 /**
- * Triggers Real Google Sign-In Popup
- * Returns Promise resolving to { accessToken } or { credential }
+ * Triggers Real Google Sign-In Popup (Web) or Native Google Play Services (Android)
+ * Returns Promise resolving to { accessToken } or { credential } / { idToken }
  */
 export const triggerGoogleSignIn = async () => {
   let clientId = getGoogleClientId();
@@ -91,6 +93,45 @@ export const triggerGoogleSignIn = async () => {
     }
   }
 
+  // 1. Native Android Google Sign-In via Google Play Services (Zero WebView popup issues)
+  if (isNativePlatform()) {
+    try {
+      const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth');
+      if (clientId) {
+        GoogleAuth.initialize({
+          clientId: clientId,
+          scopes: ['profile', 'email'],
+          grantOfflineAccess: false
+        });
+      }
+
+      const googleUser = await GoogleAuth.signIn();
+      const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
+      const accessToken = googleUser?.authentication?.accessToken || googleUser?.accessToken;
+
+      if (!idToken && !accessToken) {
+        throw new Error('Google Sign-In did not return an authentication token.');
+      }
+
+      return {
+        idToken,
+        accessToken,
+        credential: idToken
+      };
+    } catch (nativeErr) {
+      const errMsg = nativeErr?.message || String(nativeErr);
+      if (
+        errMsg.includes('12501') ||
+        errMsg.toLowerCase().includes('cancel') ||
+        errMsg.toLowerCase().includes('closed')
+      ) {
+        throw new Error('Google sign-in was cancelled.');
+      }
+      throw new Error(`Android Google Sign-In error: ${errMsg}`);
+    }
+  }
+
+  // 2. Web Google Identity Services (GIS) Flow
   if (!clientId) {
     throw new Error(
       'Google sign-in is not configured with a valid Web Application Client ID. Please set GOOGLE_CLIENT_ID in your Render Environment Variables.'
