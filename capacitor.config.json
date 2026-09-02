@@ -1,0 +1,24 @@
+{
+  "appId": "com.novara.placement",
+  "appName": "NOVARA",
+  "webDir": "dist",
+  "server": {
+    "url": "https://novara-qzce.onrender.com",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1800,
+      "launchAutoHide": true,
+      "backgroundColor": "#0B0F19",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0B0F19"
+    }
+  }
+}

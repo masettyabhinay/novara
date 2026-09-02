@@ -43,3 +43,15 @@ Thumbs.db
 server/data/*.tmp
 server/data/*.bak
 server/uploads/*/
+
+# Android & Capacitor artifacts
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/*.iml
+android/app/*.iml
+*.keystore
+*.jks
+keystore.properties

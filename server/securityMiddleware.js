@@ -75,6 +75,8 @@ export function applySecurityHeaders(res, req = null) {
       'http://127.0.0.1:3000',
       'http://localhost:5173',
       'http://127.0.0.1:5173',
+      'https://localhost', // Capacitor Android secure default HTTPS origin
+      'capacitor://localhost', // Capacitor legacy / fallback origin
       ...envOrigins
     ];
     if (origin && allowedOrigins.includes(origin)) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Download, X, Sparkles } from 'lucide-react';
+import { isNativePlatform } from '../../services/nativeBridge';
 
 export const InstallBanner = () => {
   const { isInstallable, isStandaloneApp, handleInstallApp } = useApp();
@@ -8,7 +9,7 @@ export const InstallBanner = () => {
     return localStorage.getItem('novara_pwa_dismissed') === 'true';
   });
 
-  if (!isInstallable || isStandaloneApp || isDismissed) {
+  if (!isInstallable || isStandaloneApp || isDismissed || isNativePlatform()) {
     return null;
   }
 

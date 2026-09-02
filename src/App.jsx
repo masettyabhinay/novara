@@ -27,9 +27,75 @@ import { InstallBanner } from './components/InstallPrompt/InstallBanner';
 import { UpdateBanner } from './components/InstallPrompt/UpdateBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { WifiOff, Loader2, Compass } from 'lucide-react';
+import { setupNativeUi, registerNativeBackButton, exitNativeApp } from './services/nativeBridge';
 
 const AppContent = () => {
-  const { activeTab, toastMessages, isOffline, isAuthLoading } = useApp();
+  const {
+    activeTab,
+    setActiveTab,
+    toastMessages,
+    isOffline,
+    isAuthLoading,
+    isActiveRevisionOpen, setIsActiveRevisionOpen,
+    isAdaptivePlanOpen, setIsAdaptivePlanOpen,
+    isFocusSessionOpen, setIsFocusSessionOpen,
+    isRoadmapUploadOpen, setIsRoadmapUploadOpen,
+    isAddEventModalOpen, setIsAddEventModalOpen,
+    isTopicDetailOpen, setIsTopicDetailOpen,
+    isNotificationDrawerOpen, setIsNotificationDrawerOpen,
+    isOnboardingOpen, setIsOnboardingOpen,
+    isAuthModalOpen, setIsAuthModalOpen
+  } = useApp();
+
+  React.useEffect(() => {
+    // 1. Configure Native Mobile UI (status bar & splash screen)
+    setupNativeUi();
+
+    // 2. Configure Android Hardware Back Button listener
+    const unsubscribeBack = registerNativeBackButton(({ canGoBack }) => {
+      // Priority 1: Close active modals in reverse order
+      if (isActiveRevisionOpen) { setIsActiveRevisionOpen(false); return; }
+      if (isAdaptivePlanOpen) { setIsAdaptivePlanOpen(false); return; }
+      if (isFocusSessionOpen) { setIsFocusSessionOpen(false); return; }
+      if (isRoadmapUploadOpen) { setIsRoadmapUploadOpen(false); return; }
+      if (isAddEventModalOpen) { setIsAddEventModalOpen(false); return; }
+      if (isTopicDetailOpen) { setIsTopicDetailOpen(false); return; }
+      if (isNotificationDrawerOpen) { setIsNotificationDrawerOpen(false); return; }
+      if (isOnboardingOpen) { setIsOnboardingOpen(false); return; }
+      if (isAuthModalOpen) { setIsAuthModalOpen(false); return; }
+
+      // Priority 2: Navigate back to root 'today' tab if on another view
+      if (activeTab !== 'today') {
+        setActiveTab('today');
+        return;
+      }
+
+      // Priority 3: Navigate back in history if available
+      if (canGoBack) {
+        window.history.back();
+        return;
+      }
+
+      // Priority 4: Exit the application from root screen
+      exitNativeApp();
+    });
+
+    return () => {
+      unsubscribeBack();
+    };
+  }, [
+    activeTab,
+    setActiveTab,
+    isActiveRevisionOpen, setIsActiveRevisionOpen,
+    isAdaptivePlanOpen, setIsAdaptivePlanOpen,
+    isFocusSessionOpen, setIsFocusSessionOpen,
+    isRoadmapUploadOpen, setIsRoadmapUploadOpen,
+    isAddEventModalOpen, setIsAddEventModalOpen,
+    isTopicDetailOpen, setIsTopicDetailOpen,
+    isNotificationDrawerOpen, setIsNotificationDrawerOpen,
+    isOnboardingOpen, setIsOnboardingOpen,
+    isAuthModalOpen, setIsAuthModalOpen
+  ]);
 
   const renderActiveView = () => {
     switch (activeTab) {
