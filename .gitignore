@@ -4,6 +4,8 @@ node_modules/
 # Production build outputs
 dist/
 dist-ssr/
+vite.config.js.timestamp*
+*.timestamp-*.mjs
 
 # Environment variables & secrets (CRITICAL)
 .env

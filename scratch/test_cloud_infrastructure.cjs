@@ -175,6 +175,7 @@ async function runCloudInfraTests() {
   assert(envContent.includes('GOOGLE_CLIENT_ID='), '.env.example documents GOOGLE_CLIENT_ID');
   assert(envContent.includes('VITE_GOOGLE_CLIENT_ID='), '.env.example documents VITE_GOOGLE_CLIENT_ID');
   assert(envContent.includes('JWT_SECRET='), '.env.example documents JWT_SECRET');
+  assert(envContent.includes('DATABASE_SSL_CA='), '.env.example documents DATABASE_SSL_CA');
   assert(envContent.includes('STORAGE_BUCKET='), '.env.example documents STORAGE_BUCKET');
   assert(envContent.includes('APP_BASE_URL='), '.env.example documents APP_BASE_URL');
 

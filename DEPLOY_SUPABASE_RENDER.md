@@ -37,6 +37,7 @@ This step-by-step guide walks you through deploying NOVARA to **Render** (Applic
    postgresql://postgres.[project-ref]:[YOUR-PASSWORD]@aws-0-[region].pooler.supabase.com:6543/postgres?sslmode=require
    ```
 6. Replace `[YOUR-PASSWORD]` with your actual database password. This is your `DATABASE_URL`.
+7. In the same **Database** settings page, scroll to **SSL Certificate** and click **Download Certificate** (`prod-ca-2021.crt`). Open it in any text editor to copy its contents for the `DATABASE_SSL_CA` variable on Render.
 
 ### Step 3: Run Database Schema Initialization
 1. In the Supabase dashboard, go to the **SQL Editor** (left navigation).
@@ -93,6 +94,7 @@ Under the **Environment Variables** tab in Render, add the following key-value p
 | :--- | :--- | :--- |
 | `NODE_ENV` | Server | `production` |
 | `DATABASE_URL` | Server | Your Supabase PostgreSQL Connection String |
+| `DATABASE_SSL_CA` | Server | Supabase CA Certificate contents (`prod-ca-2021.crt`) |
 | `JWT_SECRET` | Server | Generate a 64+ character random hex string |
 | `AI_API_KEY` | Server | Your Google Gemini API Key |
 | `GOOGLE_CLIENT_ID` | Server | Your Google OAuth 2.0 Client ID |
