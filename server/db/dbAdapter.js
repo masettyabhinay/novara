@@ -1,8 +1,12 @@
 /**
  * Production Unified Database Adapter for NOVARA
- * Supports PostgreSQL connection pooling via DATABASE_URL with seamless local JSON store fallback
+ * Connects to managed PostgreSQL (Supabase / RDS / Neon) via DATABASE_URL
+ * In production, fails loudly if PostgreSQL is unavailable (NO silent fallback).
+ * Local JSON document store is permitted ONLY in non-production development/test environments.
  */
 
+import pg from 'pg';
+const { Pool } = pg;
 import * as localDb from '../db.js';
 
 class DatabaseAdapter {
@@ -16,14 +20,22 @@ class DatabaseAdapter {
   async init() {
     if (this.initialized) return;
 
+    this.databaseUrl = process.env.DATABASE_URL || '';
+    this.isPostgresConfigured = Boolean(this.databaseUrl && this.databaseUrl.startsWith('postgres'));
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // In production, DATABASE_URL must be provided
+    if (isProduction && !this.isPostgresConfigured) {
+      console.error('[DatabaseAdapter] CRITICAL: DATABASE_URL is missing or invalid in production.');
+      throw new Error('PRODUCTION_DATABASE_URL_MISSING: process.env.DATABASE_URL must be configured in production.');
+    }
+
     if (this.isPostgresConfigured) {
       try {
-        // Dynamic import of pg if installed
-        const { default: pg } = await import('pg');
-        const { Pool } = pg;
-        const isSslNeeded = process.env.NODE_ENV === 'production' || 
+        const isSslNeeded = isProduction || 
                             this.databaseUrl.includes('supabase') || 
                             this.databaseUrl.includes('sslmode=require');
+
         this.pool = new Pool({
           connectionString: this.databaseUrl,
           ssl: isSslNeeded ? { rejectUnauthorized: false } : false,
@@ -31,12 +43,17 @@ class DatabaseAdapter {
           idleTimeoutMillis: 30000,
           connectionTimeoutMillis: 10000
         });
+
         // Verify connectivity
         const client = await this.pool.connect();
         client.release();
-        console.log('[DatabaseAdapter] Connected to Managed PostgreSQL instance.');
+        console.log('[DatabaseAdapter] Successfully connected to PostgreSQL database.');
       } catch (err) {
-        console.warn('[DatabaseAdapter] PostgreSQL connection failed. Falling back to local document store:', err.message);
+        if (isProduction) {
+          console.error('[DatabaseAdapter] CRITICAL: PostgreSQL connection failed in production:', err.message);
+          throw new Error(`PRODUCTION_DATABASE_CONNECTION_FAILED: ${err.message}`);
+        }
+        console.warn('[DatabaseAdapter] PostgreSQL connection failed. Falling back to local document store (development only):', err.message);
         this.isPostgresConfigured = false;
         this.pool = null;
       }
@@ -44,6 +61,7 @@ class DatabaseAdapter {
       // Local development document store
       console.log('[DatabaseAdapter] Initialized with local persistent document store (server/data/novara_db.json).');
     }
+
     this.initialized = true;
   }
 
