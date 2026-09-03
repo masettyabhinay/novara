@@ -83,8 +83,69 @@ export async function fetchTaskStudyMaterial(taskContext = {}) {
 }
 
 /**
+ * Sends a query or action request to the server-side AI Study Tutor.
+ */
+export async function askTaskTutor(tutorPayload = {}) {
+  const payload = {
+    taskId: tutorPayload.taskId || tutorPayload.id || '',
+    taskTitle: tutorPayload.taskTitle || tutorPayload.name || tutorPayload.topic || 'Core Curriculum Concept',
+    taskDescription: tutorPayload.taskDescription || tutorPayload.description || '',
+    roadmapPhase: tutorPayload.roadmapPhase || tutorPayload.phase || '',
+    roadmapTopic: tutorPayload.roadmapTopic || tutorPayload.topic || tutorPayload.taskTitle || tutorPayload.name || '',
+    taskCategory: tutorPayload.taskCategory || tutorPayload.category || 'DSA',
+    difficulty: tutorPayload.difficulty || 'Medium',
+    learningObjectives: tutorPayload.learningObjectives || '',
+    currentStudyMaterial: tutorPayload.currentStudyMaterial || null,
+    userQuery: tutorPayload.userQuery || tutorPayload.prompt || '',
+    actionType: tutorPayload.actionType || 'custom_query',
+    codeContext: tutorPayload.codeContext || '',
+    conversationHistory: Array.isArray(tutorPayload.conversationHistory) ? tutorPayload.conversationHistory.slice(-4) : []
+  };
+
+  const sessionToken = localStorage.getItem('novara_session_token') || localStorage.getItem('placeready_session_token');
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+  if (sessionToken) {
+    headers['Authorization'] = `Bearer ${sessionToken}`;
+  }
+
+  try {
+    const res = await fetch('/api/study/tutor', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `Failed to get tutor answer (${res.status})`);
+    }
+
+    const data = await res.json();
+    if (data && data.success && data.answer) {
+      return {
+        success: true,
+        answer: data.answer,
+        actionType: data.actionType || payload.actionType,
+        isFallback: data.isFallback || false
+      };
+    }
+
+    throw new Error('Invalid response format from study tutor API');
+  } catch (err) {
+    console.warn('[StudyMaterialService] AI Tutor request failed:', err.message);
+    return {
+      success: false,
+      error: err.message || 'Could not generate a response. Try again.'
+    };
+  }
+}
+
+/**
  * Clears the client-side study material cache.
  */
 export function clearStudyMaterialCache() {
   CLIENT_STUDY_MATERIAL_CACHE.clear();
 }
+

@@ -1333,6 +1333,131 @@ async function runTests() {
   delete dbCleanE2E.streaks[e2eUserId];
   saveDbE2E(dbCleanE2E);
 
+  // 6. INTERACTIVE AI TUTOR TESTS (ASK NOVARA)
+  console.log('\n================================================================');
+  console.log('🤖 TESTING INTERACTIVE AI TUTOR (ASK NOVARA) & GROUNDING');
+  console.log('================================================================');
+
+  const {
+    validateTaskTutorResponse,
+    generateTaskTutorResponse
+  } = await import('file:///f:/NOVARA/server/aiService.js');
+  const { getFallbackTutorResponse } = await import('file:///f:/NOVARA/server/studyMaterialService.js');
+
+  // 6a. Test Tutor Response Validation
+  console.log('\n[Tutor Validation] Testing Validation & Anti-Contamination Rules...');
+
+  const validArrayAnswer = `### Two Pointers Technique\n\n**Definition:**\nTwo pointers move inward from boundaries.\n\n**Why it matters:**\nPrunes search space from O(N2) to O(N).\n\n**Complexity:**\n- Time: O(N)\n- Space: O(1)`;
+  const validArrayCheck = validateTaskTutorResponse(validArrayAnswer, {
+    taskTitle: 'Arrays and String Manipulation Practice',
+    roadmapTopic: 'Arrays and strings',
+    taskCategory: 'DSA'
+  });
+  assert(validArrayCheck.valid === true, 'Valid Arrays tutor response passes validation');
+  console.log('✅ PASS: Valid domain-grounded tutor answer accepted');
+
+  // Deflection check
+  const outOfScopeAnswer = 'That is outside this study topic. Ask me something about **Arrays and strings**.';
+  const outOfScopeCheck = validateTaskTutorResponse(outOfScopeAnswer, {
+    taskTitle: 'Arrays and String Manipulation Practice',
+    roadmapTopic: 'Arrays and strings',
+    taskCategory: 'DSA'
+  });
+  assert(outOfScopeCheck.valid === true, 'Out-of-scope standard deflection message passes validation');
+  console.log('✅ PASS: Standard out-of-scope deflection passes validation');
+
+  // STAR contamination in technical task
+  const contaminatedTutorAnswer = `To answer this problem, use the STAR framework: Situation, Task, Action, Result. In your behavioral interview, explain how you resolved the bug.`;
+  const contaminatedCheck = validateTaskTutorResponse(contaminatedTutorAnswer, {
+    taskTitle: 'Arrays and String Manipulation Practice',
+    roadmapTopic: 'Arrays and strings',
+    taskCategory: 'DSA'
+  });
+  assert(contaminatedCheck.valid === false, 'Tutor validator catches and rejects STAR framework in technical task');
+  console.log('✅ PASS: Cross-domain / STAR contaminated tutor answer rejected in technical task');
+
+  // 6b. Test Grounded Fallback Tutor Generator across 11 Domains
+  console.log('\n[Tutor Fallbacks] Testing Grounded Fallbacks across all 11 Core Domains...');
+  const all11Domains = [
+    { title: 'Arrays and String Manipulation Practice', topic: 'Arrays and strings', domain: 'arrays' },
+    { title: 'Linked List Pointer Manipulation', topic: 'Linked lists', domain: 'linked_lists' },
+    { title: 'Binary Search & Monotonic Spaces', topic: 'Binary search', domain: 'binary_search' },
+    { title: 'SQL Joins, Aggregations & Window Functions', topic: 'SQL', domain: 'sql' },
+    { title: 'DBMS Fundamentals & ACID Properties', topic: 'DBMS', domain: 'dbms' },
+    { title: 'Operating Systems — Processes & Threads', topic: 'Operating systems', domain: 'operating_systems' },
+    { title: 'Computer Networks — TCP/IP', topic: 'Computer networks', domain: 'computer_networks' },
+    { title: 'React Basics & Modern Component Architecture', topic: 'React', domain: 'react' },
+    { title: 'Git Version Control & Workflows', topic: 'Git', domain: 'git_github' },
+    { title: 'Aptitude & Quantitative Problem Solving', topic: 'Aptitude', domain: 'aptitude' },
+    { title: 'Resume Preparation & STAR Method', topic: 'Resume preparation', domain: 'resume_interview' }
+  ];
+
+  for (const item of all11Domains) {
+    // 1. Explain simpler
+    const simplerResp = getFallbackTutorResponse({ taskTitle: item.title, roadmapTopic: item.topic, actionType: 'explain_simpler' });
+    assert(simplerResp && simplerResp.answer.length > 20, `Explain simpler works for ${item.title}`);
+
+    // 2. Another example
+    const exampleResp = getFallbackTutorResponse({ taskTitle: item.title, roadmapTopic: item.topic, actionType: 'another_example' });
+    assert(exampleResp && exampleResp.answer.length > 20, `Another example works for ${item.title}`);
+
+    // 3. Practice problem
+    const practiceResp = getFallbackTutorResponse({ taskTitle: item.title, roadmapTopic: item.topic, actionType: 'practice_problem' });
+    assert(practiceResp && practiceResp.answer.length > 20, `Practice problem works for ${item.title}`);
+
+    // 4. Step by step
+    const stepResp = getFallbackTutorResponse({ taskTitle: item.title, roadmapTopic: item.topic, actionType: 'step_by_step' });
+    assert(stepResp && stepResp.answer.length > 20, `Step by step works for ${item.title}`);
+
+    // 5. Explain code
+    const codeResp = getFallbackTutorResponse({ taskTitle: item.title, roadmapTopic: item.topic, actionType: 'explain_code', codeContext: 'function test() {}' });
+    assert(codeResp && codeResp.answer.includes('Complexity Analysis'), `Code explanation has complexity for ${item.title}`);
+
+    console.log(`✅ PASS: Grounded tutor actions verified for ${item.title} (${item.domain})`);
+  }
+
+  // Out of scope query in technical task
+  const outOfScopeFallback = getFallbackTutorResponse({
+    taskTitle: 'Arrays and strings',
+    roadmapTopic: 'Arrays and strings',
+    userQuery: 'What is the weather in Tokyo today?'
+  });
+  assert(outOfScopeFallback.answer.includes('outside this study topic'), 'Unrelated query deflected with topic guidance');
+  console.log('✅ PASS: Unrelated question cleanly deflected to current task');
+
+  // STAR question in Arrays task deflected
+  const starInArrayFallback = getFallbackTutorResponse({
+    taskTitle: 'Arrays and strings',
+    roadmapTopic: 'Arrays and strings',
+    userQuery: 'How to structure STAR method for interview'
+  });
+  assert(starInArrayFallback.answer.includes('outside this study topic'), 'STAR question in Arrays task deflected');
+  console.log('✅ PASS: STAR question in technical task cleanly deflected');
+
+  // 6c. Test AI Tutor Generation with Mock Provider
+  console.log('\n[AI Tutor Generation] Testing Gemini AI Tutor Generation with Conversation History...');
+  const tutorAiProvider = new MockAIProvider({ configured: true });
+  setAIProvider(tutorAiProvider);
+
+  tutorAiProvider.mockResponses.text = `### Explanation: Two Pointers\n\n**Definition:**\nTwo pointers technique maintains two boundary variables moving towards each other.\n\n**Why it matters:**\nEliminates O(N2) nested search passes into O(N) linear time.\n\n**Example:**\n\`\`\`javascript\nlet l = 0, r = arr.length - 1;\nwhile (l < r) {\n  if (arr[l] + arr[r] === target) return [l, r];\n  if (arr[l] + arr[r] < target) l++;\n  else r--;\n}\n\`\`\`\n\n**Complexity:**\n- Time Complexity: O(N)\n- Space Complexity: O(1)\n\n**Key Takeaway:**\nRequires sorted or monotonic input to guarantee correctness.`;
+
+  const aiTutorResult = await generateTaskTutorResponse({
+    taskTitle: 'Arrays and String Manipulation Practice',
+    roadmapTopic: 'Arrays and strings',
+    taskCategory: 'DSA',
+    userQuery: 'Explain two pointers simply',
+    actionType: 'explain_simpler',
+    conversationHistory: [
+      { role: 'user', text: 'What is two pointers?' },
+      { role: 'model', text: 'Two pointers moves boundary variables inward.' }
+    ]
+  });
+
+  assert(aiTutorResult !== null, 'Tutor AI generation succeeded');
+  assert(aiTutorResult.answer.includes('Two Pointers'), 'Answer is grounded in task');
+  assert(aiTutorResult.answer.includes('Time Complexity: O(N)'), 'Answer includes verified complexity');
+  console.log('✅ PASS: Gemini AI Tutor generation succeeded with conversation context & complexity analysis');
+
   // Reset provider to live default
   resetAIProvider();
 

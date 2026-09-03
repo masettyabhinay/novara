@@ -66,14 +66,16 @@ import {
   evaluateInterviewAnswerWithAI,
   generateRevisionQuestionsWithAI,
   generateTaskRevisionQuiz,
-  generateTaskStudyMaterial
+  generateTaskStudyMaterial,
+  generateTaskTutorResponse
 } from './aiService.js';
 
 import {
   getFallbackStudyMaterial,
   getStudyMaterialCacheKey,
   getCachedStudyMaterial,
-  setCachedStudyMaterial
+  setCachedStudyMaterial,
+  getFallbackTutorResponse
 } from './studyMaterialService.js';
 
 import { verifyGoogleToken, isValidGoogleClientId } from './authGoogle.js';
@@ -924,6 +926,76 @@ export async function apiMiddlewareHandler(req, res, next) {
               setCachedStudyMaterial(cacheKey, material);
 
               return sendJson(res, 200, { success: true, material, cached: false }, req);
+            } catch (err) {
+              return sendJson(res, 400, { success: false, error: err.message }, req);
+            }
+          }
+        }
+
+        // -----------------------------------------------------------------
+        // 4c. INTERACTIVE AI STUDY TUTOR ENDPOINT
+        // -----------------------------------------------------------------
+        if (pathname === '/api/study/tutor' || pathname === '/api/study-tutor') {
+          if (req.method === 'POST') {
+            const rateCheck = checkRateLimit(req, 'AI');
+            if (!rateCheck.allowed) {
+              res.setHeader('Retry-After', String(rateCheck.retryAfterSeconds));
+              return sendJson(res, 429, { success: false, error: 'Too many tutor requests. Please try again in a moment.' }, req);
+            }
+
+            try {
+              const body = await readBodyJson(req);
+              const {
+                taskTitle,
+                taskDescription,
+                roadmapPhase,
+                roadmapTopic,
+                taskCategory,
+                difficulty,
+                learningObjectives,
+                currentStudyMaterial,
+                userQuery,
+                actionType,
+                codeContext,
+                conversationHistory,
+                topic,
+                name
+              } = body;
+
+              const tutorCtx = {
+                taskTitle: taskTitle || name || topic || 'Core Curriculum Concept',
+                taskDescription: taskDescription || '',
+                roadmapPhase: roadmapPhase || '',
+                roadmapTopic: roadmapTopic || topic || taskTitle || name || '',
+                taskCategory: taskCategory || 'DSA',
+                difficulty: difficulty || 'Medium',
+                learningObjectives: learningObjectives || '',
+                currentStudyMaterial: currentStudyMaterial || null,
+                userQuery: userQuery || '',
+                actionType: actionType || 'custom_query',
+                codeContext: codeContext || '',
+                conversationHistory: Array.isArray(conversationHistory) ? conversationHistory.slice(-4) : []
+              };
+
+              let response = null;
+              if (isGeminiConfigured()) {
+                try {
+                  response = await generateTaskTutorResponse(tutorCtx);
+                } catch (aiErr) {
+                  console.warn('[apiMiddleware] Gemini tutor response failed, falling back to grounded response:', aiErr.message);
+                }
+              }
+
+              if (!response || !response.answer) {
+                response = getFallbackTutorResponse(tutorCtx);
+              }
+
+              return sendJson(res, 200, {
+                success: true,
+                answer: response.answer,
+                actionType: response.actionType || actionType || 'custom_query',
+                isFallback: response.isFallback || false
+              }, req);
             } catch (err) {
               return sendJson(res, 400, { success: false, error: err.message }, req);
             }

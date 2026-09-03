@@ -25,11 +25,12 @@ import FormulaCard from './FormulaCard';
 import PracticeProblemCard from './PracticeProblemCard';
 import SelfCheckCard from './SelfCheckCard';
 import StudyInteractiveActions from './StudyInteractiveActions';
+import StudyTutor from './StudyTutor';
 
 /**
  * DeepStudyDocument - Complete professional learning document renderer for NOVARA.
  * Integrates overview, objectives, analogies, definitions, formulas, concepts, diagrams,
- * patterns, step-by-step strategies, code examples, practice challenges, self-checks, and placement tips.
+ * patterns, step-by-step strategies, code examples, practice challenges, self-checks, Ask Tutor, and placement tips.
  */
 export default function DeepStudyDocument({
   material,
@@ -44,6 +45,7 @@ export default function DeepStudyDocument({
   const [readingProgress, setReadingProgress] = useState(0);
   const [activeSection, setActiveSection] = useState('overview');
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [activeCodeForTutor, setActiveCodeForTutor] = useState(null);
 
   // Available sections for sticky navigation
   const sections = [
@@ -55,6 +57,7 @@ export default function DeepStudyDocument({
     (material.codeExamples?.length || material.examples?.length) ? { id: 'sec-code', label: 'Code' } : null,
     material.practiceProblems?.length ? { id: 'sec-practice', label: 'Practice' } : null,
     material.selfCheckQuestions?.length ? { id: 'sec-selfcheck', label: 'Self-Check' } : null,
+    { id: 'sec-ask-tutor', label: 'Ask Tutor' },
     { id: 'sec-recap', label: 'Recap' }
   ].filter(Boolean);
 
@@ -343,6 +346,29 @@ export default function DeepStudyDocument({
                     )}
                     <button
                       type="button"
+                      onClick={() => {
+                        setActiveCodeForTutor(ex.code);
+                        handleJumpToSection('sec-ask-tutor');
+                      }}
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        fontSize: '10.5px',
+                        backgroundColor: 'rgba(200, 90, 50, 0.2)',
+                        color: '#FED7AA',
+                        border: '1px solid rgba(200, 90, 50, 0.4)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      title="Explain this code in Ask NOVARA"
+                    >
+                      <Sparkles size={11} color="var(--accent-terracotta)" />
+                      <span>Explain Code</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleCopyCode(ex.code, idx)}
                       style={{
                         padding: '3px 8px',
@@ -406,7 +432,18 @@ export default function DeepStudyDocument({
         onStartQuiz={onStartQuiz}
       />
 
-      {/* 12. COMMON MISTAKES & RECAP */}
+      {/* 12. INTERACTIVE AI TUTOR (ASK NOVARA) */}
+      <div id="sec-ask-tutor">
+        <StudyTutor
+          task={task}
+          material={material}
+          onStartQuiz={onStartQuiz}
+          activeCodeSnippet={activeCodeForTutor}
+          onClearCodeSnippet={() => setActiveCodeForTutor(null)}
+        />
+      </div>
+
+      {/* 13. COMMON MISTAKES & RECAP */}
       <div id="sec-recap" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {Array.isArray(material.commonMistakes) && material.commonMistakes.length > 0 && (
           <div>

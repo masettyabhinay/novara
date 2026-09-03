@@ -1696,5 +1696,198 @@ Do not include content from other domains (e.g., STAR framework, resume content,
   }
 }
 
+/**
+ * Validates AI Tutor response quality, relevance, and cross-domain anti-contamination.
+ */
+export function validateTaskTutorResponse(rawAnswer, tutorContext = {}) {
+  if (!rawAnswer || typeof rawAnswer !== 'string' || rawAnswer.trim().length === 0) {
+    return { valid: false, reason: 'Tutor response cannot be empty.' };
+  }
+
+  const cleanText = rawAnswer.trim().toLowerCase();
+
+  // If the tutor determined the query is out of scope and responded with the standard deflection, that is valid
+  if (cleanText.includes('outside this study topic') || cleanText.includes('outside the scope of this study')) {
+    return { valid: true, reason: null };
+  }
+
+  const targetDomain = classifyTaskDomain(tutorContext);
+  const disallowed = DOMAIN_DISALLOWED_PATTERNS[targetDomain] || [];
+  const targetTopic = (tutorContext.roadmapTopic || tutorContext.taskTitle || tutorContext.topic || '').toLowerCase();
+
+  // 1. Prohibited cross-domain patterns check
+  for (const pattern of disallowed) {
+    if (pattern.test(cleanText)) {
+      return {
+        valid: false,
+        reason: `Tutor response contains unrelated concept (${pattern.toString()}) not grounded in task "${targetTopic}" (${targetDomain}).`
+      };
+    }
+  }
+
+  // 2. Strict non-resume check: non-interview technical tasks must NEVER have STAR/resume/HR advice
+  if (targetDomain !== 'resume_interview') {
+    if (
+      cleanText.includes('star framework') ||
+      cleanText.includes('star method') ||
+      cleanText.includes('behavioral interview') ||
+      cleanText.includes('elevator pitch') ||
+      cleanText.includes('tell me about yourself') ||
+      cleanText.includes('hr interview')
+    ) {
+      return {
+        valid: false,
+        reason: `Tutor response contains HR/Behavioral interview concepts in a technical task "${targetTopic}".`
+      };
+    }
+  }
+
+  return { valid: true, reason: null };
+}
+
+/**
+ * 8. Interactive AI Study Tutor Generation
+ * Answers user questions dynamically grounded strictly in the current task context.
+ */
+export async function generateTaskTutorResponse(tutorContext = {}) {
+  const provider = getAIProvider();
+  if (!provider.isConfigured()) {
+    return null;
+  }
+
+  const taskTitle = tutorContext.taskTitle || tutorContext.taskName || tutorContext.name || tutorContext.topic || 'Core Curriculum Concept';
+  const taskDescription = tutorContext.taskDescription || tutorContext.description || 'Study and master core concept.';
+  const roadmapPhase = tutorContext.roadmapPhase || tutorContext.phase || '';
+  const roadmapTopic = tutorContext.roadmapTopic || tutorContext.topic || taskTitle;
+  const taskCategory = tutorContext.taskCategory || tutorContext.category || 'DSA';
+  const difficulty = (tutorContext.difficulty || 'Medium').toLowerCase();
+  const learningObjectives = Array.isArray(tutorContext.learningObjectives)
+    ? tutorContext.learningObjectives.join(', ')
+    : (tutorContext.learningObjectives || 'Understand and apply core concepts.');
+  const userQuery = tutorContext.userQuery || tutorContext.prompt || tutorContext.message || 'Explain this concept.';
+  const actionType = tutorContext.actionType || 'custom_query';
+  const codeContext = tutorContext.codeContext || '';
+  const taskDomain = classifyTaskDomain(tutorContext);
+
+  // Build conversation history string (last 4 turns)
+  let historySection = '';
+  if (Array.isArray(tutorContext.conversationHistory) && tutorContext.conversationHistory.length > 0) {
+    const recentHistory = tutorContext.conversationHistory.slice(-4);
+    historySection = `\nRECENT CONVERSATION HISTORY (FOR THIS TASK):\n` +
+      recentHistory.map(m => `${m.role === 'user' ? 'Student' : 'NOVARA Tutor'}: ${m.text}`).join('\n') + '\n';
+  }
+
+  // Format study material summary if available
+  let materialSummary = '';
+  if (tutorContext.currentStudyMaterial && typeof tutorContext.currentStudyMaterial === 'object') {
+    const m = tutorContext.currentStudyMaterial;
+    materialSummary = `\nSUPPLIED STUDY MATERIAL CONTEXT:
+- Overview: ${m.overview || ''}
+${m.realWorldAnalogy ? `- Analogy: ${m.realWorldAnalogy.analogy || ''}\n` : ''}
+${Array.isArray(m.concepts) ? `- Key Concepts: ${m.concepts.map(c => c.name).join(', ')}\n` : ''}
+${Array.isArray(m.patterns) ? `- Patterns: ${m.patterns.map(p => p.name).join(', ')}\n` : ''}`;
+  }
+
+  // Action-specific instructions
+  let actionInstruction = '';
+  switch (actionType) {
+    case 'explain_simpler':
+      actionInstruction = `ACTION: Rewrite the core concept of "${roadmapTopic}" in friendly, beginner-accessible language using an intuitive real-world analogy. Keep it structured: Definition, Real-World Analogy, Why it works, Key takeaway.`;
+      break;
+    case 'another_example':
+      actionInstruction = `ACTION: Generate ONE new, realistic grounded example specifically for "${roadmapTopic}". Do not repeat standard textbook trivialities. Provide problem scenario, approach, and code/solution.`;
+      break;
+    case 'practice_problem':
+      actionInstruction = `ACTION: Generate ONE task-specific practice challenge for "${roadmapTopic}". Include: Problem title, Problem statement, Skill tested, Subtle Hint, and Optimal Approach Direction. (Do not mark completed).`;
+      break;
+    case 'step_by_step':
+      actionInstruction = `ACTION: Explain the problem-solving strategy for "${roadmapTopic}" using a structured "Step 1, Step 2, Step 3, Step 4..." format with edge case considerations.`;
+      break;
+    case 'explain_code':
+      actionInstruction = `ACTION: Explain the following code snippet line-by-line:
+\`\`\`
+${codeContext || 'Code snippet from study guide'}
+\`\`\`
+Explain how pointers/state update, why the loop condition holds, and state exact Time Complexity and Space Complexity.`;
+      break;
+    default:
+      actionInstruction = `ACTION: Answer the student's question: "${userQuery}". Use structured formatting: Definition, Why it matters, Example, Key takeaway (or for code questions: Explanation, Code, Complexity).`;
+      break;
+  }
+
+  const prompt = `You are an interactive AI Tutor inside NOVARA's study workspace. You are helping a student prepare for placement interviews.
+
+TASK CONTEXT (PRIMARY & EXCLUSIVE CURRICULUM CONTEXT):
+- Task Title: ${taskTitle}
+- Task Description: ${taskDescription}
+- Roadmap Phase: ${roadmapPhase || 'Placement Preparation'}
+- Roadmap Topic: ${roadmapTopic}
+- Task Category: ${taskCategory}
+- Task Domain: ${taskDomain || 'General'}
+- Difficulty Level: ${difficulty}
+- Learning Objectives: ${learningObjectives}
+${materialSummary}
+${historySection}
+${codeContext ? `\nSELECTED CODE CONTEXT:\n\`\`\`\n${codeContext}\n\`\`\`\n` : ''}
+STUDENT QUESTION / REQUEST:
+"${userQuery}"
+
+${actionInstruction}
+
+STRICT GROUNDING & QUALITY RULES:
+1. Answer ONLY about the current task "${taskTitle}" (${roadmapTopic}) and supplied study material.
+2. If the student asks a question unrelated to "${roadmapTopic}" (e.g. asking about other topics, weather, unrelated domains), respond exactly:
+"That is outside this study topic. Ask me something about **${roadmapTopic}**."
+3. Never introduce STAR framework, HR, resume, or behavioral interview concepts into technical tasks like Arrays, SQL, React, Operating Systems.
+4. Keep answers concise, high-yield, and educational. Avoid conversational filler like "Hello!", "Great question!", "Sure I can help with that!".
+5. For code questions, provide valid syntax and exact Time and Space complexities without inventing values.
+6. Format your answer using clean markdown (bold headings, code blocks, bullet points).`;
+
+  try {
+    let rawAnswer = await provider.generateText({
+      prompt,
+      systemInstruction: `You are an expert AI Tutor inside NOVARA. Answer strictly about "${taskTitle}" (${roadmapTopic}). If unrelated, reject with "That is outside this study topic. Ask me something about ${roadmapTopic}." Format in clean markdown.`
+    });
+
+    let validation = validateTaskTutorResponse(rawAnswer, tutorContext);
+
+    // If validation failed, retry Gemini ONCE with targeted correction
+    if (!validation.valid) {
+      logger.warn(`[AIService] Tutor response failed validation (${validation.reason}). Retrying Gemini with targeted grounding prompt...`);
+      try {
+        const retryPrompt = `${prompt}
+
+CRITICAL GROUNDING ERROR IN PREVIOUS ATTEMPT:
+Your previous response failed because: ${validation.reason}.
+You MUST answer strictly about "${taskTitle}" (${roadmapTopic}). Do not introduce unrelated concepts or STAR/behavioral frameworks.`;
+
+        rawAnswer = await provider.generateText({
+          prompt: retryPrompt,
+          systemInstruction: `You are an expert AI Tutor inside NOVARA. Answer strictly about "${taskTitle}" (${roadmapTopic}). Format in clean markdown.`
+        });
+
+        validation = validateTaskTutorResponse(rawAnswer, tutorContext);
+      } catch (retryErr) {
+        logger.warn(`[AIService] Gemini tutor retry failed: ${retryErr.message}`);
+      }
+    }
+
+    if (!validation.valid || !rawAnswer) {
+      logger.warn(`[AIService] Tutor response rejected: ${validation.reason || 'Validation failed'}. Falling back to grounded tutor bank.`);
+      return null;
+    }
+
+    return {
+      answer: rawAnswer.trim(),
+      actionType,
+      isFallback: false
+    };
+  } catch (err) {
+    logger.error(ERROR_CATEGORIES.AI_ERROR, 'Task tutor generation with Gemini failed', err);
+    return null;
+  }
+}
+
+
 
 

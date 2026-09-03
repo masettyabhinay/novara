@@ -1080,3 +1080,137 @@ export function setCachedStudyMaterial(cacheKey, material) {
   if (!cacheKey || !material) return;
   STUDY_MATERIAL_CACHE.set(cacheKey, material);
 }
+
+/**
+ * Deterministic Grounded Fallback Tutor Generator for NOVARA
+ * Supplies high-yield structured answers when AI is offline or unavailable.
+ */
+export function getFallbackTutorResponse(tutorContext = {}) {
+  const taskTitle = tutorContext.taskTitle || tutorContext.topic || 'Current Topic';
+  const roadmapTopic = tutorContext.roadmapTopic || tutorContext.topic || taskTitle;
+  const userQuery = (tutorContext.userQuery || '').trim().toLowerCase();
+  const actionType = tutorContext.actionType || 'custom_query';
+  const codeContext = tutorContext.codeContext || '';
+  const domain = classifyTaskDomain(tutorContext);
+  const material = GROUNDED_STUDY_MATERIALS[domain] || null;
+
+  // 1. Check for cross-domain or completely unrelated questions in technical tasks
+  if (domain !== 'resume_interview') {
+    if (
+      userQuery.includes('star framework') ||
+      userQuery.includes('star method') ||
+      userQuery.includes('behavioral interview') ||
+      userQuery.includes('tell me about yourself') ||
+      userQuery.includes('elevator pitch') ||
+      userQuery.includes('salary negotiation')
+    ) {
+      return {
+        answer: `That is outside this study topic. Ask me something about **${roadmapTopic}**.`,
+        actionType,
+        isFallback: true,
+        groundedDomain: domain
+      };
+    }
+  }
+
+  // 2. Unrelated random topic checks
+  if (
+    userQuery.includes('weather') ||
+    userQuery.includes('recipe') ||
+    userQuery.includes('movie') ||
+    userQuery.includes('capital of') ||
+    userQuery.includes('who is the president')
+  ) {
+    return {
+      answer: `That is outside this study topic. Ask me something about **${roadmapTopic}**.`,
+      actionType,
+      isFallback: true,
+      groundedDomain: domain
+    };
+  }
+
+  // 3. Action Type Handling
+  if (actionType === 'explain_simpler' || userQuery.includes('explain simpler') || userQuery.includes('simple') || userQuery.includes('layman')) {
+    if (material && material.realWorldAnalogy) {
+      return {
+        answer: `### 🌟 Simplified Concept: ${roadmapTopic}\n\n**Real-World Analogy:**\n${material.realWorldAnalogy.analogy}\n\n**Why it works in plain terms:**\n${material.realWorldAnalogy.explanation}\n\n**Key Takeaway:**\nInstead of checking every single possibility (which is slow), we use structural rules to skip work intelligently.`,
+        actionType: 'explain_simpler',
+        isFallback: true
+      };
+    }
+    return {
+      answer: `### 🌟 Simplified Concept: ${roadmapTopic}\n\n**Definition:**\n${roadmapTopic} allows you to organize and process information step-by-step with optimal efficiency.\n\n**Why it matters:**\nIt prevents brute-force operations and saves both CPU processing time and memory.\n\n**Key Takeaway:**\nFocus on maintaining clean boundary invariants and updating state incrementally.`,
+      actionType: 'explain_simpler',
+      isFallback: true
+    };
+  }
+
+  if (actionType === 'another_example' || userQuery.includes('another example') || userQuery.includes('more examples')) {
+    if (material && material.workedExamples && material.workedExamples.length > 0) {
+      const ex = material.workedExamples[0];
+      return {
+        answer: `### 💡 Additional Grounded Example\n\n**Problem Scenario:**\n${ex.problem || ex.title}\n\n**Approach:**\n${ex.approach}\n\n**Optimal Solution:**\n\`\`\`\n${ex.solution}\n\`\`\`\n\n**Key Takeaway:**\nNotice how the data invariants allow us to reach the solution in optimal linear or logarithmic time.`,
+        actionType: 'another_example',
+        isFallback: true
+      };
+    }
+    return {
+      answer: `### 💡 Additional Grounded Example for ${roadmapTopic}\n\n**Scenario:**\nConsider processing a sequence of inputs sequentially while checking if the current condition meets the required threshold.\n\n**Step-by-Step Flow:**\n1. Initialize tracking variables at initial boundaries.\n2. Ingest elements one-by-one.\n3. Update the running metric and compare against the goal.\n\n**Key Takeaway:**\nMaintaining running state eliminates redundant nested iterations.`,
+      actionType: 'another_example',
+      isFallback: true
+    };
+  }
+
+  if (actionType === 'practice_problem' || userQuery.includes('practice problem') || userQuery.includes('give me a problem')) {
+    if (material && material.practiceProblems && material.practiceProblems.length > 0) {
+      const p = material.practiceProblems[0];
+      return {
+        answer: `### 🧩 Practice Challenge: ${p.title}\n\n**Problem:**\n${p.problem}\n\n**Skill Tested:**\n${p.skillTested || roadmapTopic}\n\n**💡 Hint:**\n${p.hint}\n\n**🔍 Optimal Approach Direction:**\n${p.approach}`,
+        actionType: 'practice_problem',
+        isFallback: true
+      };
+    }
+    return {
+      answer: `### 🧩 Practice Challenge: ${roadmapTopic}\n\n**Problem:**\nGiven an input sequence, implement an optimal O(N) or O(log N) algorithm to find the target condition without auxiliary memory allocations.\n\n**💡 Hint:**\nThink about whether sorting or maintaining two boundary pointers helps prune the search space.\n\n**Approach:**\nInitialize boundary pointers and narrow the range based on comparative evaluations.`,
+      actionType: 'practice_problem',
+      isFallback: true
+    };
+  }
+
+  if (actionType === 'step_by_step' || userQuery.includes('step by step') || userQuery.includes('steps')) {
+    if (material && material.stepByStep && material.stepByStep.length > 0) {
+      const stepsFormatted = material.stepByStep.map((s, idx) => `**Step ${idx + 1}:** ${s.replace(/^\d+\.\s*/, '')}`).join('\n\n');
+      return {
+        answer: `### 🔍 Step-by-Step Problem Solving Framework\n\n${stepsFormatted}\n\n**Key Takeaway:**\nAlways verify boundary constraints (empty input, single element, negative numbers) before finalizing code.`,
+        actionType: 'step_by_step',
+        isFallback: true
+      };
+    }
+    return {
+      answer: `### 🔍 Step-by-Step Framework for ${roadmapTopic}\n\n**Step 1:** Clarify constraints, input size, and edge cases.\n\n**Step 2:** Formulate the mathematical or structural invariant.\n\n**Step 3:** Implement the traversal or update mechanism.\n\n**Step 4:** Analyze Time and Space complexity explicitly.`,
+      actionType: 'step_by_step',
+      isFallback: true
+    };
+  }
+
+  if (actionType === 'explain_code' || userQuery.includes('explain this code') || userQuery.includes('explain code') || codeContext) {
+    const targetCode = codeContext || (material?.codeExamples?.[0]?.code) || '// Code implementation';
+    const complexityTime = material?.codeExamples?.[0]?.complexity?.time || 'O(N)';
+    const complexitySpace = material?.codeExamples?.[0]?.complexity?.space || 'O(1)';
+
+    return {
+      answer: `### 💻 Code Walkthrough & Line-by-Line Analysis\n\n\`\`\`javascript\n${targetCode}\n\`\`\`\n\n**Line-by-Line Explanation:**\n1. **Initialization:** Sets up primary boundary pointers and tracking variables in O(1) space.\n2. **Loop Condition:** Iterates while the search window or pointers remain within valid bounds.\n3. **State Transition:** Updates state monotonically based on comparison logic, pruning non-viable candidates.\n4. **Return:** Returns the calculated result or index location.\n\n**Complexity Analysis:**\n- **Time Complexity:** ${complexityTime} (single pass traversal)\n- **Space Complexity:** ${complexitySpace} (in-place auxiliary memory)`,
+      actionType: 'explain_code',
+      isFallback: true
+    };
+  }
+
+  // 4. Default Grounded Query Response
+  const conceptSummary = material?.concepts?.map(c => `• **${c.name}:** ${c.explanation}`).join('\n') || `• **Core Mechanism:** Master fundamental invariants for ${roadmapTopic}.`;
+  return {
+    answer: `### 🎯 Grounded Insights: ${taskTitle}\n\n**Overview:**\n${material?.overview || `Study and practice core principles of ${roadmapTopic}.`}\n\n**Core Concepts:**\n${conceptSummary}\n\n**Key Takeaway:**\n${material?.keyTakeaways?.[0] || material?.quickRecap?.[0] || `Apply optimal linear or logarithmic strategies to solve ${roadmapTopic} problems.`}`,
+    actionType: 'custom_query',
+    isFallback: true
+  };
+}
+
