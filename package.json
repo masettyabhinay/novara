@@ -1,5 +1,5 @@
 {
-  "name": "placeready",
+  "name": "novara",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "start": "node server/server.js",
     "test": "node scratch/test_gemini_ai_service.cjs",
-    "test:all": "node scratch/test_gemini_ai_service.cjs && node scratch/test_production_server.cjs && node scratch/test_roadmap_pdf_pipeline.cjs && node scratch/test_revision_engine.cjs && node scratch/test_security_audit.cjs",
+    "test:all": "node scratch/test_gemini_ai_service.cjs && node scratch/test_production_server.cjs && node scratch/test_roadmap_pdf_pipeline.cjs && node scratch/test_revision_engine.cjs && node scratch/test_security_audit.cjs && node scratch/test_final_smoke_test.cjs",
     "web:dev": "vite",
     "web:build": "vite build",
     "cap:sync": "cap sync android",
