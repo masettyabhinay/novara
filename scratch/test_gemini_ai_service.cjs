@@ -1023,6 +1023,23 @@ async function runTests() {
             steps: [{ step: 1, title: 'Check boundary sum', description: '2 + 15 = 17 > target 13. Move right pointer left.' }]
           }
         ],
+        realWorldAnalogy: {
+          analogy: 'Two librarians moving inward on sorted bookshelf.',
+          explanation: 'Comparing boundaries eliminates search space without nested loops.',
+          mappedConcept: 'Two Pointers'
+        },
+        definitions: [
+          { term: 'Contiguous Subarray', definition: 'Adjacent unbroken elements.', context: 'DSA' }
+        ],
+        formulas: [
+          { name: 'Prefix Sum', formula: 'Sum(L, R) = prefix[R] - prefix[L-1]', variables: 'prefix[i]', intuition: 'O(1) range queries' }
+        ],
+        practiceProblems: [
+          { title: 'Two Sum II', problem: 'Sorted pair sum', difficulty: 'Medium', skillTested: 'Two Pointers', hint: 'Check bounds', approach: 'Two pointers' }
+        ],
+        selfCheckQuestions: [
+          { question: 'Why does Kadane fail if initialized to 0 on negative array?', answerSummary: '0 is larger than negative numbers.', prompt: 'Kadane initialization check' }
+        ],
         patterns: [{ name: 'Sliding Window', whenToUse: 'Contiguous ranges', howItWorks: 'Expand right, shrink left', example: 'Longest substring' }],
         stepByStep: ['1. Bounds check', '2. Pointer setup', '3. Edge cases'],
         codeExamples: [{ title: 'Kadane Max Subarray', language: 'javascript', code: 'function maxSubArray(nums) {}', explanation: 'Linear scan', complexity: { time: 'O(N)', space: 'O(1)' } }],
@@ -1180,7 +1197,18 @@ async function runTests() {
     assert(Array.isArray(generated.concepts) && generated.concepts.length >= 1, 'Contains concepts');
     assert(Array.isArray(generated.learningObjectives), 'Contains learning objectives');
     assert(Array.isArray(generated.diagrams), 'Contains valid diagrams array');
-    console.log(`✅ PASS: Gemini study document & diagrams generated & validated for ${testCase.ctx.taskTitle}`);
+    if (testCase.resp.realWorldAnalogy) {
+      assert(generated.realWorldAnalogy !== null, 'Contains real-world analogy');
+      assert(generated.realWorldAnalogy.analogy.length > 10, 'Analogy text is descriptive');
+    }
+    if (testCase.resp.practiceProblems) {
+      assert(Array.isArray(generated.practiceProblems) && generated.practiceProblems.length >= 1, 'Contains practice problems');
+      assert(generated.practiceProblems[0].hint.length > 5, 'Practice problem contains hint');
+    }
+    if (testCase.resp.selfCheckQuestions) {
+      assert(Array.isArray(generated.selfCheckQuestions) && generated.selfCheckQuestions.length >= 1, 'Contains self check questions');
+    }
+    console.log(`✅ PASS: Gemini Deep Study document generated & validated for ${testCase.ctx.taskTitle}`);
   }
 
   // 3b. Test Contaminated Diagram Rejection

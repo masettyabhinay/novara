@@ -1348,6 +1348,27 @@ export function validateTaskStudyMaterialQuality(parsed, taskContext = {}) {
     }
   }
 
+  // Deep Study sections sanitization
+  const sanitizedDefinitions = Array.isArray(parsed.definitions)
+    ? parsed.definitions.filter(d => d && (d.term || d.name) && (d.definition || d.explanation))
+    : [];
+
+  const sanitizedFormulas = Array.isArray(parsed.formulas)
+    ? parsed.formulas.filter(f => f && (f.name || f.title) && (f.formula || f.equation))
+    : [];
+
+  const sanitizedPracticeProblems = Array.isArray(parsed.practiceProblems)
+    ? parsed.practiceProblems.filter(p => p && (p.title || p.problem))
+    : [];
+
+  const sanitizedSelfCheck = Array.isArray(parsed.selfCheckQuestions)
+    ? parsed.selfCheckQuestions.filter(q => q && (typeof q === 'string' || q.question || q.prompt))
+    : [];
+
+  const sanitizedAnalogy = parsed.realWorldAnalogy && typeof parsed.realWorldAnalogy === 'object'
+    ? parsed.realWorldAnalogy
+    : (typeof parsed.realWorldAnalogy === 'string' ? { analogy: parsed.realWorldAnalogy } : null);
+
   // Domain relevance and anti-contamination validation
   const targetDomain = classifyTaskDomain(taskContext);
   const disallowed = DOMAIN_DISALLOWED_PATTERNS[targetDomain] || [];
@@ -1358,12 +1379,17 @@ export function validateTaskStudyMaterialQuality(parsed, taskContext = {}) {
     parsed.subtitle || '',
     parsed.overview || '',
     (parsed.learningObjectives || []).join(' '),
+    sanitizedAnalogy ? `${sanitizedAnalogy.analogy || ''} ${sanitizedAnalogy.explanation || ''}` : '',
+    sanitizedDefinitions.map(d => `${d.term || ''} ${d.definition || ''}`).join(' '),
+    sanitizedFormulas.map(f => `${f.name || ''} ${f.formula || ''} ${f.intuition || ''}`).join(' '),
     (parsed.concepts || []).map(c => `${c.name || ''} ${c.explanation || ''} ${c.intuition || ''} ${c.example || ''}`).join(' '),
-    (sanitizedDiagrams || []).map(d => `${d.title || ''} ${d.purpose || ''} ${d.description || ''} ${(d.elements || []).map(e => `${e.label || ''} ${e.sublabel || ''}`).join(' ')} ${(d.steps || []).map(s => `${s.title || ''} ${s.description || ''}`).join(' ')}`).join(' '),
+    sanitizedDiagrams.map(d => `${d.title || ''} ${d.purpose || ''} ${d.description || ''} ${(d.elements || []).map(e => `${e.label || ''} ${e.sublabel || ''}`).join(' ')} ${(d.steps || []).map(s => `${s.title || ''} ${s.description || ''}`).join(' ')}`).join(' '),
     (parsed.patterns || []).map(p => `${p.name || ''} ${p.whenToUse || ''} ${p.howItWorks || ''} ${p.example || ''}`).join(' '),
     (parsed.stepByStep || []).join(' '),
     (parsed.codeExamples || parsed.examples || []).map(e => `${e.title || ''} ${e.explanation || ''} ${e.code || ''}`).join(' '),
     (parsed.workedExamples || []).map(w => `${w.title || ''} ${w.problem || ''} ${w.approach || ''} ${w.solution || ''}`).join(' '),
+    sanitizedPracticeProblems.map(p => `${p.title || ''} ${p.problem || ''} ${p.hint || ''} ${p.approach || ''}`).join(' '),
+    sanitizedSelfCheck.map(s => typeof s === 'string' ? s : `${s.question || ''} ${s.answerSummary || ''}`).join(' '),
     (parsed.commonMistakes || []).join(' '),
     (parsed.interviewTips || []).join(' '),
     parsed.placementRelevance || '',
@@ -1398,7 +1424,16 @@ export function validateTaskStudyMaterialQuality(parsed, taskContext = {}) {
     }
   }
 
-  return { valid: true, reason: null, sanitizedDiagrams };
+  return {
+    valid: true,
+    reason: null,
+    sanitizedDiagrams,
+    sanitizedDefinitions,
+    sanitizedFormulas,
+    sanitizedPracticeProblems,
+    sanitizedSelfCheck,
+    sanitizedAnalogy
+  };
 }
 
 /**
@@ -1416,9 +1451,10 @@ export function validateTaskStudyMaterialRelevance(parsed, taskContext = {}, dom
 }
 
 /**
- * 7. Task-Specific Study Material Generation
+ * 7. Task-Specific Study Material Generation (Deep Study Mode)
  * Generates rich, topic-grounded study documents dynamically for ANY learning task in NOVARA.
- * Gemini serves as the primary content generator with strict grounding and multi-step validation.
+ * Adapts document depth based on scheduled duration and includes analogies, formulas, definitions,
+ * code implementations, practice problems, and self-checks selectively.
  */
 export async function generateTaskStudyMaterial(taskContext = {}) {
   const provider = getAIProvider();
@@ -1432,6 +1468,7 @@ export async function generateTaskStudyMaterial(taskContext = {}) {
   const roadmapTopic = taskContext.roadmapTopic || taskContext.topic || taskTitle;
   const taskCategory = taskContext.taskCategory || taskContext.category || 'DSA';
   const difficulty = (taskContext.difficulty || 'Medium').toLowerCase();
+  const duration = parseInt(taskContext.durationMinutes || taskContext.estimatedMinutes || taskContext.duration, 10) || 45;
   const learningObjectives = Array.isArray(taskContext.learningObjectives)
     ? taskContext.learningObjectives.join(', ')
     : (taskContext.learningObjectives || 'Understand and apply core concepts.');
@@ -1439,7 +1476,14 @@ export async function generateTaskStudyMaterial(taskContext = {}) {
 
   const taskDomain = classifyTaskDomain(taskContext);
 
-  const prompt = `You are a world-class technical educator generating a concise, professional study guide for a student preparing for placement interviews.
+  // Depth adaptation guidance based on study duration
+  const depthGuidance = duration < 30
+    ? 'TARGET DEPTH: Concise high-yield guide (20-25 min session). Include concise overview, 2-3 core concepts, 1 key implementation, and high-yield takeaways.'
+    : duration <= 55
+      ? 'TARGET DEPTH: Deep conceptual guide (30-45 min session). Include overview, real-world analogy, definitions, core mechanisms, visual diagram when valuable, code implementation, 2 practice challenges, and self-check questions.'
+      : 'TARGET DEPTH: Comprehensive masterclass (60+ min session). Include thorough overview, real-world analogy, definitions, formulas/recurrences, deep concepts, diagrams, code implementations, 3-4 practice challenges, and self-check prompts.';
+
+  const prompt = `You are a world-class technical educator generating a comprehensive, professional Deep Study Guide for a student preparing for placement interviews.
 
 TASK CONTEXT (PRIMARY & EXCLUSIVE CURRICULUM CONTEXT):
 - Task Title: ${taskTitle}
@@ -1449,13 +1493,16 @@ TASK CONTEXT (PRIMARY & EXCLUSIVE CURRICULUM CONTEXT):
 - Task Category: ${taskCategory}
 - Task Domain: ${taskDomain || 'General'}
 - Difficulty Level: ${difficulty}
+- Scheduled Study Duration: ${duration} minutes
 - Learning Objectives: ${learningObjectives}
 ${relevantMetadata ? `- Additional Context: ${relevantMetadata}\n` : ''}
+${depthGuidance}
+
 STRICT GROUNDING & QUALITY RULES:
 1. Generate study material ONLY for the selected task and its supplied learning context. Do not use unrelated topics from the user's roadmap, question banks, previous tasks, or general placement knowledge.
 2. Focus deeply on the core algorithmic or engineering techniques of "${taskTitle}" (${roadmapTopic}).
-3. Determine whether a visual representation materially improves understanding of any concept (e.g. pointer movements, node connections, search spaces, table joins, process/threads, protocol handshakes, component trees). Generate diagrams ONLY when they provide genuine educational value. Never generate decorative diagrams. If no diagram is useful, output "diagrams": [].
-4. Avoid generic motivational filler or chat conversationalisms. Structure content like a high-yield placement revision document.
+3. Determine whether a visual representation materially improves understanding of any concept. Generate diagrams ONLY when they provide genuine educational value. Never generate decorative diagrams. If no diagram is useful, output "diagrams": [].
+4. Include optional sections (realWorldAnalogy, definitions, formulas, practiceProblems, selfCheckQuestions) when educationally appropriate for this domain (e.g. formulas for math/complexity/aptitude, schema/tables for SQL, analogies for OS/React).
 5. Never generate unrelated domains (for example: NEVER generate STAR framework, HR, or Resume content for technical topics like Arrays, SQL, React, or Operating Systems).
 6. For coding/technical tasks, provide syntactically valid code examples with Time and Space complexity analysis.
 
@@ -1464,6 +1511,17 @@ REQUIRED JSON STRUCTURE:
   "title": "${taskTitle}",
   "subtitle": "Clear, informative subtitle highlighting core techniques...",
   "overview": "A concise 2-3 sentence overview explaining what problem this concept solves and why it is essential...",
+  "realWorldAnalogy": {
+    "analogy": "Intuitive real-world comparison that makes the abstract concept immediately click...",
+    "explanation": "Why this analogy maps accurately to the computer science mechanism...",
+    "mappedConcept": "Core Concept Name"
+  },
+  "definitions": [
+    { "term": "Key Term", "definition": "Precise technical definition...", "context": "Domain" }
+  ],
+  "formulas": [
+    { "name": "Formula or Recurrence", "formula": "Mathematical representation or O(...) formula", "variables": "Variable definitions", "intuition": "Why this formula holds" }
+  ],
   "learningObjectives": [
     "Master core technique 1...",
     "Apply pattern 2..."
@@ -1528,6 +1586,23 @@ REQUIRED JSON STRUCTURE:
       "solution": "Key implementation detail or complexity..."
     }
   ],
+  "practiceProblems": [
+    {
+      "title": "Problem Title",
+      "problem": "Problem description...",
+      "difficulty": "Easy | Medium | Hard",
+      "skillTested": "Specific technique tested",
+      "hint": "Subtle hint pointing towards optimal direction...",
+      "approach": "Optimal algorithm approach walkthrough..."
+    }
+  ],
+  "selfCheckQuestions": [
+    {
+      "question": "Can you explain why ... works?",
+      "answerSummary": "Key insight summary...",
+      "prompt": "Self-reflection question"
+    }
+  ],
   "commonMistakes": [
     "Off-by-one errors or specific edge cases to avoid...",
     "Suboptimal complexity pitfalls..."
@@ -1553,8 +1628,8 @@ REQUIRED JSON STRUCTURE:
   try {
     let result = await provider.generateJSON({
       prompt,
-      systemInstruction: `You are a world-class technical educator. Generate comprehensive, strictly grounded study guides for "${taskTitle}". Never output content for unrelated domains. Output strictly valid JSON.`,
-      schemaHint: 'JSON object matching the rich learning document schema with optional visual diagrams.'
+      systemInstruction: `You are a world-class technical educator. Generate comprehensive, strictly grounded deep study guides for "${taskTitle}". Never output content for unrelated domains. Output strictly valid JSON.`,
+      schemaHint: 'JSON object matching the rich Deep Study learning document schema.'
     });
 
     let qualityValidation = validateTaskStudyMaterialQuality(result, taskContext);
@@ -1573,7 +1648,7 @@ Do not include content from other domains (e.g., STAR framework, resume content,
         result = await provider.generateJSON({
           prompt: retryPrompt,
           systemInstruction: `You are a world-class technical educator. Return only valid JSON with study material strictly grounded in "${taskTitle}". Output valid JSON matching the exact schema.`,
-          schemaHint: 'Valid JSON matching the rich learning document schema.'
+          schemaHint: 'Valid JSON matching the rich Deep Study learning document schema.'
         });
 
         qualityValidation = validateTaskStudyMaterialQuality(result, taskContext);
@@ -1595,6 +1670,9 @@ Do not include content from other domains (e.g., STAR framework, resume content,
       title: result.title || taskTitle,
       subtitle: result.subtitle || '',
       overview: result.overview,
+      realWorldAnalogy: qualityValidation.sanitizedAnalogy || result.realWorldAnalogy || null,
+      definitions: qualityValidation.sanitizedDefinitions || result.definitions || [],
+      formulas: qualityValidation.sanitizedFormulas || result.formulas || [],
       learningObjectives: Array.isArray(result.learningObjectives) ? result.learningObjectives : [],
       concepts: Array.isArray(result.concepts) ? result.concepts : [],
       diagrams: finalDiagrams,
@@ -1602,6 +1680,8 @@ Do not include content from other domains (e.g., STAR framework, resume content,
       stepByStep: Array.isArray(result.stepByStep) ? result.stepByStep : [],
       codeExamples: Array.isArray(result.codeExamples) ? result.codeExamples : (Array.isArray(result.examples) ? result.examples : []),
       workedExamples: Array.isArray(result.workedExamples) ? result.workedExamples : [],
+      practiceProblems: qualityValidation.sanitizedPracticeProblems || result.practiceProblems || [],
+      selfCheckQuestions: qualityValidation.sanitizedSelfCheck || result.selfCheckQuestions || [],
       commonMistakes: Array.isArray(result.commonMistakes) ? result.commonMistakes : [],
       interviewTips: Array.isArray(result.interviewTips) ? result.interviewTips : [],
       practiceGuidance: Array.isArray(result.practiceGuidance) ? result.practiceGuidance : [],
@@ -1615,5 +1695,6 @@ Do not include content from other domains (e.g., STAR framework, resume content,
     return null;
   }
 }
+
 
 
