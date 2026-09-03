@@ -7,7 +7,8 @@ import {
   Clock, 
   Flame, 
   Check,
-  Pause
+  Pause,
+  BookOpen
 } from 'lucide-react';
 
 export const TaskCard = ({ task }) => {
@@ -16,7 +17,8 @@ export const TaskCard = ({ task }) => {
     startFocusSession, 
     activeFocusTask,
     activeFocusSession,
-    setIsFocusModalOpen
+    setIsFocusModalOpen,
+    openTaskStudyMaterial
   } = useApp();
 
   const isCurrentActive = activeFocusSession?.taskId === task.id || activeFocusTask?.id === task.id;
@@ -74,9 +76,16 @@ export const TaskCard = ({ task }) => {
     }
   };
 
+  const handleCardClick = (e) => {
+    // If clicking buttons inside card, don't trigger modal
+    if (e.target.closest('button')) return;
+    openTaskStudyMaterial(task);
+  };
+
   return (
     <div 
       className="card-white"
+      onClick={handleCardClick}
       style={{
         marginBottom: '10px',
         padding: '14px 16px',
@@ -84,7 +93,8 @@ export const TaskCard = ({ task }) => {
         borderColor: isCurrentActive ? 'var(--accent-terracotta)' : 'var(--border-beige)',
         opacity: task.completed ? 0.85 : 1,
         transition: 'all 180ms ease',
-        boxShadow: task.completed ? 'none' : '0 1px 4px rgba(35, 25, 15, 0.03)'
+        boxShadow: task.completed ? 'none' : '0 1px 4px rgba(35, 25, 15, 0.03)',
+        cursor: 'pointer'
       }}
     >
       {/* Top Meta Row: Category, Priority, Estimated Duration */}
@@ -112,7 +122,14 @@ export const TaskCard = ({ task }) => {
       {/* Main Body: Checkbox, Title, and Description */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '8px' }}>
         <button
-          onClick={() => toggleTaskCompletion(task.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!task.completed) {
+              openTaskStudyMaterial(task);
+            } else {
+              toggleTaskCompletion(task.id);
+            }
+          }}
           style={{
             marginTop: '1px',
             color: task.completed ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)',
@@ -124,7 +141,7 @@ export const TaskCard = ({ task }) => {
             padding: 0,
             cursor: 'pointer'
           }}
-          aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
+          aria-label={task.completed ? "Mark incomplete" : "Open study material"}
         >
           {task.completed ? (
             <CheckCircle2 size={22} fill="var(--accent-terracotta-light)" strokeWidth={2.2} />
@@ -135,7 +152,10 @@ export const TaskCard = ({ task }) => {
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <h3 
-            onClick={() => toggleTaskCompletion(task.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              openTaskStudyMaterial(task);
+            }}
             style={{
               fontSize: '14px',
               fontWeight: 700,
@@ -197,8 +217,30 @@ export const TaskCard = ({ task }) => {
         {!task.completed ? (
           <>
             <button
-              onClick={handleStartOrResume}
+              onClick={(e) => {
+                e.stopPropagation();
+                openTaskStudyMaterial(task);
+              }}
               className="btn-secondary"
+              style={{
+                padding: '6px 12px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-pill)',
+                minHeight: '32px',
+                gap: '5px'
+              }}
+            >
+              <BookOpen size={12} color="var(--accent-terracotta)" />
+              <span>Study</span>
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleStartOrResume();
+              }}
+              className="btn-primary"
               style={{
                 padding: '6px 14px',
                 fontSize: '12px',
@@ -208,24 +250,8 @@ export const TaskCard = ({ task }) => {
                 gap: '5px'
               }}
             >
-              <Play size={11} fill="var(--text-charcoal)" />
+              <Play size={11} fill="#FFFFFF" />
               <span>{isCurrentActive ? 'Resume' : 'Start'}</span>
-            </button>
-
-            <button
-              onClick={() => toggleTaskCompletion(task.id)}
-              className="btn-primary"
-              style={{
-                padding: '6px 14px',
-                fontSize: '12px',
-                fontWeight: 700,
-                borderRadius: 'var(--radius-pill)',
-                minHeight: '32px',
-                gap: '4px'
-              }}
-            >
-              <Check size={13} strokeWidth={2.5} />
-              <span>Complete</span>
             </button>
           </>
         ) : (

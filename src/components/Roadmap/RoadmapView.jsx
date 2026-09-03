@@ -30,7 +30,8 @@ export const RoadmapView = () => {
     completedRoadmapTopics,
     updateRoadmapTopicStatus, 
     updateFullRoadmap, 
-    showToast 
+    showToast,
+    openTaskStudyMaterial 
   } = useApp();
 
   const [isUploading, setIsUploading] = useState(false);
@@ -551,13 +552,28 @@ export const RoadmapView = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            gap: '8px'
+                            gap: '8px',
+                            cursor: 'pointer'
+                          }}
+                          onClick={(e) => {
+                            if (e.target.closest('button')) return;
+                            openTaskStudyMaterial({
+                              name: topic.name,
+                              topic: topic.name,
+                              taskTitle: topic.name,
+                              phase: phase.title,
+                              roadmapPhase: phase.title,
+                              difficulty: topic.difficulty || 'Medium'
+                            });
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                             {/* Interactive Status Indicator Toggle */}
                             <button
-                              onClick={() => updateRoadmapTopicStatus(phase.id, topic.id, isDone ? 'in_progress' : 'completed')}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateRoadmapTopicStatus(phase.id, topic.id, isDone ? 'in_progress' : 'completed');
+                              }}
                               style={{
                                 width: '22px',
                                 height: '22px',

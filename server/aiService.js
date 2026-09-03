@@ -1290,3 +1290,278 @@ Do not include questions from other domains (e.g., STAR framework, resume questi
 export async function generateRevisionQuestionsWithAI(taskContext = {}) {
   return generateTaskRevisionQuiz(taskContext);
 }
+
+/**
+ * Validates task-specific study material quality and schema output from Gemini.
+ */
+export function validateTaskStudyMaterialQuality(parsed, taskContext = {}) {
+  if (!parsed || typeof parsed !== 'object') {
+    return { valid: false, reason: 'Study material response is not a valid JSON object.' };
+  }
+  if (!parsed.title || typeof parsed.title !== 'string' || parsed.title.trim().length === 0) {
+    return { valid: false, reason: 'Study material is missing a valid title.' };
+  }
+  if (!parsed.overview || typeof parsed.overview !== 'string' || parsed.overview.trim().length < 10) {
+    return { valid: false, reason: 'Study material is missing a comprehensive overview.' };
+  }
+  if (!Array.isArray(parsed.concepts) || parsed.concepts.length === 0) {
+    return { valid: false, reason: 'Study material must have at least one concept in concepts array.' };
+  }
+  for (let i = 0; i < parsed.concepts.length; i++) {
+    const c = parsed.concepts[i];
+    if (!c || typeof c !== 'object' || !c.name || !c.explanation) {
+      return { valid: false, reason: `Concept ${i + 1} is missing a name or explanation.` };
+    }
+  }
+  if (!Array.isArray(parsed.stepByStep) || parsed.stepByStep.length === 0) {
+    return { valid: false, reason: 'Study material must have a stepByStep approach array.' };
+  }
+  if (!Array.isArray(parsed.commonMistakes) || parsed.commonMistakes.length === 0) {
+    return { valid: false, reason: 'Study material must include commonMistakes array.' };
+  }
+  if ((!Array.isArray(parsed.quickRecap) || parsed.quickRecap.length === 0) && (!Array.isArray(parsed.keyTakeaways) || parsed.keyTakeaways.length === 0)) {
+    return { valid: false, reason: 'Study material must include quickRecap or keyTakeaways.' };
+  }
+
+  // Domain relevance and anti-contamination validation
+  const targetDomain = classifyTaskDomain(taskContext);
+  const disallowed = DOMAIN_DISALLOWED_PATTERNS[targetDomain] || [];
+  const targetTopic = (taskContext.roadmapTopic || taskContext.taskTitle || taskContext.topic || '').toLowerCase();
+
+  const allText = [
+    parsed.title || '',
+    parsed.subtitle || '',
+    parsed.overview || '',
+    (parsed.learningObjectives || []).join(' '),
+    (parsed.concepts || []).map(c => `${c.name || ''} ${c.explanation || ''} ${c.intuition || ''} ${c.example || ''}`).join(' '),
+    (parsed.patterns || []).map(p => `${p.name || ''} ${p.whenToUse || ''} ${p.howItWorks || ''} ${p.example || ''}`).join(' '),
+    (parsed.stepByStep || []).join(' '),
+    (parsed.codeExamples || parsed.examples || []).map(e => `${e.title || ''} ${e.explanation || ''} ${e.code || ''}`).join(' '),
+    (parsed.workedExamples || []).map(w => `${w.title || ''} ${w.problem || ''} ${w.approach || ''} ${w.solution || ''}`).join(' '),
+    (parsed.commonMistakes || []).join(' '),
+    (parsed.interviewTips || []).join(' '),
+    parsed.placementRelevance || '',
+    (parsed.quickRecap || []).join(' '),
+    (parsed.keyTakeaways || []).join(' ')
+  ].join(' ').toLowerCase();
+
+  // 1. Prohibited cross-domain patterns
+  for (const pattern of disallowed) {
+    if (pattern.test(allText)) {
+      return {
+        valid: false,
+        reason: `Study material contains unrelated concept (${pattern.toString()}) not grounded in task "${targetTopic}" (${targetDomain}).`
+      };
+    }
+  }
+
+  // 2. Strict non-resume check: non-interview tasks must NEVER have STAR/resume/HR questions
+  if (targetDomain !== 'resume_interview') {
+    if (
+      allText.includes('star framework') ||
+      allText.includes('star method') ||
+      allText.includes('behavioral interview') ||
+      allText.includes('elevator pitch') ||
+      allText.includes('tell me about yourself') ||
+      allText.includes('hr interview')
+    ) {
+      return {
+        valid: false,
+        reason: `Study material contains HR/Behavioral interview concepts in a technical task "${targetTopic}".`
+      };
+    }
+  }
+
+  return { valid: true, reason: null };
+}
+
+/**
+ * Backward compatibility alias for validateTaskStudyMaterialQuality
+ */
+export function validateTaskStudyMaterialSchema(parsed) {
+  return validateTaskStudyMaterialQuality(parsed);
+}
+
+/**
+ * Backward compatibility alias for validateTaskStudyMaterialRelevance
+ */
+export function validateTaskStudyMaterialRelevance(parsed, taskContext = {}, domain = '') {
+  return validateTaskStudyMaterialQuality(parsed, taskContext);
+}
+
+/**
+ * 7. Task-Specific Study Material Generation
+ * Generates rich, topic-grounded study documents dynamically for ANY learning task in NOVARA.
+ * Gemini serves as the primary content generator with strict grounding and multi-step validation.
+ */
+export async function generateTaskStudyMaterial(taskContext = {}) {
+  const provider = getAIProvider();
+  if (!provider.isConfigured()) {
+    return null;
+  }
+
+  const taskTitle = taskContext.taskTitle || taskContext.taskName || taskContext.name || taskContext.topic || 'Core Curriculum Concept';
+  const taskDescription = taskContext.taskDescription || taskContext.description || 'Study and master core concept.';
+  const roadmapPhase = taskContext.roadmapPhase || taskContext.phase || '';
+  const roadmapTopic = taskContext.roadmapTopic || taskContext.topic || taskTitle;
+  const taskCategory = taskContext.taskCategory || taskContext.category || 'DSA';
+  const difficulty = (taskContext.difficulty || 'Medium').toLowerCase();
+  const learningObjectives = Array.isArray(taskContext.learningObjectives)
+    ? taskContext.learningObjectives.join(', ')
+    : (taskContext.learningObjectives || 'Understand and apply core concepts.');
+  const relevantMetadata = taskContext.relevantMetadata || taskContext.metadata || '';
+
+  const taskDomain = classifyTaskDomain(taskContext);
+
+  const prompt = `You are a world-class technical educator generating a concise, professional study guide for a student preparing for placement interviews.
+
+TASK CONTEXT (PRIMARY & EXCLUSIVE CURRICULUM CONTEXT):
+- Task Title: ${taskTitle}
+- Task Description: ${taskDescription}
+- Roadmap Phase: ${roadmapPhase || 'Placement Preparation'}
+- Roadmap Topic: ${roadmapTopic}
+- Task Category: ${taskCategory}
+- Task Domain: ${taskDomain || 'General'}
+- Difficulty Level: ${difficulty}
+- Learning Objectives: ${learningObjectives}
+${relevantMetadata ? `- Additional Context: ${relevantMetadata}\n` : ''}
+STRICT GROUNDING & QUALITY RULES:
+1. Generate study material ONLY for the selected task and its supplied learning context. Do not use unrelated topics from the user's roadmap, question banks, previous tasks, or general placement knowledge.
+2. Focus deeply on the core algorithmic or engineering techniques of "${taskTitle}" (${roadmapTopic}).
+3. Avoid generic motivational filler or chat conversationalisms. Structure content like a high-yield placement revision document.
+4. Never generate unrelated domains (for example: NEVER generate STAR framework, HR, or Resume content for technical topics like Arrays, SQL, React, or Operating Systems).
+5. For coding/technical tasks, provide syntactically valid code examples with Time and Space complexity analysis.
+
+REQUIRED JSON STRUCTURE:
+{
+  "title": "${taskTitle}",
+  "subtitle": "Clear, informative subtitle highlighting core techniques...",
+  "overview": "A concise 2-3 sentence overview explaining what problem this concept solves and why it is essential...",
+  "learningObjectives": [
+    "Master core technique 1...",
+    "Apply pattern 2..."
+  ],
+  "concepts": [
+    {
+      "name": "Concept / Technique Name",
+      "explanation": "Clear educational explanation of the mechanism...",
+      "intuition": "Why this approach works and eliminates brute force...",
+      "example": "Brief practical scenario or mini-example..."
+    }
+  ],
+  "patterns": [
+    {
+      "name": "Algorithmic / Architectural Pattern",
+      "whenToUse": "When to apply this pattern...",
+      "howItWorks": "How state or pointers are updated...",
+      "example": "Classic problem name or scenario..."
+    }
+  ],
+  "stepByStep": [
+    "1. Clarify constraints and input bounds...",
+    "2. Choose optimal data structure or pointers...",
+    "3. Handle edge cases..."
+  ],
+  "codeExamples": [
+    {
+      "title": "Clean Idiomatic Implementation",
+      "language": "javascript",
+      "code": "function example() { ... }",
+      "explanation": "Why this implementation is optimal...",
+      "complexity": {
+        "time": "O(N)",
+        "space": "O(1)"
+      }
+    }
+  ],
+  "workedExamples": [
+    {
+      "title": "Classic Problem Walkthrough",
+      "problem": "Problem statement...",
+      "approach": "Optimal approach intuition...",
+      "solution": "Key implementation detail or complexity..."
+    }
+  ],
+  "commonMistakes": [
+    "Off-by-one errors or specific edge cases to avoid...",
+    "Suboptimal complexity pitfalls..."
+  ],
+  "interviewTips": [
+    "Tip 1: What interviewers look for...",
+    "Tip 2: Edge cases to explicitly state..."
+  ],
+  "practiceGuidance": [
+    "Key problems or exercises to practice..."
+  ],
+  "quickRecap": [
+    "Key takeaway 1...",
+    "Key takeaway 2..."
+  ],
+  "keyTakeaways": [
+    "High-yield summary point..."
+  ],
+  "placementRelevance": "How and why top tech companies evaluate this specific topic in placement interviews...",
+  "domain": "${taskDomain || 'general'}"
+}`;
+
+  try {
+    let result = await provider.generateJSON({
+      prompt,
+      systemInstruction: `You are a world-class technical educator. Generate comprehensive, strictly grounded study guides for "${taskTitle}". Never output content for unrelated domains. Output strictly valid JSON.`,
+      schemaHint: 'JSON object matching the rich learning document schema.'
+    });
+
+    let qualityValidation = validateTaskStudyMaterialQuality(result, taskContext);
+
+    // If quality validation failed, retry Gemini ONCE with targeted correction prompt
+    if (!qualityValidation.valid) {
+      logger.warn(`[AIService] Task study material failed validation (${qualityValidation.reason}). Retrying Gemini with targeted grounding prompt...`);
+      try {
+        const retryPrompt = `${prompt}
+
+CRITICAL GROUNDING & QUALITY ERROR IN PREVIOUS RESPONSE:
+Your previous response failed because: ${qualityValidation.reason}.
+You MUST generate study material strictly about "${taskTitle}" (${taskDomain || 'Curriculum Task'}).
+Do not include content from other domains (e.g., STAR framework, resume content, or unrelated CS topics).`;
+
+        result = await provider.generateJSON({
+          prompt: retryPrompt,
+          systemInstruction: `You are a world-class technical educator. Return only valid JSON with study material strictly grounded in "${taskTitle}". Output valid JSON matching the exact schema.`,
+          schemaHint: 'Valid JSON matching the rich learning document schema.'
+        });
+
+        qualityValidation = validateTaskStudyMaterialQuality(result, taskContext);
+      } catch (retryErr) {
+        logger.warn(`[AIService] Gemini study material retry failed: ${retryErr.message}`);
+      }
+    }
+
+    if (!qualityValidation.valid || !result) {
+      logger.warn(`[AIService] Task study material rejected: ${qualityValidation.reason || 'Validation failed'}. Falling back to grounded study material bank.`);
+      return null;
+    }
+
+    return {
+      title: result.title || taskTitle,
+      subtitle: result.subtitle || '',
+      overview: result.overview,
+      learningObjectives: Array.isArray(result.learningObjectives) ? result.learningObjectives : [],
+      concepts: Array.isArray(result.concepts) ? result.concepts : [],
+      patterns: Array.isArray(result.patterns) ? result.patterns : [],
+      stepByStep: Array.isArray(result.stepByStep) ? result.stepByStep : [],
+      codeExamples: Array.isArray(result.codeExamples) ? result.codeExamples : (Array.isArray(result.examples) ? result.examples : []),
+      workedExamples: Array.isArray(result.workedExamples) ? result.workedExamples : [],
+      commonMistakes: Array.isArray(result.commonMistakes) ? result.commonMistakes : [],
+      interviewTips: Array.isArray(result.interviewTips) ? result.interviewTips : [],
+      practiceGuidance: Array.isArray(result.practiceGuidance) ? result.practiceGuidance : [],
+      quickRecap: Array.isArray(result.quickRecap) ? result.quickRecap : [],
+      keyTakeaways: Array.isArray(result.keyTakeaways) ? result.keyTakeaways : (Array.isArray(result.quickRecap) ? result.quickRecap : []),
+      placementRelevance: result.placementRelevance || 'Frequently evaluated in placement interview rounds.',
+      domain: taskDomain
+    };
+  } catch (err) {
+    logger.error(ERROR_CATEGORIES.AI_ERROR, 'Task study material generation with Gemini failed', err);
+    return null;
+  }
+}
+

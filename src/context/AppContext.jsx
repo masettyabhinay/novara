@@ -179,6 +179,21 @@ export const AppProvider = ({ children }) => {
   const [selectedTopicDetail, setSelectedTopicDetail] = useState(null);
   const [isTopicDetailOpen, setIsTopicDetailOpen] = useState(false);
 
+  // Task-Specific Study Material State
+  const [activeStudyTask, setActiveStudyTask] = useState(null);
+  const [isStudyModalOpen, setIsStudyModalOpen] = useState(false);
+
+  const openTaskStudyMaterial = (task) => {
+    if (!task) return;
+    setActiveStudyTask(task);
+    setIsStudyModalOpen(true);
+  };
+
+  const closeTaskStudyMaterial = () => {
+    setIsStudyModalOpen(false);
+    setActiveStudyTask(null);
+  };
+
   // Placement Application Tracker State
   const [applications, setApplications] = useState([]);
   const [applicationMetrics, setApplicationMetrics] = useState({
@@ -1658,6 +1673,12 @@ export const AppProvider = ({ children }) => {
         isFocusModalOpen,
         setIsFocusModalOpen,
         focusAnalytics,
+        activeStudyTask,
+        setActiveStudyTask,
+        isStudyModalOpen,
+        setIsStudyModalOpen,
+        openTaskStudyMaterial,
+        closeTaskStudyMaterial,
         startFocusSession,
         pauseFocusSession,
         resumeFocusSession,

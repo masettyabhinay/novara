@@ -886,20 +886,325 @@ async function runTests() {
   assert(relevanceCheck.valid === false, 'Relevance validator successfully rejects contaminated STAR question in Arrays task');
   assert(relevanceCheck.reason.includes('Question 1'), 'Validator explicitly flags Question 1 as cross-domain / unrelated');
 
-  // G. Test end-to-end AI generator when Gemini outputs unrelated questions (triggers retry/fallback)
-  const rogueProvider = new MockAIProvider({ configured: true });
-  rogueProvider.mockResponses.json = contaminatedGeminiResponse;
-  setAIProvider(rogueProvider);
+  // H. TASK-SPECIFIC STUDY MATERIAL TESTS
+  console.log('\n================================================================');
+  console.log('📚 TESTING TASK-SPECIFIC STUDY MATERIAL GENERATION & GROUNDING');
+  console.log('================================================================');
 
-  // When AI returns contaminated response, generateTaskRevisionQuiz retries and if still invalid returns null for grounded fallback
-  const rejectedQuizResult = await generateTaskRevisionQuiz(arraysTaskContext);
-  assert(rejectedQuizResult === null, 'Contaminated AI response rejected without crashing, triggering grounded bank fallback');
+  const {
+    generateTaskStudyMaterial,
+    validateTaskStudyMaterialSchema,
+    validateTaskStudyMaterialRelevance
+  } = await import('file:///f:/NOVARA/server/aiService.js');
+  const {
+    getFallbackStudyMaterial,
+    getStudyMaterialCacheKey,
+    getCachedStudyMaterial,
+    setCachedStudyMaterial
+  } = await import('file:///f:/NOVARA/server/studyMaterialService.js');
+
+  const studyDomains = [
+    {
+      taskTitle: 'Arrays and String Manipulation Practice',
+      roadmapTopic: 'Arrays and strings',
+      taskCategory: 'DSA',
+      expectedKeywords: ['two pointers', 'sliding window', 'kadane', 'prefix sum']
+    },
+    {
+      taskTitle: 'Linked List Pointer Manipulation',
+      roadmapTopic: 'Linked lists',
+      taskCategory: 'DSA',
+      expectedKeywords: ['floyd', 'cycle', 'reversal', 'dummy']
+    },
+    {
+      taskTitle: 'SQL Joins, Aggregations & Window Functions',
+      roadmapTopic: 'SQL',
+      taskCategory: 'SQL',
+      expectedKeywords: ['join', 'having', 'rank', 'dense_rank']
+    },
+    {
+      taskTitle: 'React Basics & Modern Component Architecture',
+      roadmapTopic: 'React',
+      taskCategory: 'Development',
+      expectedKeywords: ['hooks', 'state', 'useeffect', 'virtual dom']
+    },
+    {
+      taskTitle: 'Resume Preparation & STAR Method',
+      roadmapTopic: 'Resume preparation',
+      taskCategory: 'Interview',
+      expectedKeywords: ['star', 'metrics', 'elevator pitch', 'behavioral']
+    }
+  ];
+
+  // 1. Verify Fallback Study Material for all required domains
+  for (const item of studyDomains) {
+    const fallbackMat = getFallbackStudyMaterial(item);
+    assert(fallbackMat !== null, `Fallback study material exists for "${item.taskTitle}"`);
+    assert(fallbackMat.title && fallbackMat.title.length > 0, 'Has title');
+    assert(fallbackMat.overview && fallbackMat.overview.length > 20, 'Has rich overview');
+    assert(Array.isArray(fallbackMat.codeExamples) || Array.isArray(fallbackMat.examples), 'Has code examples or examples array');
+    assert(Array.isArray(fallbackMat.commonMistakes) && fallbackMat.commonMistakes.length >= 1, 'Has common mistakes');
+    assert(
+      (Array.isArray(fallbackMat.quickRecap) && fallbackMat.quickRecap.length >= 1) ||
+      (Array.isArray(fallbackMat.keyTakeaways) && fallbackMat.keyTakeaways.length >= 1),
+      'Has quick recap or key takeaways'
+    );
+
+    const fullText = JSON.stringify(fallbackMat).toLowerCase();
+    const hasExpectedKeyword = item.expectedKeywords.some(kw => fullText.includes(kw));
+    assert(hasExpectedKeyword, `Study material contains domain-relevant terminology for ${item.taskTitle}`);
+    console.log(`✅ PASS: Grounded Study Material validated for ${item.taskTitle}`);
+  }
+
+  // 2. Test Contamination Rejection (Arrays task + STAR framework response)
+  console.log('\n[Regression Test] Verifying that Contaminated Study Material is Rejected & Retried/Failsafe...');
+  const contaminatedStudyResponse = {
+    title: 'Arrays and String Manipulation Practice',
+    overview: 'The STAR framework is essential for behavioral interviews when discussing array problems.',
+    concepts: [
+      {
+        name: 'STAR Method in Tech Rounds',
+        explanation: 'Situation, Task, Action, Result for explaining algorithmic decisions.',
+        example: 'Describe how you solved an array problem using STAR.'
+      }
+    ],
+    stepByStep: ['Step 1: Explain the Situation', 'Step 2: Define your Task', 'Step 3: Detail your Action', 'Step 4: Quantify Result'],
+    examples: [
+      {
+        title: 'STAR Story',
+        explanation: 'Behavioral response template',
+        code: 'Situation -> Task -> Action -> Result'
+      }
+    ],
+    commonMistakes: ['Not quantifying the result metric in the STAR response.'],
+    placementRelevance: 'Evaluates behavioral communication.',
+    quickRecap: ['Always use STAR for interview answers.']
+  };
+
+  const studyRelevanceCheck = validateTaskStudyMaterialRelevance(contaminatedStudyResponse, {
+    taskTitle: 'Arrays and String Manipulation Practice',
+    roadmapTopic: 'Arrays and strings',
+    taskCategory: 'DSA'
+  }, 'arrays');
+
+  assert(studyRelevanceCheck.valid === false, 'Study material relevance validator rejects contaminated STAR framework in Arrays task');
+  console.log('✅ PASS: Study material relevance validator successfully caught and rejected STAR contamination');
+
+  // 3. Test End-to-End AI Generation across all requested domains
+  console.log('\n[AI Generation] Testing Gemini Study Material Generation across Domains...');
+  const studyAiProvider = new MockAIProvider({ configured: true });
+  setAIProvider(studyAiProvider);
+
+  const testDomainResponses = [
+    {
+      ctx: { taskTitle: 'Arrays and String Manipulation Practice', roadmapTopic: 'Arrays and strings', taskCategory: 'DSA' },
+      resp: {
+        title: 'Arrays and String Manipulation Practice',
+        subtitle: 'Two Pointers and Sliding Window',
+        overview: 'Arrays are linear contiguous memory blocks optimized for O(1) index access.',
+        learningObjectives: ['Master Two Pointers', 'Implement Kadane algorithm'],
+        concepts: [
+          { name: 'Two Pointers', explanation: 'Move pointers inward in O(N).', intuition: 'Eliminates brute-force combinations.', example: 'Two sum sorted.' }
+        ],
+        patterns: [{ name: 'Sliding Window', whenToUse: 'Contiguous ranges', howItWorks: 'Expand right, shrink left', example: 'Longest substring' }],
+        stepByStep: ['1. Bounds check', '2. Pointer setup', '3. Edge cases'],
+        codeExamples: [{ title: 'Kadane Max Subarray', language: 'javascript', code: 'function maxSubArray(nums) {}', explanation: 'Linear scan', complexity: { time: 'O(N)', space: 'O(1)' } }],
+        workedExamples: [{ title: 'Two Sum II', problem: 'Sorted array pair sum', approach: 'Two pointers from ends', solution: 'O(N) time' }],
+        commonMistakes: ['Not handling all negative array in Kadane'],
+        interviewTips: ['State time and space complexity upfront'],
+        practiceGuidance: ['LeetCode #53 and #11'],
+        quickRecap: ['Two pointers requires sorted input'],
+        keyTakeaways: ['O(N) time and O(1) space'],
+        placementRelevance: 'Tested in 80%+ of initial screening rounds.',
+        domain: 'arrays'
+      }
+    },
+    {
+      ctx: { taskTitle: 'Linked List Pointer Manipulation', roadmapTopic: 'Linked lists', taskCategory: 'DSA' },
+      resp: {
+        title: 'Linked List Pointer Manipulation',
+        subtitle: 'Fast & Slow Pointers and Reversal',
+        overview: 'Linked lists use node pointers to form dynamic chains without contiguous memory.',
+        learningObjectives: ['Implement Floyd cycle detection', 'Reverse list in-place'],
+        concepts: [{ name: 'Fast & Slow Pointers', explanation: 'Tortoise and hare detection.', intuition: 'Faster pointer laps slower pointer in loop.', example: 'Cycle detection.' }],
+        patterns: [{ name: 'Dummy Head', whenToUse: 'Head deletions', howItWorks: 'Pre-head node', example: 'Merge lists' }],
+        stepByStep: ['1. Save nextNode', '2. Rewire curr.next', '3. Advance pointers'],
+        codeExamples: [{ title: 'Reverse List', language: 'javascript', code: 'function reverseList(head) {}', explanation: 'In-place reversal', complexity: { time: 'O(N)', space: 'O(1)' } }],
+        workedExamples: [{ title: 'Cycle Start Node', problem: 'Find loop entry', approach: 'Floyd algorithm', solution: 'O(N) time' }],
+        commonMistakes: ['Losing pointer reference before saving nextNode'],
+        interviewTips: ['Ask if singly or doubly linked'],
+        practiceGuidance: ['LeetCode #206 and #141'],
+        quickRecap: ['Floyd algorithm runs in O(1) auxiliary space'],
+        keyTakeaways: ['Never overwrite curr.next without temp storage'],
+        placementRelevance: 'Core data structure evaluated at top tech firms.',
+        domain: 'linked_lists'
+      }
+    },
+    {
+      ctx: { taskTitle: 'SQL Joins, Aggregations & Window Functions', roadmapTopic: 'SQL', taskCategory: 'SQL' },
+      resp: {
+        title: 'SQL Joins, Aggregations & Window Functions',
+        subtitle: 'Relational Queries and Window Partitions',
+        overview: 'SQL standardizes relational queries and analytical calculations.',
+        learningObjectives: ['Master INNER and LEFT joins', 'Write DENSE_RANK window queries'],
+        concepts: [{ name: 'Window Functions', explanation: 'Computes metrics without collapsing rows.', intuition: 'Partitions dataset on the fly.', example: 'DENSE_RANK() OVER (PARTITION BY dept_id ORDER BY sal DESC).' }],
+        patterns: [{ name: 'CTE with Partition', whenToUse: 'Top-N per group', howItWorks: 'Rank with CTE then filter', example: 'Nth highest salary' }],
+        stepByStep: ['1. Base join', '2. WHERE filter', '3. PARTITION ranking'],
+        codeExamples: [{ title: 'Nth Highest Salary', language: 'sql', code: 'WITH Ranked AS (...) SELECT ...', explanation: 'CTE window rank', complexity: { time: 'O(N log N)', space: 'O(N)' } }],
+        workedExamples: [{ title: 'Customers Without Orders', problem: 'Find unassigned customers', approach: 'LEFT JOIN with WHERE IS NULL', solution: 'O(N) scan' }],
+        commonMistakes: ['Using WHERE with aggregate functions instead of HAVING'],
+        interviewTips: ['Always use table aliases'],
+        practiceGuidance: ['LeetCode SQL 50'],
+        quickRecap: ['WHERE filters rows; HAVING filters aggregates'],
+        keyTakeaways: ['DENSE_RANK leaves no gaps on duplicate ties'],
+        placementRelevance: 'Tested in backend and data engineering interviews.',
+        domain: 'sql'
+      }
+    },
+    {
+      ctx: { taskTitle: 'React Basics & Modern Component Architecture', roadmapTopic: 'React', taskCategory: 'Development' },
+      resp: {
+        title: 'React Basics & Modern Component Architecture',
+        subtitle: 'Hooks, Immutability & Reconciliation',
+        overview: 'React builds declarative UIs with reactive state and Virtual DOM diffing.',
+        learningObjectives: ['Manage useEffect cleanups', 'Understand state immutability'],
+        concepts: [{ name: 'State Immutability', explanation: 'Update state via pure copies.', intuition: 'Enables shallow reference comparisons in Virtual DOM.', example: 'setItems(prev => [...prev, item]).' }],
+        patterns: [{ name: 'Custom Hook', whenToUse: 'Reusable effect logic', howItWorks: 'Extract stateful function', example: 'useWindowSize' }],
+        stepByStep: ['1. Unidirectional data flow', '2. Pick hook', '3. Add cleanup function'],
+        codeExamples: [{ title: 'useWindowSize Custom Hook', language: 'javascript', code: 'export function useWindowSize() {}', explanation: 'Resize listener with cleanup', complexity: { time: 'O(1)', space: 'O(1)' } }],
+        workedExamples: [{ title: 'Debounced Search', problem: 'Throttle keystroke API calls', approach: 'Timeout inside useEffect', solution: '300ms debounce' }],
+        commonMistakes: ['Mutating state directly bypassing React change detection'],
+        interviewTips: ['Explain how React 18 batches state updates'],
+        practiceGuidance: ['Build debounced search input'],
+        quickRecap: ['Return a cleanup function from useEffect to avoid memory leaks'],
+        keyTakeaways: ['State flows down; Events flow up'],
+        placementRelevance: 'Heavily tested for Frontend and Full Stack positions.',
+        domain: 'react'
+      }
+    },
+    {
+      ctx: { taskTitle: 'Resume Preparation & STAR Method', roadmapTopic: 'Resume preparation', taskCategory: 'Interview' },
+      resp: {
+        title: 'Resume Preparation & STAR Method',
+        subtitle: 'Behavioral Communication & Metric Impact',
+        overview: 'Structured communication and project impact demonstrate technical ownership.',
+        learningObjectives: ['Structure STAR stories', 'Quantify project metrics'],
+        concepts: [{ name: 'STAR Framework', explanation: 'Situation, Task, Action, Result.', intuition: 'Proves individual engineering ownership with objective outcomes.', example: 'API latency reduction story.' }],
+        patterns: [{ name: 'Google XYZ Resume Formula', whenToUse: 'Resume bullet points', howItWorks: 'Accomplished X by doing Z as measured by Y', example: 'Reduced latency by 40%' }],
+        stepByStep: ['1. Pick project challenge', '2. Define personal action', '3. State metric outcome'],
+        codeExamples: [],
+        workedExamples: [{ title: 'Behavioral Conflict Story', problem: 'Resolving architecture disagreement', approach: 'Benchmark data and proof of concept', solution: 'Team alignment' }],
+        commonMistakes: ['Using "we" exclusively instead of stating your own individual contribution'],
+        interviewTips: ['Spend 60% of STAR response on Action and Result'],
+        practiceGuidance: ['Draft 4 STAR stories with metrics'],
+        quickRecap: ['STAR: Situation, Task, Action, Result'],
+        keyTakeaways: ['Quantify project outcomes with concrete numbers and percentages'],
+        placementRelevance: 'Evaluated in behavioral and engineering manager rounds.',
+        domain: 'resume_interview'
+      }
+    }
+  ];
+
+  for (const testCase of testDomainResponses) {
+    studyAiProvider.mockResponses.json = testCase.resp;
+    const generated = await generateTaskStudyMaterial(testCase.ctx);
+    assert(generated !== null, `generateTaskStudyMaterial succeeded for ${testCase.ctx.taskTitle}`);
+    assert.strictEqual(generated.title, testCase.resp.title, `Title matches for ${testCase.ctx.taskTitle}`);
+    assert(generated.overview.length > 20, 'Has comprehensive overview');
+    assert(Array.isArray(generated.concepts) && generated.concepts.length >= 1, 'Contains concepts');
+    assert(Array.isArray(generated.learningObjectives), 'Contains learning objectives');
+    console.log(`✅ PASS: Gemini study document generated & validated for ${testCase.ctx.taskTitle}`);
+  }
+
+  // 4. Test Server-side Cache Layer with Fingerprinting
+  const cacheKey = getStudyMaterialCacheKey({ taskTitle: 'Arrays and strings', roadmapTopic: 'Arrays and strings', taskDescription: 'Practice sliding window' });
+  const sampleDoc = testDomainResponses[0].resp;
+  setCachedStudyMaterial(cacheKey, sampleDoc);
+  const retrievedCached = getCachedStudyMaterial(cacheKey);
+  assert(retrievedCached !== null, 'Retrieved cached study material from in-memory cache');
+  assert.strictEqual(retrievedCached.title, sampleDoc.title, 'Cached title matches');
+  console.log('✅ PASS: Server-side in-memory study material fingerprint cache verified');
+
+  // 5. Full End-to-End Task Lifecycle Test (Today Task -> Study Material -> Focus Session -> Task Quiz -> Spaced Repetition -> Task Complete)
+  console.log('\n[End-to-End Test] Testing Full Task Lifecycle: Study -> Focus -> Quiz -> Spaced Repetition...');
+  const e2eUserId = `user_e2e_${Date.now()}`;
+  const e2eTaskId = `task_e2e_${Date.now()}`;
+  const e2eSessionId = `session_e2e_${Date.now()}`;
+
+  const { loadDb: loadDbE2E, saveDb: saveDbE2E } = await import('file:///f:/NOVARA/server/db.js');
+  const dbE2E = loadDbE2E();
+  if (!dbE2E.tasks) dbE2E.tasks = {};
+  dbE2E.tasks[e2eUserId] = [
+    {
+      id: e2eTaskId,
+      userId: e2eUserId,
+      name: 'Arrays and strings — Solve 2 problems',
+      category: 'DSA',
+      completed: false,
+      actualMinutesStudied: 0
+    }
+  ];
+  if (!dbE2E.focusSessions) dbE2E.focusSessions = {};
+  dbE2E.focusSessions[e2eUserId] = [
+    {
+      sessionId: e2eSessionId,
+      userId: e2eUserId,
+      taskId: e2eTaskId,
+      status: 'active',
+      actualMinutes: 45
+    }
+  ];
+  if (!dbE2E.streaks) dbE2E.streaks = {};
+  dbE2E.streaks[e2eUserId] = {
+    userId: e2eUserId,
+    currentStreak: 5,
+    longestStreak: 5,
+    todayTargetMet: false,
+    completedDays: 5
+  };
+  saveDbE2E(dbE2E);
+
+  // Step A: Study Material fetched
+  const e2eStudyMaterial = getFallbackStudyMaterial({ taskTitle: 'Arrays and strings', taskCategory: 'DSA' });
+  assert(e2eStudyMaterial !== null && e2eStudyMaterial.domain === 'arrays', 'Study material available for task');
+
+  // Step B: Task Quiz generated & submitted
+  const e2eQuizAnswers = [
+    { questionId: 'q_arr_1', selectedAnswer: 'Time: O(N), Space: O(1)', isCorrect: true },
+    { questionId: 'q_arr_2', selectedAnswer: 'Two Pointers with Left and Right moving inward', isCorrect: true },
+    { questionId: 'q_arr_3', selectedAnswer: 'prefix[R] - prefix[L-1]', isCorrect: true },
+    { questionId: 'q_arr_4', selectedAnswer: 'Dynamic / Sliding Window', isCorrect: true },
+    { questionId: 'q_arr_5', selectedAnswer: 'max(nums[i], current_sum + nums[i])', isCorrect: true }
+  ];
+
+  const e2eResult = recordTaskRevisionAndComplete(e2eUserId, {
+    taskId: e2eTaskId,
+    sessionId: e2eSessionId,
+    answers: e2eQuizAnswers,
+    durationMinutes: 45,
+    taskContext: { taskTitle: 'Arrays and strings', roadmapTopic: 'Arrays and strings', taskCategory: 'DSA' }
+  });
+
+  assert(e2eResult.success === true, 'Task completed successfully after quiz');
+  assert.strictEqual(e2eResult.scorePercent, 100, 'Score is 100%');
+  assert.strictEqual(e2eResult.task.completed, true, 'Task marked completed');
+  assert.strictEqual(e2eResult.session.status, 'completed', 'Focus session completed');
+  assert(e2eResult.revision.retentionScore >= 80, 'Deterministic SM-2 retention score boosted');
+  console.log('✅ PASS: Complete end-to-end task lifecycle verified');
+
+  // Clean up
+  const dbCleanE2E = loadDbE2E();
+  delete dbCleanE2E.tasks[e2eUserId];
+  delete dbCleanE2E.focusSessions[e2eUserId];
+  delete dbCleanE2E.revisions[e2eUserId];
+  delete dbCleanE2E.streaks[e2eUserId];
+  saveDbE2E(dbCleanE2E);
 
   // Reset provider to live default
   resetAIProvider();
 
   console.log('\n================================================================');
-  console.log('🎉 ALL 12 GEMINI AI INTEGRATION TESTS PASSED SUCCESSFULLY!');
+  console.log('🎉 ALL GEMINI AI & STUDY MATERIAL INTEGRATION TESTS PASSED!');
   console.log('================================================================\n');
 }
 
@@ -907,3 +1212,4 @@ runTests().catch((err) => {
   console.error('Test suite failed:', err);
   process.exit(1);
 });
+

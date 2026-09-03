@@ -65,8 +65,16 @@ import {
   generateInterviewQuestionsWithAI,
   evaluateInterviewAnswerWithAI,
   generateRevisionQuestionsWithAI,
-  generateTaskRevisionQuiz
+  generateTaskRevisionQuiz,
+  generateTaskStudyMaterial
 } from './aiService.js';
+
+import {
+  getFallbackStudyMaterial,
+  getStudyMaterialCacheKey,
+  getCachedStudyMaterial,
+  setCachedStudyMaterial
+} from './studyMaterialService.js';
 
 import { verifyGoogleToken, isValidGoogleClientId } from './authGoogle.js';
 
@@ -851,6 +859,71 @@ export async function apiMiddlewareHandler(req, res, next) {
               const body = await readBodyJson(req);
               const updated = rescheduleRevision(authUser.id, body);
               return sendJson(res, 200, { success: true, revision: updated }, req);
+            } catch (err) {
+              return sendJson(res, 400, { success: false, error: err.message }, req);
+            }
+          }
+        }
+
+        // -----------------------------------------------------------------
+        // 4b. TASK-SPECIFIC STUDY MATERIAL ENDPOINTS
+        // -----------------------------------------------------------------
+        if (pathname === '/api/study-material/generate' || pathname === '/api/tasks/study-material') {
+          if (req.method === 'POST') {
+            const rateCheck = checkRateLimit(req, 'AI');
+            if (!rateCheck.allowed) {
+              res.setHeader('Retry-After', String(rateCheck.retryAfterSeconds));
+              return sendJson(res, 429, { success: false, error: 'Too many study material requests. Please try again in a moment.' }, req);
+            }
+
+            try {
+              const body = await readBodyJson(req);
+              const { taskId, taskTitle, taskDescription, roadmapPhase, roadmapTopic, taskCategory, difficulty, learningObjectives, relevantMetadata, topic, name } = body;
+
+              const taskCtx = {
+                taskId: taskId || '',
+                taskTitle: taskTitle || name || topic || 'Core Curriculum Concept',
+                taskDescription: taskDescription || '',
+                roadmapPhase: roadmapPhase || '',
+                roadmapTopic: roadmapTopic || topic || taskTitle || name || '',
+                taskCategory: taskCategory || 'DSA',
+                difficulty: difficulty || 'Medium',
+                learningObjectives: learningObjectives || '',
+                relevantMetadata: relevantMetadata || ''
+              };
+
+              // 1. Check server-side cache
+              const cacheKey = getStudyMaterialCacheKey(taskCtx);
+              const cached = getCachedStudyMaterial(cacheKey);
+              if (cached) {
+                return sendJson(res, 200, { success: true, material: cached, cached: true }, req);
+              }
+
+              let material = null;
+              if (isGeminiConfigured()) {
+                try {
+                  material = await generateTaskStudyMaterial(taskCtx);
+                } catch (aiErr) {
+                  console.warn('[apiMiddleware] Gemini study material generation failed, falling back to grounded bank:', aiErr.message);
+                }
+              }
+
+              if (!material) {
+                material = getFallbackStudyMaterial(taskCtx);
+              }
+
+              if (!material) {
+                return sendJson(res, 503, {
+                  success: false,
+                  retryable: true,
+                  error: 'Study material is currently unavailable for this task. Please retry.'
+                }, req);
+              }
+
+              // Cache the result
+              setCachedStudyMaterial(cacheKey, material);
+
+              return sendJson(res, 200, { success: true, material, cached: false }, req);
             } catch (err) {
               return sendJson(res, 400, { success: false, error: err.message }, req);
             }

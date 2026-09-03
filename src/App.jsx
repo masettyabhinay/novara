@@ -18,6 +18,7 @@ import { AuthModal } from './components/Auth/AuthModal';
 import { OnboardingFlow } from './components/Onboarding/OnboardingFlow';
 import { RoadmapUploadModal } from './components/RoadmapUpload/RoadmapUploadModal';
 import { FocusSessionModal } from './components/Focus/FocusSessionModal';
+import TaskStudyMaterialModal from './components/Tasks/TaskStudyMaterialModal';
 import { ActiveRevisionModal } from './components/Revision/ActiveRevisionModal';
 import { TopicRevisionDetailModal } from './components/Revision/TopicRevisionDetailModal';
 import { AdaptivePlanModal } from './components/AdaptivePlan/AdaptivePlanModal';
@@ -36,6 +37,10 @@ const AppContent = () => {
     toastMessages,
     isOffline,
     isAuthLoading,
+    activeStudyTask,
+    isStudyModalOpen,
+    closeTaskStudyMaterial,
+    startFocusSession,
     isActiveRevisionOpen, setIsActiveRevisionOpen,
     isAdaptivePlanOpen, setIsAdaptivePlanOpen,
     isFocusSessionOpen, setIsFocusSessionOpen,
@@ -227,6 +232,12 @@ const AppContent = () => {
       <AuthModal />
       <OnboardingFlow />
       <RoadmapUploadModal />
+      <TaskStudyMaterialModal
+        isOpen={isStudyModalOpen}
+        task={activeStudyTask}
+        onClose={closeTaskStudyMaterial}
+        onStartTask={(t) => startFocusSession(t)}
+      />
       <FocusSessionModal />
       <ActiveRevisionModal />
       <TopicRevisionDetailModal />
