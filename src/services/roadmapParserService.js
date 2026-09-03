@@ -8,6 +8,7 @@
  */
 
 import { SAMPLE_ROADMAPS } from '../data/mockData';
+import { getStoredToken } from './authService';
 
 export const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.doc', '.png', '.jpg', '.jpeg', '.txt', '.md'];
 export const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
@@ -86,14 +87,21 @@ export const parseRoadmapDocument = async (file, options = {}) => {
 
   try {
     const arrayBuffer = await file.arrayBuffer();
+    const token = getStoredToken();
+
+    const headers = {
+      'x-file-name': encodeURIComponent(file.name),
+      'x-target-role': encodeURIComponent(options.targetRole || 'Software Engineer'),
+      'Content-Type': 'application/octet-stream'
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
     const response = await fetch('/api/roadmap/analyze', {
       method: 'POST',
-      headers: {
-        'x-file-name': encodeURIComponent(file.name),
-        'x-target-role': encodeURIComponent(options.targetRole || 'Software Engineer'),
-        'Content-Type': 'application/octet-stream'
-      },
+      headers,
       body: arrayBuffer
     });
 

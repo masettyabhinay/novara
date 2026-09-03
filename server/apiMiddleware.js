@@ -27,6 +27,8 @@ import {
   deleteNotificationOnServer,
   clearAllNotificationsOnServer,
   updateNotificationPreferencesOnServer,
+  recordUploadedFile,
+  getUserUploadedFiles,
   loadDb,
   saveDb
 } from './db.js';
@@ -358,6 +360,26 @@ export async function apiMiddlewareHandler(req, res, next) {
             } catch (err) {
               return sendJson(res, 400, { success: false, error: err.message }, req);
             }
+          }
+
+          // GET /api/user/roadmap or GET /api/roadmaps/current or GET /api/roadmaps
+          if (req.method === 'GET' && (pathname === '/api/user/roadmap' || pathname === '/api/roadmaps/current' || pathname === '/api/roadmaps')) {
+            const db = loadDb();
+            const roadmap = db.roadmaps[authUser.id] || null;
+            return sendJson(res, 200, { success: true, roadmap }, req);
+          }
+
+          // GET /api/user/tasks or GET /api/tasks/today or GET /api/tasks or GET /api/plan/today
+          if (req.method === 'GET' && (pathname === '/api/user/tasks' || pathname === '/api/tasks/today' || pathname === '/api/tasks' || pathname === '/api/plan/today')) {
+            const db = loadDb();
+            const tasks = db.tasks[authUser.id] || [];
+            return sendJson(res, 200, { success: true, tasks }, req);
+          }
+
+          // GET /api/user/files or GET /api/user/uploaded-files
+          if (req.method === 'GET' && (pathname === '/api/user/files' || pathname === '/api/user/uploaded-files')) {
+            const files = getUserUploadedFiles(authUser.id);
+            return sendJson(res, 200, { success: true, files }, req);
           }
 
           // PUT or POST /api/user/roadmap
@@ -1323,6 +1345,22 @@ export async function apiMiddlewareHandler(req, res, next) {
               needsReview: extractedRoadmap.needsReview
             });
 
+            const authUser = getAuthUserFromRequest(req);
+            let savedFileMeta = null;
+            if (authUser) {
+              try {
+                savedFileMeta = await fileStorageService.uploadUserRoadmapFile(
+                  authUser.id,
+                  buffer,
+                  safeFileName,
+                  req.headers['content-type']
+                );
+                recordUploadedFile(authUser.id, savedFileMeta);
+              } catch (storageErr) {
+                console.warn('[apiMiddleware] Storage upload non-blocking warning:', storageErr.message);
+              }
+            }
+
             const validation = validateRoadmapSchema(extractedRoadmap);
             if (!validation.valid) {
               return sendJson(res, 422, {
@@ -1338,6 +1376,8 @@ export async function apiMiddlewareHandler(req, res, next) {
               confidence: extractedRoadmap.confidence || 'high',
               needsReview: !!extractedRoadmap.needsReview,
               reviewReason: extractedRoadmap.reviewReason || null,
+              fileId: savedFileMeta?.fileId || null,
+              storageKey: savedFileMeta?.storageKey || null,
               source: 'extracted_from_document',
               isDemo: false
             }, req);

@@ -47,6 +47,7 @@ export const RoadmapUploadFlow = ({ onCancel, onComplete }) => {
   const [analysisProgress, setAnalysisProgress] = useState(0);
   const [planGenProgress, setPlanGenProgress] = useState(0);
   const [extractedRoadmap, setExtractedRoadmap] = useState(null);
+  const [generatedTasksList, setGeneratedTasksList] = useState([]);
   const [isDemoFallback, setIsDemoFallback] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [expandedPhases, setExpandedPhases] = useState({ 'ep-1': true, 'ep-2': true, 'phase-1': true, 'phase-2': true });
@@ -163,34 +164,41 @@ export const RoadmapUploadFlow = ({ onCancel, onComplete }) => {
     }, 450);
   };
 
-  // Run Plan Generation
-  const startPlanGeneration = () => {
+  // Run Plan Generation and await server persistence
+  const startPlanGeneration = async () => {
     setCurrentStep(4);
     setPlanGenProgress(0);
 
     let progress = 0;
     const interval = setInterval(() => {
       progress++;
-      setPlanGenProgress(progress);
+      setPlanGenProgress(Math.min(progress, planGenSteps.length - 1));
+    }, 350);
 
-      if (progress >= planGenSteps.length) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setCurrentStep(5);
-        }, 350);
+    try {
+      if (extractedRoadmap) {
+        const tasks = await generateDailyTasksFromRoadmap(extractedRoadmap, {
+          targetRole: planRole,
+          dailyTargetHours: planHours,
+          targetDate: planDate
+        });
+        setGeneratedTasksList(tasks || []);
       }
-    }, 400);
+      clearInterval(interval);
+      setPlanGenProgress(planGenSteps.length);
+      setTimeout(() => {
+        setCurrentStep(5);
+      }, 300);
+    } catch (err) {
+      clearInterval(interval);
+      console.error('[Plan Generation Error]', err);
+      showToast('Plan Generation Error', err.message || "Couldn't create your daily plan.", 'terracotta');
+      setCurrentStep(3);
+    }
   };
 
   // Final confirmation: switch to Today's view
   const handleFinish = () => {
-    if (extractedRoadmap) {
-      generateDailyTasksFromRoadmap(extractedRoadmap, {
-        targetRole: planRole,
-        dailyTargetHours: planHours,
-        targetDate: planDate
-      });
-    }
     if (onComplete) onComplete();
     setActiveTab('today');
   };
@@ -1031,7 +1039,7 @@ export const RoadmapUploadFlow = ({ onCancel, onComplete }) => {
                 Today's tasks
               </div>
               <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
-                6
+                {generatedTasksList.length > 0 ? generatedTasksList.length : 6}
               </div>
             </div>
 

@@ -622,6 +622,7 @@ export const AppProvider = ({ children }) => {
       if (res.success) {
         await hydrateFromCloud(res.token);
         setIsAuthModalOpen(false);
+        setActiveTab('today');
         showToast('Welcome back! 👋', `Logged in as ${res.user.name}`);
         return { success: true, user: res.user };
       }

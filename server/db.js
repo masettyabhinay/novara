@@ -90,7 +90,8 @@ const DEFAULT_DB_STATE = {
   },
   readiness: {
     usr_alex_rivera: JSON.parse(JSON.stringify(INITIAL_READINESS_METRICS))
-  }
+  },
+  uploadedFiles: {}
 };
 
 function hashPassword(password) {
@@ -614,10 +615,70 @@ export function toggleSubtaskOnServer(userId, taskId, subtaskId) {
 
 export function saveUserDailyTasks(userId, roadmap, tasks) {
   const db = loadDb();
-  db.roadmaps[userId] = roadmap;
-  db.tasks[userId] = tasks;
+  if (roadmap) {
+    db.roadmaps[userId] = roadmap;
+  }
+
+  // Merge tasks preserving completion state if any tasks were already completed
+  const existingTasks = db.tasks[userId] || [];
+  const completedMap = new Map();
+  for (const t of existingTasks) {
+    if (t.completed) {
+      completedMap.set(t.id, t);
+      if (t.name) completedMap.set(t.name, t);
+    }
+  }
+
+  const mergedTasks = (tasks || []).map((t) => {
+    const existing = completedMap.get(t.id) || (t.name ? completedMap.get(t.name) : null);
+    if (existing && existing.completed) {
+      return {
+        ...t,
+        completed: true,
+        completedAt: existing.completedAt || new Date().toISOString(),
+        subtasks: t.subtasks ? t.subtasks.map((st) => ({ ...st, done: true })) : []
+      };
+    }
+    return t;
+  });
+
+  db.tasks[userId] = mergedTasks;
+
+  // Also ensure user profile hasCompletedOnboarding is true
+  const userIdx = db.users.findIndex((u) => u.id === userId);
+  if (userIdx !== -1) {
+    db.users[userIdx].hasCompletedOnboarding = true;
+    db.users[userIdx].updatedAt = new Date().toISOString();
+  }
+
   saveDb(db);
-  return { roadmap, tasks };
+  return { roadmap: db.roadmaps[userId], tasks: mergedTasks };
+}
+
+export function recordUploadedFile(userId, fileMeta) {
+  const db = loadDb();
+  if (!db.uploadedFiles) {
+    db.uploadedFiles = {};
+  }
+  if (!db.uploadedFiles[userId]) {
+    db.uploadedFiles[userId] = [];
+  }
+  const entry = {
+    id: fileMeta.fileId || `file_${Date.now()}`,
+    userId,
+    fileName: fileMeta.fileName,
+    sizeBytes: fileMeta.sizeBytes,
+    storageKey: fileMeta.storageKey,
+    uploadedAt: fileMeta.uploadedAt || new Date().toISOString()
+  };
+  db.uploadedFiles[userId].push(entry);
+  saveDb(db);
+  return entry;
+}
+
+export function getUserUploadedFiles(userId) {
+  const db = loadDb();
+  return (db.uploadedFiles && db.uploadedFiles[userId]) || [];
 }
 
 export function completeRevisionOnServer(userId, revId, grade = 'good') {
