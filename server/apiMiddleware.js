@@ -139,9 +139,60 @@ import {
   sanitizeAndValidateCalendarEventInput
 } from './validationService.js';
 
+import fs from 'fs';
+import path from 'path';
 import { dbAdapter } from './db/dbAdapter.js';
 import { fileStorageService } from './storageService.js';
 import { logger, ERROR_CATEGORIES } from './logger.js';
+
+export function getAppVersion() {
+  try {
+    const pkgPath = path.resolve(process.cwd(), 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      if (pkg.version) return pkg.version;
+    }
+  } catch {}
+  return '1.0.0';
+}
+
+export function getBuildCommit() {
+  const envCommit = process.env.RENDER_GIT_COMMIT || 
+                    process.env.GIT_COMMIT || 
+                    process.env.COMMIT_REF || 
+                    process.env.BUILD_COMMIT || 
+                    process.env.VERCEL_GIT_COMMIT_SHA;
+  if (envCommit && envCommit.trim()) {
+    return envCommit.trim();
+  }
+  try {
+    const gitHeadPath = path.resolve(process.cwd(), '.git', 'HEAD');
+    if (fs.existsSync(gitHeadPath)) {
+      const head = fs.readFileSync(gitHeadPath, 'utf8').trim();
+      if (head.startsWith('ref: ')) {
+        const refFile = head.slice(5).trim();
+        const refPath = path.resolve(process.cwd(), '.git', refFile);
+        if (fs.existsSync(refPath)) {
+          return fs.readFileSync(refPath, 'utf8').trim().slice(0, 7);
+        }
+        // Check packed-refs if ref file not found directly
+        const packedRefsPath = path.resolve(process.cwd(), '.git', 'packed-refs');
+        if (fs.existsSync(packedRefsPath)) {
+          const lines = fs.readFileSync(packedRefsPath, 'utf8').split('\n');
+          for (const line of lines) {
+            if (line.includes(refFile)) {
+              const [sha] = line.trim().split(' ');
+              if (sha && sha.length >= 7) return sha.slice(0, 7);
+            }
+          }
+        }
+      } else if (head.length >= 7) {
+        return head.slice(0, 7);
+      }
+    }
+  } catch {}
+  return '1.0.0-release';
+}
 
 function getAuthUserFromRequest(req) {
   const authHeader = req.headers['authorization'] || '';
@@ -180,41 +231,46 @@ export async function apiMiddlewareHandler(req, res, next) {
   const rawUrl = req.url || '';
   const pathname = rawUrl.split('?')[0];
 
-        // Apply defensive headers to all requests
-        applySecurityHeaders(res, req);
+  // -------------------------------------------------------------------
+  // RATE LIMITING & SECURITY DEFENSES
+  // -------------------------------------------------------------------
+  const ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
 
-        // Preflight OPTIONS handling
-        if (req.method === 'OPTIONS') {
-          res.statusCode = 204;
-          return res.end();
+    // Apply defensive headers to all requests
+    applySecurityHeaders(res, req);
+
+    // Preflight OPTIONS handling
+    if (req.method === 'OPTIONS') {
+      res.statusCode = 204;
+      return res.end();
+    }
+
+    // Only handle /api/ routes
+    if (!pathname.startsWith('/api/')) {
+      return next();
+    }
+
+    // -------------------------------------------------------------------
+    // 0. HEALTH CHECK ENDPOINT
+    // -------------------------------------------------------------------
+    if (req.method === 'GET' && pathname === '/api/health') {
+      const dbHealth = await dbAdapter.healthCheck();
+      const storageHealth = await fileStorageService.healthCheck();
+
+      return sendJson(res, 200, {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        version: getAppVersion(),
+        buildCommit: getBuildCommit(),
+        uptime: Math.round(process.uptime()),
+        environment: process.env.NODE_ENV || 'development',
+        services: {
+          server: 'online',
+          database: dbHealth.status === 'healthy' ? 'connected' : 'degraded',
+          storage: storageHealth.status === 'healthy' ? 'available' : 'degraded'
         }
-
-        // Only handle /api/ routes
-        if (!pathname.startsWith('/api/')) {
-          return next();
-        }
-
-        // -------------------------------------------------------------------
-        // 0. HEALTH CHECK ENDPOINT
-        // -------------------------------------------------------------------
-        if (req.method === 'GET' && pathname === '/api/health') {
-          const dbHealth = await dbAdapter.healthCheck();
-          const storageHealth = await fileStorageService.healthCheck();
-
-          return sendJson(res, 200, {
-            status: 'healthy',
-            timestamp: new Date().toISOString(),
-            version: '1.0.2',
-            buildCommit: '1.0.2-roadmap-pipeline-fixed',
-            uptime: Math.round(process.uptime()),
-            environment: process.env.NODE_ENV || 'development',
-            services: {
-              server: 'online',
-              database: dbHealth.status === 'healthy' ? 'connected' : 'degraded',
-              storage: storageHealth.status === 'healthy' ? 'available' : 'degraded'
-            }
-          }, req);
-        }
+      }, req);
+    }
 
         // -------------------------------------------------------------------
         // 1. AUTHENTICATION ENDPOINTS (WITH RATE LIMITING)
