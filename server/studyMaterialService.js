@@ -5,7 +5,7 @@
  * code implementations, practice challenges, and self-check questions.
  */
 
-import { classifyTaskDomain } from './revisionService.js';
+import { classifyTaskDomain, normalizeText } from './revisionService.js';
 
 // Server-side in-memory cache for generated study materials
 const STUDY_MATERIAL_CACHE = new Map();
@@ -1053,14 +1053,12 @@ export function getFallbackStudyMaterial(taskContextOrTopic) {
  * Generates a stable fingerprint cache key for a task's study material.
  */
 export function getStudyMaterialCacheKey(taskContext = {}) {
-  const taskId = taskContext.taskId || taskContext.id || '';
-  const taskTitle = taskContext.taskTitle || taskContext.taskName || taskContext.name || '';
-  const topic = taskContext.roadmapTopic || taskContext.topic || '';
-  const desc = taskContext.taskDescription || taskContext.description || '';
-  const duration = taskContext.durationMinutes || taskContext.estimatedMinutes || taskContext.duration || '';
-  const objectives = Array.isArray(taskContext.learningObjectives)
-    ? taskContext.learningObjectives.join(',')
-    : (taskContext.learningObjectives || '');
+  const taskId = normalizeText(taskContext.taskId || taskContext.id || '');
+  const taskTitle = normalizeText(taskContext.taskTitle || taskContext.taskName || taskContext.name || '');
+  const topic = normalizeText(taskContext.roadmapTopic || taskContext.topic || '');
+  const desc = normalizeText(taskContext.taskDescription || taskContext.description || '');
+  const duration = normalizeText(taskContext.durationMinutes || taskContext.estimatedMinutes || taskContext.duration || '');
+  const objectives = normalizeText(taskContext.learningObjectives || '');
   
   return `study_${taskId}_${taskTitle}_${topic}_${desc.slice(0, 30)}_${duration}_${objectives.slice(0, 30)}`.trim().toLowerCase().replace(/\s+/g, '_');
 }
@@ -1086,11 +1084,13 @@ export function setCachedStudyMaterial(cacheKey, material) {
  * Supplies high-yield structured answers when AI is offline or unavailable.
  */
 export function getFallbackTutorResponse(tutorContext = {}) {
-  const taskTitle = tutorContext.taskTitle || tutorContext.topic || 'Current Topic';
-  const roadmapTopic = tutorContext.roadmapTopic || tutorContext.topic || taskTitle;
-  const userQuery = (tutorContext.userQuery || '').trim().toLowerCase();
+  const taskTitle = normalizeText(tutorContext.taskTitle || tutorContext.topic || 'Current Topic');
+  const roadmapTopic = normalizeText(tutorContext.roadmapTopic || tutorContext.topic || taskTitle);
+  const userQuery = normalizeText(tutorContext.userQuery || tutorContext.prompt || tutorContext.message || '').toLowerCase();
   const actionType = tutorContext.actionType || 'custom_query';
-  const codeContext = tutorContext.codeContext || '';
+  const codeContext = typeof tutorContext.codeContext === 'string'
+    ? tutorContext.codeContext
+    : (tutorContext.codeContext?.code ? String(tutorContext.codeContext.code) : normalizeText(tutorContext.codeContext));
   const domain = classifyTaskDomain(tutorContext);
   const material = GROUNDED_STUDY_MATERIALS[domain] || null;
 

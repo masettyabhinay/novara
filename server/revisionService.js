@@ -967,17 +967,49 @@ const GROUNDED_QUESTION_BANKS = {
   ]
 };
 
+/**
+ * Safe text normalization helper
+ * Handles string, array, object, number, boolean, null, undefined without throwing TypeError
+ */
+export function normalizeText(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value.trim();
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => normalizeText(item))
+      .filter(Boolean)
+      .join(' ');
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (typeof value === 'object') {
+    try {
+      const extracted = value.name || value.title || value.text || value.code || value.description || value.label || value.query || '';
+      if (extracted) return normalizeText(extracted);
+      return Object.values(value)
+        .map((v) => normalizeText(v))
+        .filter(Boolean)
+        .join(' ');
+    } catch {
+      return '';
+    }
+  }
+  return String(value);
+}
+
 // Deterministic Task-to-Domain Classifier
 export function classifyTaskDomain(topicOrContext = '', fallbackCategory = '') {
   let topicOnly = '';
-  let cat = fallbackCategory || '';
+  let cat = normalizeText(fallbackCategory).toLowerCase();
   let text = '';
 
   if (typeof topicOrContext === 'object' && topicOrContext !== null) {
-    topicOnly = `${topicOrContext.roadmapTopic || ''} ${topicOrContext.taskTitle || ''} ${topicOrContext.topic || ''} ${topicOrContext.name || ''}`.trim().toLowerCase();
-    cat = (topicOrContext.taskCategory || topicOrContext.category || fallbackCategory || '').toLowerCase();
-    const desc = (topicOrContext.taskDescription || topicOrContext.description || '').toLowerCase();
-    const objectives = (topicOrContext.learningObjectives || '').toLowerCase();
+    const topicRaw = `${topicOrContext.roadmapTopic || ''} ${topicOrContext.taskTitle || ''} ${topicOrContext.topic || ''} ${topicOrContext.name || ''}`;
+    topicOnly = normalizeText(topicRaw).toLowerCase();
+    cat = normalizeText(topicOrContext.taskCategory || topicOrContext.category || fallbackCategory || '').toLowerCase();
+    const desc = normalizeText(topicOrContext.taskDescription || topicOrContext.description || '').toLowerCase();
+    const objectives = normalizeText(topicOrContext.learningObjectives || '').toLowerCase();
     text = `${topicOnly} ${desc} ${objectives} ${cat}`.toLowerCase();
   } else if (typeof topicOrContext === 'string') {
     topicOnly = topicOrContext.trim().toLowerCase();

@@ -16,7 +16,7 @@ import {
   extractSourceCurriculumBullets,
   validateCurriculumFaithfulness
 } from './roadmapService.js';
-import { classifyTaskDomain } from './revisionService.js';
+import { classifyTaskDomain, normalizeText } from './revisionService.js';
 
 // =============================================================================
 // 1. BASE AI PROVIDER (Abstract Interface)
@@ -1144,16 +1144,14 @@ export async function generateTaskRevisionQuiz(taskContext = {}) {
   }
 
   // Normalize task context fields
-  const taskTitle = taskContext.taskTitle || taskContext.taskName || taskContext.topicName || taskContext.topic || 'Core Curriculum Concept';
-  const taskDescription = taskContext.taskDescription || taskContext.description || 'Practice and comprehension of core curriculum topic.';
-  const roadmapPhase = taskContext.roadmapPhase || taskContext.phase || '';
-  const roadmapTopic = taskContext.roadmapTopic || taskContext.topic || taskTitle;
-  const taskCategory = taskContext.taskCategory || taskContext.category || 'DSA';
-  const difficulty = (taskContext.difficulty || 'Medium').toLowerCase();
-  const learningObjectives = Array.isArray(taskContext.learningObjectives)
-    ? taskContext.learningObjectives.join(', ')
-    : (taskContext.learningObjectives || 'Understand and apply core concepts.');
-  const relevantMetadata = taskContext.relevantMetadata || taskContext.metadata || '';
+  const taskTitle = normalizeText(taskContext.taskTitle || taskContext.taskName || taskContext.topicName || taskContext.topic || 'Core Curriculum Concept');
+  const taskDescription = normalizeText(taskContext.taskDescription || taskContext.description || 'Practice and comprehension of core curriculum topic.');
+  const roadmapPhase = normalizeText(taskContext.roadmapPhase || taskContext.phase || '');
+  const roadmapTopic = normalizeText(taskContext.roadmapTopic || taskContext.topic || taskTitle);
+  const taskCategory = normalizeText(taskContext.taskCategory || taskContext.category || 'DSA');
+  const difficulty = normalizeText(taskContext.difficulty || 'Medium').toLowerCase();
+  const learningObjectives = normalizeText(taskContext.learningObjectives || 'Understand and apply core concepts.');
+  const relevantMetadata = normalizeText(taskContext.relevantMetadata || taskContext.metadata || '');
   const count = typeof taskContext.count === 'number' ? taskContext.count : 5;
 
   const taskDomain = classifyTaskDomain(taskContext);
@@ -1697,6 +1695,7 @@ Do not include content from other domains (e.g., STAR framework, resume content,
 }
 
 /**
+ * 7. Interactive AI Study Tutor Response Validation
  * Validates AI Tutor response quality, relevance, and cross-domain anti-contamination.
  */
 export function validateTaskTutorResponse(rawAnswer, tutorContext = {}) {
@@ -1713,7 +1712,7 @@ export function validateTaskTutorResponse(rawAnswer, tutorContext = {}) {
 
   const targetDomain = classifyTaskDomain(tutorContext);
   const disallowed = DOMAIN_DISALLOWED_PATTERNS[targetDomain] || [];
-  const targetTopic = (tutorContext.roadmapTopic || tutorContext.taskTitle || tutorContext.topic || '').toLowerCase();
+  const targetTopic = normalizeText(tutorContext.roadmapTopic || tutorContext.taskTitle || tutorContext.topic || '').toLowerCase();
 
   // 1. Prohibited cross-domain patterns check
   for (const pattern of disallowed) {
@@ -1755,18 +1754,18 @@ export async function generateTaskTutorResponse(tutorContext = {}) {
     return null;
   }
 
-  const taskTitle = tutorContext.taskTitle || tutorContext.taskName || tutorContext.name || tutorContext.topic || 'Core Curriculum Concept';
-  const taskDescription = tutorContext.taskDescription || tutorContext.description || 'Study and master core concept.';
-  const roadmapPhase = tutorContext.roadmapPhase || tutorContext.phase || '';
-  const roadmapTopic = tutorContext.roadmapTopic || tutorContext.topic || taskTitle;
-  const taskCategory = tutorContext.taskCategory || tutorContext.category || 'DSA';
-  const difficulty = (tutorContext.difficulty || 'Medium').toLowerCase();
-  const learningObjectives = Array.isArray(tutorContext.learningObjectives)
-    ? tutorContext.learningObjectives.join(', ')
-    : (tutorContext.learningObjectives || 'Understand and apply core concepts.');
-  const userQuery = tutorContext.userQuery || tutorContext.prompt || tutorContext.message || 'Explain this concept.';
+  const taskTitle = normalizeText(tutorContext.taskTitle || tutorContext.taskName || tutorContext.name || tutorContext.topic || 'Core Curriculum Concept');
+  const taskDescription = normalizeText(tutorContext.taskDescription || tutorContext.description || 'Study and master core concept.');
+  const roadmapPhase = normalizeText(tutorContext.roadmapPhase || tutorContext.phase || '');
+  const roadmapTopic = normalizeText(tutorContext.roadmapTopic || tutorContext.topic || taskTitle);
+  const taskCategory = normalizeText(tutorContext.taskCategory || tutorContext.category || 'DSA');
+  const difficulty = normalizeText(tutorContext.difficulty || 'Medium').toLowerCase();
+  const learningObjectives = normalizeText(tutorContext.learningObjectives || 'Understand and apply core concepts.');
+  const userQuery = normalizeText(tutorContext.userQuery || tutorContext.prompt || tutorContext.message || 'Explain this concept.');
   const actionType = tutorContext.actionType || 'custom_query';
-  const codeContext = tutorContext.codeContext || '';
+  const codeContext = typeof tutorContext.codeContext === 'string'
+    ? tutorContext.codeContext
+    : (tutorContext.codeContext?.code ? String(tutorContext.codeContext.code) : normalizeText(tutorContext.codeContext));
   const taskDomain = classifyTaskDomain(tutorContext);
 
   // Build conversation history string (last 4 turns)

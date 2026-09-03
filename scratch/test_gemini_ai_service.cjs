@@ -1458,6 +1458,95 @@ async function runTests() {
   assert(aiTutorResult.answer.includes('Time Complexity: O(N)'), 'Answer includes verified complexity');
   console.log('✅ PASS: Gemini AI Tutor generation succeeded with conversation context & complexity analysis');
 
+  // 6d. TYPE NORMALIZATION REGRESSION TESTS: learningObjectives as Array / String / Empty / Undefined / Null
+  console.log('\n[Tutor Type Normalization] Testing learningObjectives across all types (Array, String, Empty Array, Undefined, Null)...');
+
+  const { normalizeText, classifyTaskDomain } = await import('file:///f:/NOVARA/server/revisionService.js');
+
+  // Helper unit assertions
+  assert.strictEqual(normalizeText(['Implement optimal solution', 'Analyze complexity']), 'Implement optimal solution Analyze complexity');
+  assert.strictEqual(normalizeText('Direct string objective'), 'Direct string objective');
+  assert.strictEqual(normalizeText([]), '');
+  assert.strictEqual(normalizeText(undefined), '');
+  assert.strictEqual(normalizeText(null), '');
+  assert.strictEqual(normalizeText(123), '123');
+  assert.strictEqual(normalizeText({ name: 'Nested Object' }), 'Nested Object');
+  console.log('✅ PASS: normalizeText helper unit tests passed across all types');
+
+  const learningObjectivesVariants = [
+    { label: 'Array<string>', value: ['Implement optimal solution', 'Analyze time and space complexity'] },
+    { label: 'Single string', value: 'Master two pointers and sliding window constraints' },
+    { label: 'Empty array', value: [] },
+    { label: 'Undefined', value: undefined },
+    { label: 'Null', value: null }
+  ];
+
+  for (const variant of learningObjectivesVariants) {
+    const contextWithVariant = {
+      taskTitle: 'Arrays and String Manipulation Practice',
+      roadmapTopic: 'Arrays and strings',
+      taskCategory: 'DSA',
+      learningObjectives: variant.value,
+      difficulty: 'Medium',
+      actionType: 'step_by_step'
+    };
+
+    // 1. Test classifyTaskDomain does not throw
+    const domainClassified = classifyTaskDomain(contextWithVariant);
+    assert.strictEqual(domainClassified, 'arrays', `classifyTaskDomain resolves 'arrays' for learningObjectives (${variant.label})`);
+
+    // 2. Test getFallbackTutorResponse does not throw and generates valid response
+    const fallbackResp = getFallbackTutorResponse(contextWithVariant);
+    assert(fallbackResp && fallbackResp.answer && fallbackResp.answer.length > 20, `getFallbackTutorResponse succeeds for learningObjectives (${variant.label})`);
+
+    // 3. Test validateTaskTutorResponse does not throw
+    const validationCheck = validateTaskTutorResponse(fallbackResp.answer, contextWithVariant);
+    assert(validationCheck.valid === true, `validateTaskTutorResponse succeeds for learningObjectives (${variant.label})`);
+
+    // 4. Test generateTaskTutorResponse with AI Provider
+    const aiResp = await generateTaskTutorResponse(contextWithVariant);
+    assert(aiResp !== null, `generateTaskTutorResponse succeeds for learningObjectives (${variant.label})`);
+
+    console.log(`✅ PASS: learningObjectives as ${variant.label} successfully handled without TypeError`);
+  }
+
+  // 6e. Test all Tutor action types with Array learningObjectives on Arrays task
+  console.log('\n[Tutor Action Types Grounding] Testing all action types with Array learningObjectives...');
+  const arrayTaskCtx = {
+    taskTitle: 'Arrays and strings — Solve 2 problems',
+    roadmapTopic: 'Arrays and strings',
+    taskCategory: 'DSA',
+    learningObjectives: ['Implement optimal solution', 'Analyze time and space complexity'],
+    difficulty: 'Medium'
+  };
+
+  const actionTypesToTest = [
+    { action: 'explain_simpler', prompt: 'Explain two pointers simply' },
+    { action: 'another_example', prompt: 'Give another example' },
+    { action: 'practice_problem', prompt: 'Give me a practice problem' },
+    { action: 'step_by_step', prompt: 'Explain step-by-step' },
+    { action: 'explain_code', prompt: 'Explain this code', codeContext: 'function twoSum(arr, target) { let l = 0, r = arr.length - 1; while (l < r) { ... } }' },
+    { action: 'custom_query', prompt: 'Why does Kadane algorithm work?' }
+  ];
+
+  for (const act of actionTypesToTest) {
+    const actResult = getFallbackTutorResponse({
+      ...arrayTaskCtx,
+      actionType: act.action,
+      userQuery: act.prompt,
+      codeContext: act.codeContext
+    });
+
+    assert(actResult && actResult.answer, `Action ${act.action} produced an answer`);
+    
+    // Anti-contamination check: STAR/HR must not appear
+    const lowerAns = actResult.answer.toLowerCase();
+    assert(!lowerAns.includes('star framework'), `Action ${act.action} does not leak STAR framework`);
+    assert(!lowerAns.includes('behavioral interview'), `Action ${act.action} does not leak behavioral interview`);
+
+    console.log(`✅ PASS: Tutor action "${act.action}" verified with Array learningObjectives and strict anti-contamination`);
+  }
+
   // Reset provider to live default
   resetAIProvider();
 
