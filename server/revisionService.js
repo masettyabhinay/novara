@@ -315,7 +315,7 @@ const GROUNDED_QUESTION_BANKS = {
     }
   ],
 
-  // Core CS - DBMS & SQL
+  // Core CS - DBMS
   'dbms': [
     {
       id: 'q_db_1',
@@ -335,21 +335,6 @@ const GROUNDED_QUESTION_BANKS = {
     {
       id: 'q_db_2',
       type: 'mcq',
-      question: 'What is the key difference between RANK() and DENSE_RANK() in SQL window functions?',
-      options: [
-        'RANK() leaves gaps after ties (e.g. 1, 2, 2, 4); DENSE_RANK() does not leave gaps (e.g. 1, 2, 2, 3)',
-        'DENSE_RANK() only works on unique values',
-        'RANK() is an aggregate function while DENSE_RANK() is a scalar function',
-        'There is no difference'
-      ],
-      correctAnswer: 0,
-      correctAnswerText: 'RANK() leaves gaps after ties (e.g. 1, 2, 2, 4); DENSE_RANK() does not leave gaps (e.g. 1, 2, 2, 3)',
-      explanation: 'RANK() skips rank values following duplicates, whereas DENSE_RANK() produces consecutive rank numbers.',
-      testedSubconcept: 'SQL Window Functions'
-    },
-    {
-      id: 'q_db_3',
-      type: 'mcq',
       question: 'Why can a database table have only ONE Clustered Index?',
       options: [
         'Because the clustered index defines the physical sorting order of actual data rows on disk',
@@ -363,7 +348,7 @@ const GROUNDED_QUESTION_BANKS = {
       testedSubconcept: 'Clustered vs Non-Clustered Indexes'
     },
     {
-      id: 'q_db_4',
+      id: 'q_db_3',
       type: 'mcq',
       question: 'In relational database transactions, what concurrency anomaly does the REPEATABLE READ isolation level prevent?',
       options: [
@@ -378,7 +363,71 @@ const GROUNDED_QUESTION_BANKS = {
       testedSubconcept: 'Transaction Isolation Levels'
     },
     {
+      id: 'q_db_4',
+      type: 'mcq',
+      question: 'What is the primary objective of Database Normalization (e.g. 1NF, 2NF, 3NF, BCNF)?',
+      options: [
+        'To reduce data redundancy and eliminate insertion, update, and deletion anomalies',
+        'To maximize disk space consumption',
+        'To merge all database tables into a single large table',
+        'To disable primary key constraints'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'To reduce data redundancy and eliminate insertion, update, and deletion anomalies',
+      explanation: 'Normalization organizes relational tables to eliminate redundant data and avoid data modification anomalies by enforcing functional dependencies.',
+      testedSubconcept: 'Database Normalization'
+    },
+    {
       id: 'q_db_5',
+      type: 'mcq',
+      question: 'Why are B+ Trees preferred over Binary Search Trees or Hash Tables for database indexing?',
+      options: [
+        'B+ Trees have high fanout minimizing disk I/O seek operations and linked leaf nodes for fast range queries',
+        'B+ Trees require zero disk storage',
+        'Hash tables cannot store numeric integers',
+        'Binary search trees are faster on disk'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'B+ Trees have high fanout minimizing disk I/O seek operations and linked leaf nodes for fast range queries',
+      explanation: 'High branching factor keeps tree depth shallow (2-3 disk reads) while sequential leaf pointers enable efficient range scans (e.g. BETWEEN, >, <).',
+      testedSubconcept: 'B+ Tree Indexing'
+    }
+  ],
+
+  // Core CS - SQL
+  'sql': [
+    {
+      id: 'q_sql_1',
+      type: 'mcq',
+      question: 'What is the key difference between INNER JOIN and LEFT OUTER JOIN in SQL?',
+      options: [
+        'INNER JOIN returns only matching rows from both tables; LEFT JOIN returns all rows from left table plus matched rows from right table (with NULLs for unmatched)',
+        'INNER JOIN returns all rows from right table only',
+        'LEFT JOIN is only used for temporary tables',
+        'INNER JOIN creates a Cartesian product by default'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'INNER JOIN returns only matching rows from both tables; LEFT JOIN returns all rows from left table plus matched rows from right table (with NULLs for unmatched)',
+      explanation: 'INNER JOIN filters out rows that lack matching keys in both tables. LEFT OUTER JOIN retains every record from the left table and inserts NULL for missing right-table columns.',
+      testedSubconcept: 'SQL Joins'
+    },
+    {
+      id: 'q_sql_2',
+      type: 'mcq',
+      question: 'What is the key difference between RANK() and DENSE_RANK() in SQL window functions?',
+      options: [
+        'RANK() leaves gaps after ties (e.g. 1, 2, 2, 4); DENSE_RANK() does not leave gaps (e.g. 1, 2, 2, 3)',
+        'DENSE_RANK() only works on unique values',
+        'RANK() is an aggregate function while DENSE_RANK() is a scalar function',
+        'There is no difference'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'RANK() leaves gaps after ties (e.g. 1, 2, 2, 4); DENSE_RANK() does not leave gaps (e.g. 1, 2, 2, 3)',
+      explanation: 'RANK() skips rank values following duplicates, whereas DENSE_RANK() produces consecutive rank numbers.',
+      testedSubconcept: 'SQL Window Functions'
+    },
+    {
+      id: 'q_sql_3',
       type: 'mcq',
       question: 'Which SQL clause is used to filter aggregated group results produced by the GROUP BY clause?',
       options: ['HAVING', 'WHERE', 'ORDER BY', 'LIMIT'],
@@ -386,6 +435,31 @@ const GROUNDED_QUESTION_BANKS = {
       correctAnswerText: 'HAVING',
       explanation: 'WHERE filters individual records before aggregation; HAVING filters aggregated groups after GROUP BY (e.g. `HAVING COUNT(*) > 5`).',
       testedSubconcept: 'HAVING vs WHERE'
+    },
+    {
+      id: 'q_sql_4',
+      type: 'mcq',
+      question: 'What is the purpose of the `COALESCE(column, default_value)` function in SQL?',
+      options: [
+        'Returns the first non-null value in a list of arguments',
+        'Calculates the cumulative sum of a column',
+        'Converts strings to uppercase',
+        'Deletes null rows from disk'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'Returns the first non-null value in a list of arguments',
+      explanation: 'COALESCE evaluates arguments in order and returns the current value of the first expression that does not evaluate to NULL.',
+      testedSubconcept: 'COALESCE & NULL Handling'
+    },
+    {
+      id: 'q_sql_5',
+      type: 'mcq',
+      question: 'In SQL window functions, what clause partitions the result set into subsets before applying the window calculation?',
+      options: ['PARTITION BY', 'GROUP BY', 'DISTINCT BY', 'SPLIT BY'],
+      correctAnswer: 0,
+      correctAnswerText: 'PARTITION BY',
+      explanation: 'PARTITION BY divides query rows into groups (partitions) over which the window function operates independently.',
+      testedSubconcept: 'PARTITION BY Clause'
     }
   ],
 
@@ -893,57 +967,229 @@ const GROUNDED_QUESTION_BANKS = {
   ]
 };
 
-// Fallback topic matcher
-function matchQuestionBank(topicOrContext = '', category = '') {
-  let combined = '';
+// Deterministic Task-to-Domain Classifier
+export function classifyTaskDomain(topicOrContext = '', fallbackCategory = '') {
+  let topicOnly = '';
+  let cat = fallbackCategory || '';
+  let text = '';
+
   if (typeof topicOrContext === 'object' && topicOrContext !== null) {
-    combined = `${topicOrContext.taskTitle || ''} ${topicOrContext.taskDescription || ''} ${topicOrContext.roadmapTopic || ''} ${topicOrContext.roadmapPhase || ''} ${topicOrContext.taskCategory || ''} ${topicOrContext.topic || ''} ${topicOrContext.category || ''}`.toLowerCase();
-  } else {
-    combined = `${topicOrContext} ${category}`.toLowerCase();
+    topicOnly = `${topicOrContext.roadmapTopic || ''} ${topicOrContext.taskTitle || ''} ${topicOrContext.topic || ''} ${topicOrContext.name || ''}`.trim().toLowerCase();
+    cat = (topicOrContext.taskCategory || topicOrContext.category || fallbackCategory || '').toLowerCase();
+    const desc = (topicOrContext.taskDescription || topicOrContext.description || '').toLowerCase();
+    const objectives = (topicOrContext.learningObjectives || '').toLowerCase();
+    text = `${topicOnly} ${desc} ${objectives} ${cat}`.toLowerCase();
+  } else if (typeof topicOrContext === 'string') {
+    topicOnly = topicOrContext.trim().toLowerCase();
+    text = `${topicOnly} ${cat}`.toLowerCase();
   }
 
-  if (combined.includes('linked list') || combined.includes('pointer manipulation') || combined.includes('singly') || combined.includes('doubly linked')) {
-    return GROUNDED_QUESTION_BANKS['linked_lists'];
+  // 1. PRIMARY: Match specific curriculum topic & task title directly (Highest Precedence)
+
+  // DSA - Linked Lists
+  if (topicOnly.includes('linked list') || topicOnly.includes('pointer manipulation') || topicOnly.includes('singly') || topicOnly.includes('doubly linked') || topicOnly.includes('linkedlist')) {
+    return 'linked_lists';
   }
-  if (combined.includes('binary search') || combined.includes('searching') || combined.includes('search space')) {
-    return GROUNDED_QUESTION_BANKS['binary_search'];
+
+  // DSA - Binary Search
+  if (topicOnly.includes('binary search') || topicOnly.includes('search space') || topicOnly.includes('rotated array') || topicOnly.includes('monotonic')) {
+    return 'binary_search';
   }
-  if (combined.includes('sql') || combined.includes('join') || combined.includes('window function') || combined.includes('having') || combined.includes('aggregation') || combined.includes('query')) {
-    return GROUNDED_QUESTION_BANKS['dbms'];
+
+  // DSA - Arrays & Strings
+  if (
+    topicOnly.includes('array') ||
+    topicOnly.includes('string') ||
+    topicOnly.includes('two pointer') ||
+    topicOnly.includes('sliding window') ||
+    topicOnly.includes('kadane') ||
+    topicOnly.includes('prefix sum') ||
+    topicOnly.includes('subarray') ||
+    topicOnly.includes('anagram') ||
+    topicOnly.includes('palindrome')
+  ) {
+    return 'arrays';
   }
-  if (combined.includes('dbms') || combined.includes('database') || combined.includes('acid') || combined.includes('transaction') || combined.includes('normalization') || combined.includes('index')) {
-    return GROUNDED_QUESTION_BANKS['dbms'];
+
+  // Core CS - SQL (Specific query concepts)
+  if (
+    topicOnly.includes('sql') ||
+    topicOnly.includes('join') ||
+    topicOnly.includes('window function') ||
+    topicOnly.includes('having') ||
+    topicOnly.includes('group by') ||
+    topicOnly.includes('queries') ||
+    topicOnly.includes('subquery') ||
+    topicOnly.includes('coalesce')
+  ) {
+    return 'sql';
   }
-  if (combined.includes('os') || combined.includes('operating system') || combined.includes('process') || combined.includes('thread') || combined.includes('deadlock') || combined.includes('concurrency') || combined.includes('virtual memory') || combined.includes('paging') || combined.includes('cpu scheduling')) {
-    return GROUNDED_QUESTION_BANKS['operating_systems'];
+
+  // Core CS - DBMS (Architecture & transactions)
+  if (
+    topicOnly.includes('dbms') ||
+    topicOnly.includes('database') ||
+    topicOnly.includes('acid') ||
+    topicOnly.includes('transaction') ||
+    topicOnly.includes('normalization') ||
+    topicOnly.includes('clustered index') ||
+    topicOnly.includes('b-tree') ||
+    topicOnly.includes('concurrency control') ||
+    topicOnly.includes('rdbms')
+  ) {
+    return 'dbms';
   }
-  if (combined.includes('network') || combined.includes('tcp') || combined.includes('ip') || combined.includes('osi') || combined.includes('dns') || combined.includes('http') || combined.includes('udp') || combined.includes('handshake')) {
-    return GROUNDED_QUESTION_BANKS['computer_networks'];
+
+  // Core CS - Operating Systems
+  if (
+    topicOnly.includes('operating system') ||
+    topicOnly.includes('os ') ||
+    topicOnly === 'os' ||
+    topicOnly.includes('process') ||
+    topicOnly.includes('thread') ||
+    topicOnly.includes('deadlock') ||
+    topicOnly.includes('paging') ||
+    topicOnly.includes('virtual memory') ||
+    topicOnly.includes('cpu scheduling') ||
+    topicOnly.includes('mutex') ||
+    topicOnly.includes('semaphore') ||
+    topicOnly.includes('thrashing')
+  ) {
+    return 'operating_systems';
   }
-  if (combined.includes('react') || combined.includes('hook') || combined.includes('component') || combined.includes('props') || combined.includes('state') || combined.includes('jsx') || combined.includes('frontend')) {
-    return GROUNDED_QUESTION_BANKS['react'];
+
+  // Core CS - Computer Networks
+  if (
+    topicOnly.includes('network') ||
+    topicOnly.includes('tcp') ||
+    topicOnly.includes('udp') ||
+    topicOnly.includes('osi') ||
+    topicOnly.includes('dns') ||
+    topicOnly.includes('ip address') ||
+    topicOnly.includes('3-way handshake') ||
+    topicOnly.includes('router') ||
+    topicOnly.includes('subnet') ||
+    topicOnly.includes('tls') ||
+    topicOnly.includes('socket')
+  ) {
+    return 'computer_networks';
   }
-  if (combined.includes('rest') || combined.includes('api') || combined.includes('endpoint') || combined.includes('http method') || combined.includes('status code')) {
-    return GROUNDED_QUESTION_BANKS['rest_apis'];
+
+  // Development - React
+  if (
+    topicOnly.includes('react') ||
+    topicOnly.includes('hook') ||
+    topicOnly.includes('useeffect') ||
+    topicOnly.includes('usestate') ||
+    topicOnly.includes('jsx') ||
+    topicOnly.includes('virtual dom') ||
+    topicOnly.includes('component')
+  ) {
+    return 'react';
   }
-  if (combined.includes('git') || combined.includes('github') || combined.includes('branch') || combined.includes('merge') || combined.includes('rebase') || combined.includes('commit') || combined.includes('pull request')) {
-    return GROUNDED_QUESTION_BANKS['git_github'];
+
+  // Development - REST APIs
+  if (
+    topicOnly.includes('rest') ||
+    topicOnly.includes('api') ||
+    topicOnly.includes('endpoint') ||
+    topicOnly.includes('http method') ||
+    topicOnly.includes('status code') ||
+    topicOnly.includes('idempotent')
+  ) {
+    return 'rest_apis';
   }
-  if (combined.includes('aptitude') || combined.includes('speed') || combined.includes('train') || combined.includes('work') || combined.includes('percentage') || combined.includes('probability') || combined.includes('permutation') || combined.includes('reasoning')) {
-    return GROUNDED_QUESTION_BANKS['aptitude'];
+
+  // Development - Git & GitHub
+  if (
+    topicOnly.includes('git') ||
+    topicOnly.includes('github') ||
+    topicOnly.includes('branch') ||
+    topicOnly.includes('merge') ||
+    topicOnly.includes('rebase') ||
+    topicOnly.includes('pull request') ||
+    topicOnly.includes('staging')
+  ) {
+    return 'git_github';
   }
-  if (combined.includes('resume') || combined.includes('interview') || combined.includes('star') || combined.includes('behavioral') || combined.includes('hr') || combined.includes('mock') || combined.includes('explanation')) {
-    return GROUNDED_QUESTION_BANKS['resume_interview'];
+
+  // Aptitude
+  if (
+    topicOnly.includes('aptitude') ||
+    topicOnly.includes('speed math') ||
+    topicOnly.includes('time and work') ||
+    topicOnly.includes('speed and distance') ||
+    topicOnly.includes('percentage') ||
+    topicOnly.includes('probability') ||
+    topicOnly.includes('permutation') ||
+    topicOnly.includes('quantitative')
+  ) {
+    return 'aptitude';
   }
-  if (combined.includes('system design') || combined.includes('oop') || combined.includes('scaling') || combined.includes('cap theorem') || combined.includes('caching') || combined.includes('load balancer') || combined.includes('hashing')) {
-    return GROUNDED_QUESTION_BANKS['system_design'];
+
+  // Resume & Interview Preparation (Strict: NEVER match on generic word "interview" alone)
+  if (
+    topicOnly.includes('resume') ||
+    topicOnly.includes('star framework') ||
+    topicOnly.includes('star method') ||
+    topicOnly.includes('elevator pitch') ||
+    topicOnly.includes('behavioral interview') ||
+    topicOnly.includes('hr interview') ||
+    topicOnly === 'resume preparation' ||
+    topicOnly === 'resume prep' ||
+    topicOnly === 'interview preparation'
+  ) {
+    return 'resume_interview';
   }
-  if (combined.includes('array') || combined.includes('string') || combined.includes('sliding window') || combined.includes('two pointer') || combined.includes('kadane') || combined.includes('prefix sum') || combined.includes('dsa')) {
-    return GROUNDED_QUESTION_BANKS['arrays'];
+
+  // System Design
+  if (
+    topicOnly.includes('system design') ||
+    topicOnly.includes('cap theorem') ||
+    topicOnly.includes('consistent hashing') ||
+    topicOnly.includes('horizontal scaling') ||
+    topicOnly.includes('load balancer') ||
+    topicOnly.includes('caching')
+  ) {
+    return 'system_design';
   }
+
+  // 2. SECONDARY: Match on detailed task description / objectives if topic was generic
+  if (text.includes('linked list') || text.includes('pointer manipulation')) return 'linked_lists';
+  if (text.includes('binary search')) return 'binary_search';
+  if (text.includes('array') || text.includes('string') || text.includes('sliding window') || text.includes('two pointer') || text.includes('kadane')) return 'arrays';
+  if (text.includes('sql') || text.includes('window function') || text.includes('join')) return 'sql';
+  if (text.includes('dbms') || text.includes('acid') || text.includes('normalization') || text.includes('transaction')) return 'dbms';
+  if (text.includes('operating system') || text.includes('deadlock') || text.includes('mutex') || text.includes('paging') || text.includes('virtual memory')) return 'operating_systems';
+  if (text.includes('tcp') || text.includes('osi layer') || text.includes('dns resolution') || text.includes('computer network')) return 'computer_networks';
+  if (text.includes('react') || text.includes('useeffect') || text.includes('jsx')) return 'react';
+  if (text.includes('rest api') || text.includes('http status') || text.includes('idempotent')) return 'rest_apis';
+  if (text.includes('git') || text.includes('github') || text.includes('rebase')) return 'git_github';
+  if (text.includes('aptitude') || text.includes('speed math') || text.includes('probability')) return 'aptitude';
+  if (text.includes('resume') || text.includes('star framework') || text.includes('behavioral question')) return 'resume_interview';
+  if (text.includes('system design') || text.includes('cap theorem')) return 'system_design';
+
+  // 3. TERTIARY: Match category only if topic wasn't classified
+  if (cat === 'dsa') return 'arrays';
+  if (cat === 'sql') return 'sql';
+  if (cat === 'core cs') return 'dbms';
+  if (cat === 'development') return 'react';
+  if (cat === 'aptitude') return 'aptitude';
+  if (cat === 'interview' && (topicOnly.includes('resume') || topicOnly.includes('star'))) return 'resume_interview';
 
   return null;
 }
+
+// Fallback topic matcher using deterministic classifier
+export function matchQuestionBank(topicOrContext = '', category = '') {
+  const domain = classifyTaskDomain(topicOrContext, category);
+  if (domain && GROUNDED_QUESTION_BANKS[domain]) {
+    return GROUNDED_QUESTION_BANKS[domain];
+  }
+  return null;
+}
+
+export { GROUNDED_QUESTION_BANKS };
 
 /**
  * Calculates dynamic priority score for a revision item.

@@ -797,13 +797,103 @@ async function runTests() {
   });
   assert.strictEqual(duplicateCompletion.streak.currentStreak, initialStreak, 'Duplicate completion is idempotent');
 
-  // Clean up test records
-  const dbClean = loadDb();
-  delete dbClean.tasks[testUserId];
-  delete dbClean.focusSessions[testUserId];
-  delete dbClean.revisions[testUserId];
-  delete dbClean.streaks[testUserId];
-  saveDb(dbClean);
+  // E. Regression Test: "Arrays and strings" Grounding & Anti-STAR Framework
+  console.log('\n[Regression Test] Verifying "Arrays and strings" grounding & zero STAR framework leakage...');
+  const arraysTaskContext = {
+    taskTitle: 'Arrays and strings',
+    taskDescription: 'Solve 2 medium problems on subarray sums and string manipulation',
+    roadmapPhase: 'Phase 1 - Programming Foundations',
+    roadmapTopic: 'Arrays and strings',
+    taskCategory: 'DSA',
+    difficulty: 'Medium',
+    learningObjectives: 'Master two pointers, sliding window, and Kadane algorithm'
+  };
+
+  const arraysGroundedQuestions = generateRevisionQuestions(arraysTaskContext);
+  assert(arraysGroundedQuestions !== null, 'Grounded questions generated for "Arrays and strings"');
+  assert.strictEqual(arraysGroundedQuestions.length, 5, 'Exactly 5 questions generated');
+
+  for (const q of arraysGroundedQuestions) {
+    const fullQText = `${q.question} ${(q.options || []).join(' ')} ${q.explanation || ''}`.toLowerCase();
+    assert(!fullQText.includes('star framework'), 'Question must NOT contain "STAR framework"');
+    assert(!fullQText.includes('star method'), 'Question must NOT contain "STAR method"');
+    assert(!fullQText.includes('resume'), 'Question must NOT contain "resume"');
+    assert(!fullQText.includes('elevator pitch'), 'Question must NOT contain "elevator pitch"');
+    assert(!fullQText.includes('behavioral interview'), 'Question must NOT contain "behavioral interview"');
+    assert(!fullQText.includes('hr interview'), 'Question must NOT contain "HR interview"');
+    assert(
+      fullQText.includes('array') ||
+      fullQText.includes('subarray') ||
+      fullQText.includes('two pointers') ||
+      fullQText.includes('pointer') ||
+      fullQText.includes('kadane') ||
+      fullQText.includes('prefix sum') ||
+      fullQText.includes('sliding window') ||
+      fullQText.includes('sort'),
+      'Question is strictly relevant to Arrays and strings'
+    );
+  }
+
+  // F. Regression Test: Unrelated Gemini Response is Caught & Rejected by Relevance Validator
+  console.log('\n[Regression Test] Testing that Unrelated Gemini Question is Rejected & Retried/Failsafe...');
+  const { validateTaskQuizRelevance } = await import('file:///f:/NOVARA/server/aiService.js');
+  const contaminatedGeminiResponse = {
+    questions: [
+      {
+        question: 'What does the STAR framework stand for in behavioral and technical placement interviews?',
+        options: [
+          'Situation, Task, Action, Result',
+          'System, Timing, Algorithm, Response',
+          'Scope, Technique, Analysis, Review',
+          'Source, Testing, Assertion, Release'
+        ],
+        correctAnswer: 0,
+        explanation: 'STAR stands for Situation, Task, Action, Result.',
+        topic: 'Arrays and strings'
+      },
+      {
+        question: 'What is the time complexity of Kadane\'s algorithm?',
+        options: ['O(N)', 'O(N^2)', 'O(log N)', 'O(1)'],
+        correctAnswer: 0,
+        explanation: 'Kadane runs in O(N).',
+        topic: 'Arrays and strings'
+      },
+      {
+        question: 'How do two pointers work on a sorted array?',
+        options: ['Move left right based on sum', 'Random swap', 'Hash search', 'Sort twice'],
+        correctAnswer: 0,
+        explanation: 'Pointers move towards center.',
+        topic: 'Arrays and strings'
+      },
+      {
+        question: 'What is a prefix sum array?',
+        options: ['Cumulative sum array', 'Reverse array', 'Binary tree', 'Bitset'],
+        correctAnswer: 0,
+        explanation: 'Prefix sum stores cumulative sums.',
+        topic: 'Arrays and strings'
+      },
+      {
+        question: 'What is the space complexity of in-place array reversal?',
+        options: ['O(1)', 'O(N)', 'O(N^2)', 'O(log N)'],
+        correctAnswer: 0,
+        explanation: 'In-place reversal uses constant memory.',
+        topic: 'Arrays and strings'
+      }
+    ]
+  };
+
+  const relevanceCheck = validateTaskQuizRelevance(contaminatedGeminiResponse, arraysTaskContext, 'arrays');
+  assert(relevanceCheck.valid === false, 'Relevance validator successfully rejects contaminated STAR question in Arrays task');
+  assert(relevanceCheck.reason.includes('Question 1'), 'Validator explicitly flags Question 1 as cross-domain / unrelated');
+
+  // G. Test end-to-end AI generator when Gemini outputs unrelated questions (triggers retry/fallback)
+  const rogueProvider = new MockAIProvider({ configured: true });
+  rogueProvider.mockResponses.json = contaminatedGeminiResponse;
+  setAIProvider(rogueProvider);
+
+  // When AI returns contaminated response, generateTaskRevisionQuiz retries and if still invalid returns null for grounded fallback
+  const rejectedQuizResult = await generateTaskRevisionQuiz(arraysTaskContext);
+  assert(rejectedQuizResult === null, 'Contaminated AI response rejected without crashing, triggering grounded bank fallback');
 
   // Reset provider to live default
   resetAIProvider();

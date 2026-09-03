@@ -16,6 +16,7 @@ import {
   extractSourceCurriculumBullets,
   validateCurriculumFaithfulness
 } from './roadmapService.js';
+import { classifyTaskDomain } from './revisionService.js';
 
 // =============================================================================
 // 1. BASE AI PROVIDER (Abstract Interface)
@@ -916,7 +917,7 @@ REQUIRED JSON OUTPUT:
 }
 
 /**
- * Validates task-specific revision quiz output from Gemini.
+ * Validates task-specific revision quiz schema output from Gemini.
  */
 function validateTaskQuizSchema(parsed, expectedCount = 5) {
   if (!parsed || typeof parsed !== 'object') {
@@ -967,6 +968,169 @@ function validateTaskQuizSchema(parsed, expectedCount = 5) {
   return { valid: true, reason: null };
 }
 
+const DOMAIN_DISALLOWED_PATTERNS = {
+  arrays: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /tell\s*me\s*about\s*yourself/i,
+    /acid\s*properties/i,
+    /coffman\s*condition/i,
+    /tcp\s*3-way/i,
+    /virtual\s*dom/i,
+    /useeffect/i,
+    /git\s*rebase/i,
+    /deadlock\s*prevention/i
+  ],
+  linked_lists: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /acid\s*properties/i,
+    /coffman\s*condition/i,
+    /tcp\s*3-way/i,
+    /useeffect/i,
+    /git\s*rebase/i
+  ],
+  binary_search: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /acid\s*properties/i,
+    /coffman\s*condition/i,
+    /tcp\s*3-way/i,
+    /useeffect/i
+  ],
+  sql: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /floyd.*cycle/i,
+    /kadane/i,
+    /useeffect/i,
+    /tcp\s*3-way/i
+  ],
+  dbms: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /floyd.*cycle/i,
+    /kadane/i,
+    /useeffect/i,
+    /tcp\s*3-way/i
+  ],
+  operating_systems: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /floyd.*cycle/i,
+    /kadane/i,
+    /useeffect/i,
+    /react\s*hook/i
+  ],
+  computer_networks: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /floyd.*cycle/i,
+    /kadane/i,
+    /useeffect/i,
+    /acid\s*properties/i
+  ],
+  react: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /floyd.*cycle/i,
+    /kadane/i,
+    /acid\s*properties/i,
+    /coffman\s*condition/i,
+    /tcp\s*3-way/i
+  ],
+  rest_apis: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /floyd.*cycle/i,
+    /kadane/i,
+    /coffman\s*condition/i
+  ],
+  git_github: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /floyd.*cycle/i,
+    /kadane/i,
+    /coffman\s*condition/i
+  ],
+  aptitude: [
+    /star\s*(framework|method)/i,
+    /elevator\s*pitch/i,
+    /behavioral\s*interview/i,
+    /hr\s*interview/i,
+    /acid\s*properties/i,
+    /useeffect/i,
+    /git\s*rebase/i
+  ]
+};
+
+/**
+ * Validates domain relevance of all generated questions.
+ */
+export function validateTaskQuizRelevance(parsed, taskContext = {}, domain = '') {
+  if (!parsed || !Array.isArray(parsed.questions)) {
+    return { valid: false, reason: 'Questions array is missing.' };
+  }
+
+  const targetDomain = domain || classifyTaskDomain(taskContext);
+  const disallowed = DOMAIN_DISALLOWED_PATTERNS[targetDomain] || [];
+  const targetTopic = (taskContext.roadmapTopic || taskContext.taskTitle || taskContext.topic || '').toLowerCase();
+
+  for (let i = 0; i < parsed.questions.length; i++) {
+    const q = parsed.questions[i];
+    const fullText = `${q.question} ${(q.options || []).join(' ')} ${q.explanation || ''}`.toLowerCase();
+
+    // 1. Check for prohibited cross-domain patterns
+    for (const pattern of disallowed) {
+      if (pattern.test(fullText)) {
+        return {
+          valid: false,
+          reason: `Question ${i + 1} contains unrelated concept (${pattern.toString()}) not grounded in task "${targetTopic}" (${targetDomain}).`
+        };
+      }
+    }
+
+    // 2. Strict non-resume check: non-interview tasks must NEVER have STAR/resume/HR questions
+    if (targetDomain !== 'resume_interview') {
+      if (
+        fullText.includes('star framework') ||
+        fullText.includes('star method') ||
+        fullText.includes('behavioral interview') ||
+        fullText.includes('elevator pitch') ||
+        fullText.includes('tell me about yourself') ||
+        fullText.includes('hr interview')
+      ) {
+        return {
+          valid: false,
+          reason: `Question ${i + 1} contains HR/Behavioral interview concepts in a technical task "${targetTopic}".`
+        };
+      }
+    }
+  }
+
+  return { valid: true, reason: null };
+}
+
 /**
  * 6. Generic Task-Specific Revision Quiz Generation
  * Generates verified, task-grounded active recall questions dynamically for ANY completed learning task.
@@ -992,22 +1156,25 @@ export async function generateTaskRevisionQuiz(taskContext = {}) {
   const relevantMetadata = taskContext.relevantMetadata || taskContext.metadata || '';
   const count = typeof taskContext.count === 'number' ? taskContext.count : 5;
 
+  const taskDomain = classifyTaskDomain(taskContext);
+
   const prompt = `You are generating a knowledge-check quiz for a placement preparation learning task.
 
-TASK CONTEXT:
+TASK CONTEXT (PRIMARY & EXCLUSIVE CURRICULUM CONTEXT):
 - Task Title: ${taskTitle}
 - Task Description: ${taskDescription}
 - Roadmap Phase: ${roadmapPhase || 'Placement Preparation'}
 - Roadmap Topic: ${roadmapTopic}
 - Task Category: ${taskCategory}
+- Task Domain: ${taskDomain || 'General'}
 - Difficulty Level: ${difficulty}
 - Learning Objectives: ${learningObjectives}
 ${relevantMetadata ? `- Additional Context: ${relevantMetadata}\n` : ''}
 STRICT GROUNDING RULES:
-1. Generate questions ONLY from concepts supported by the supplied task title, task description, roadmap topic, and learning context.
-2. Do not assume the user studied concepts that are not represented in the provided context.
-3. Do not generate unrelated questions.
-4. Do not claim that the user learned something merely because it exists elsewhere in the roadmap.
+1. Generate questions ONLY about the completed task and its supplied learning context. Do not use unrelated topics from the user's roadmap, question banks, previous tasks, or general placement knowledge.
+2. Generate questions ONLY from concepts directly supported by the supplied task title "${taskTitle}" and roadmap topic "${roadmapTopic}".
+3. Do not assume the user studied concepts that are not represented in the provided context.
+4. Do not generate questions from unrelated domains (for example: NEVER generate STAR framework, HR, or Resume questions for technical topics like Arrays, SQL, or Operating Systems).
 5. Generate exactly ${count} objective questions.
 6. Appropriate question types:
    - Coding / DSA task: code/output tracing + core complexity/concept questions
@@ -1049,41 +1216,41 @@ REQUIRED JSON STRUCTURE:
   try {
     let result = await provider.generateJSON({
       prompt,
-      systemInstruction: 'You are generating a knowledge-check quiz for a placement preparation learning task. Generate questions ONLY from concepts supported by the supplied task title, task description, roadmap topic, and learning context. Do not assume concepts not in context. Output strictly valid JSON.',
-      schemaHint: 'JSON object with questions array of 5 task-grounded questions.'
+      systemInstruction: `You are generating an active revision quiz for a student who just finished studying "${taskTitle}". Generate questions ONLY about "${taskTitle}". Do not generate questions for other topics. Output strictly valid JSON.`,
+      schemaHint: `JSON object with questions array of ${count} task-grounded questions.`
     });
 
-    let validation = validateTaskQuizSchema(result, count);
+    let schemaValidation = validateTaskQuizSchema(result, count);
+    let relevanceValidation = schemaValidation.valid ? validateTaskQuizRelevance(result, taskContext, taskDomain) : { valid: false, reason: schemaValidation.reason };
 
-    // If schema validation failed, retry Gemini ONCE with targeted correction prompt
-    if (!validation.valid) {
-      logger.warn(`[AIService] Task revision quiz failed validation (${validation.reason}). Retrying Gemini with correction prompt...`);
+    // If validation failed, retry Gemini ONCE with targeted correction prompt
+    if (!schemaValidation.valid || !relevanceValidation.valid) {
+      const failureReason = !schemaValidation.valid ? schemaValidation.reason : relevanceValidation.reason;
+      logger.warn(`[AIService] Task revision quiz failed validation (${failureReason}). Retrying Gemini with targeted grounding prompt...`);
       try {
         const retryPrompt = `${prompt}
 
-CRITICAL CORRECTION REQUIRED:
-Your previous response failed validation because: ${validation.reason}.
-Ensure that:
-1. Exactly ${count} questions are returned in the "questions" array.
-2. Each question has exactly 4 distinct non-empty string options.
-3. "correctAnswer" is an integer index from 0 to 3.
-4. "explanation" is a clear educational explanation.
-5. Questions are strictly grounded in "${roadmapTopic}".`;
+CRITICAL GROUNDING ERROR IN PREVIOUS RESPONSE:
+Your previous response failed because: ${failureReason}.
+You MUST generate ${count} objective questions strictly testing "${taskTitle}" (${taskDomain || 'Curriculum Task'}).
+Do not include questions from other domains (e.g., STAR framework, resume questions, or unrelated CS topics).`;
 
         result = await provider.generateJSON({
           prompt: retryPrompt,
-          systemInstruction: 'You are an expert technical educator. Return only valid JSON with 5 strictly grounded quiz questions matching the exact schema.',
-          schemaHint: 'Valid JSON with exactly 5 grounded questions.'
+          systemInstruction: `You are an expert technical educator. Return only valid JSON with ${count} questions strictly grounded in "${taskTitle}". Never output questions for unrelated domains.`,
+          schemaHint: `Valid JSON with exactly ${count} grounded questions.`
         });
 
-        validation = validateTaskQuizSchema(result, count);
+        schemaValidation = validateTaskQuizSchema(result, count);
+        relevanceValidation = schemaValidation.valid ? validateTaskQuizRelevance(result, taskContext, taskDomain) : { valid: false, reason: schemaValidation.reason };
       } catch (retryErr) {
         logger.warn(`[AIService] Gemini task quiz retry failed: ${retryErr.message}`);
       }
     }
 
-    if (!validation.valid || !result || !Array.isArray(result.questions)) {
-      logger.warn(`[AIService] Task revision quiz rejected: ${validation.reason}. Falling back to grounded question bank.`);
+    if (!schemaValidation.valid || !relevanceValidation.valid || !result || !Array.isArray(result.questions)) {
+      const finalReason = !schemaValidation.valid ? schemaValidation.reason : (relevanceValidation.reason || 'Validation failed');
+      logger.warn(`[AIService] Task revision quiz rejected: ${finalReason}. Falling back to grounded question bank.`);
       return null;
     }
 
@@ -1108,7 +1275,7 @@ Ensure that:
         explanation: q.explanation ? q.explanation.trim() : 'Core principle validated.',
         difficulty: (q.difficulty || difficulty).toLowerCase(),
         topic: q.topic || roadmapTopic,
-        testedSubconcept: q.testedSubconcept || roadmapTopic
+        testedSubconcept: roadmapTopic
       };
     });
   } catch (err) {
