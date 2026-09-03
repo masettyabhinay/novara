@@ -50,10 +50,22 @@ import {
 
 import { 
   extractTextFromBuffer, 
+  sanitizeExtractedText,
   parseDocumentTextToRoadmap, 
   validateRoadmapSchema, 
   generateDailyPlanFromRoadmap 
 } from './roadmapService.js';
+
+import {
+  isGeminiConfigured,
+  getAIProvider,
+  parseRoadmapWithAI,
+  generateDailyPlanWithAI,
+  analyzeCoachWithAI,
+  generateInterviewQuestionsWithAI,
+  evaluateInterviewAnswerWithAI,
+  generateRevisionQuestionsWithAI
+} from './aiService.js';
 
 import { verifyGoogleToken, isValidGoogleClientId } from './authGoogle.js';
 
@@ -467,8 +479,23 @@ export async function apiMiddlewareHandler(req, res, next) {
             }
 
             try {
-              const analysis = analyzeUserPreparation(authUser.id);
-              return sendJson(res, 200, { success: true, analysis }, req);
+              const deterministicBaseline = analyzeUserPreparation(authUser.id);
+              let finalAnalysis = deterministicBaseline;
+
+              if (isGeminiConfigured() && deterministicBaseline.hasData) {
+                const db = loadDb();
+                finalAnalysis = await analyzeCoachWithAI({
+                  user: authUser,
+                  roadmap: db.roadmaps[authUser.id],
+                  tasks: db.tasks[authUser.id] || [],
+                  streak: db.streaks[authUser.id] || {},
+                  applications: getUserApplicationsFromDb(authUser.id),
+                  revisions: db.revisions[authUser.id] || [],
+                  deterministicBaseline
+                });
+              }
+
+              return sendJson(res, 200, { success: true, analysis: finalAnalysis }, req);
             } catch (err) {
               return sendJson(res, 500, { success: false, error: 'Failed to analyze preparation metrics.' }, req);
             }
@@ -518,6 +545,30 @@ export async function apiMiddlewareHandler(req, res, next) {
 
             try {
               const body = await readBodyJson(req);
+              const db = loadDb();
+              const userRoadmap = db.roadmaps?.[authUser.id];
+              const roadmapTopics = userRoadmap?.phases?.flatMap((p) => p.topics?.map((t) => t.name) || []) || [];
+              const coachData = db.coachAnalysis?.[authUser.id];
+              const weakAreas = coachData?.weakestCategory ? [coachData.weakestCategory] : [];
+
+              if (isGeminiConfigured()) {
+                try {
+                  const aiQuestions = await generateInterviewQuestionsWithAI({
+                    targetRole: body.targetRole || authUser.targetRole || 'Software Engineer',
+                    roadmapTopics,
+                    difficulty: body.difficulty || 'Medium',
+                    count: parseInt(body.questionCount || 5, 10),
+                    weakAreas,
+                    category: body.type || 'Technical'
+                  });
+                  if (Array.isArray(aiQuestions) && aiQuestions.length > 0) {
+                    body.customQuestions = aiQuestions;
+                  }
+                } catch (aiErr) {
+                  console.warn('[apiMiddleware] Gemini interview question generation failed, using question bank:', aiErr.message);
+                }
+              }
+
               const session = startInterviewSession(authUser.id, body);
               return sendJson(res, 200, { success: true, session }, req);
             } catch (err) {
@@ -539,7 +590,29 @@ export async function apiMiddlewareHandler(req, res, next) {
               if (!interviewId || questionIndex === undefined) {
                 return sendJson(res, 400, { success: false, error: 'Interview ID and question index are required.' }, req);
               }
-              const result = evaluateInterviewAnswerOnServer(authUser.id, interviewId, questionIndex, answerText);
+
+              let customEvaluation = null;
+              if (isGeminiConfigured() && answerText && answerText.trim().length > 0) {
+                try {
+                  const db = loadDb();
+                  const activeSession = db.activeInterviews?.[authUser.id];
+                  if (activeSession && activeSession.id === interviewId) {
+                    const activeQ = activeSession.questions?.[questionIndex];
+                    if (activeQ) {
+                      customEvaluation = await evaluateInterviewAnswerWithAI({
+                        question: activeQ.question,
+                        expectedKeywords: activeQ.expectedKeywords || [],
+                        idealAnswerOutline: activeQ.idealAnswerOutline || '',
+                        userAnswer: answerText
+                      });
+                    }
+                  }
+                } catch (aiErr) {
+                  console.warn('[apiMiddleware] Gemini interview evaluation failed, using rubric evaluator:', aiErr.message);
+                }
+              }
+
+              const result = evaluateInterviewAnswerOnServer(authUser.id, interviewId, questionIndex, answerText, customEvaluation);
               return sendJson(res, 200, { success: true, ...result }, req);
             } catch (err) {
               return sendJson(res, 400, { success: false, error: err.message }, req);
@@ -714,7 +787,24 @@ export async function apiMiddlewareHandler(req, res, next) {
             try {
               const body = await readBodyJson(req);
               const { topic, category, difficulty } = body;
-              const questions = generateRevisionQuestions(topic || 'Arrays', category || 'DSA', difficulty || 'Medium');
+              let questions = null;
+
+              if (isGeminiConfigured()) {
+                try {
+                  questions = await generateRevisionQuestionsWithAI({
+                    topicName: topic || 'Arrays',
+                    category: category || 'DSA',
+                    difficulty: difficulty || 'Medium'
+                  });
+                } catch (aiErr) {
+                  console.warn('[apiMiddleware] Gemini revision generation failed, falling back to grounded bank:', aiErr.message);
+                }
+              }
+
+              if (!questions || questions.length === 0) {
+                questions = generateRevisionQuestions(topic || 'Arrays', category || 'DSA', difficulty || 'Medium');
+              }
+
               return sendJson(res, 200, { success: true, topic, questions }, req);
             } catch (err) {
               return sendJson(res, 400, { success: false, error: err.message }, req);
@@ -1016,9 +1106,49 @@ export async function apiMiddlewareHandler(req, res, next) {
             });
 
             const extractedText = await extractTextFromBuffer(buffer, safeFileName);
-            const extractedRoadmap = parseDocumentTextToRoadmap(extractedText, safeFileName, targetRole);
+            const sanitizedText = sanitizeExtractedText(extractedText);
+            let extractedRoadmap = null;
+            let parserUsed = 'deterministic';
+            let fallbackUsed = false;
+
+            if (isGeminiConfigured()) {
+              try {
+                extractedRoadmap = await parseRoadmapWithAI(sanitizedText, targetRole, safeFileName);
+                if (extractedRoadmap) {
+                  parserUsed = 'gemini';
+                } else {
+                  fallbackUsed = true;
+                }
+              } catch (aiErr) {
+                console.warn('[apiMiddleware] Gemini roadmap parsing failed, using deterministic parser:', aiErr.message);
+                fallbackUsed = true;
+              }
+            } else {
+              fallbackUsed = true;
+            }
+
+            if (!extractedRoadmap) {
+              extractedRoadmap = parseDocumentTextToRoadmap(extractedText, safeFileName, targetRole);
+              parserUsed = 'deterministic';
+            }
+
+            const isDevOrTest = process.env.NODE_ENV !== 'production' || process.env.NOVARA_DEBUG_AI === 'true';
+            if (isDevOrTest) {
+              console.log('[Roadmap Pipeline Diagnostics]', {
+                extractedTextLength: extractedText?.length || 0,
+                sanitizedTextLength: sanitizedText?.length || 0,
+                aiProvider: isGeminiConfigured() ? getAIProvider().name : 'none',
+                aiModel: isGeminiConfigured() ? getAIProvider().getEffectiveModel() : 'none',
+                parserUsed,
+                fallbackUsed,
+                returnedPhaseCount: extractedRoadmap.phases?.length || 0,
+                returnedTopicCount: extractedRoadmap.phases?.reduce((acc, p) => acc + (p.topics?.length || 0), 0) || 0
+              });
+            }
 
             console.log('[Roadmap Analyze Extraction Outcome]', {
+              parserUsed,
+              fallbackUsed,
               phasesExtracted: extractedRoadmap.phases?.length || 0,
               totalTopics: extractedRoadmap.phases?.reduce((acc, p) => acc + (p.topics?.length || 0), 0) || 0,
               confidence: extractedRoadmap.confidence,
@@ -1071,9 +1201,28 @@ export async function apiMiddlewareHandler(req, res, next) {
               }, req);
             }
 
-            const planResult = generateDailyPlanFromRoadmap(roadmap, preferences);
-
             const authUser = getAuthUserFromRequest(req);
+            const db = loadDb();
+            let planResult = null;
+
+            if (isGeminiConfigured()) {
+              try {
+                planResult = await generateDailyPlanWithAI({
+                  roadmap,
+                  preferences,
+                  pendingTasks: authUser ? (db.tasks[authUser.id] || []).filter(t => !t.completed) : [],
+                  completedTasks: authUser ? (db.tasks[authUser.id] || []).filter(t => t.completed) : [],
+                  revisions: authUser ? (db.revisions[authUser.id] || []) : []
+                });
+              } catch (aiErr) {
+                console.warn('[apiMiddleware] Gemini plan generation failed, using deterministic generator:', aiErr.message);
+              }
+            }
+
+            if (!planResult || !Array.isArray(planResult.tasks) || planResult.tasks.length === 0) {
+              planResult = generateDailyPlanFromRoadmap(roadmap, preferences);
+            }
+
             if (authUser) {
               const dailyStudyMins = Math.round((preferences?.dailyTargetHours || 3) * 60);
               updateUserProfile(authUser.id, {

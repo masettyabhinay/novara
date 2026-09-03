@@ -23,7 +23,11 @@ const SENSITIVE_KEYS = [
   'authorization',
   'secret',
   'apikey',
+  'api_key',
   'ai_api_key',
+  'gemini_api_key',
+  'gemini_key',
+  'gemini',
   'jwt_secret',
   'storage_secret_key'
 ];
@@ -31,10 +35,12 @@ const SENSITIVE_KEYS = [
 function sanitizeLogData(data) {
   if (!data) return data;
   if (typeof data === 'string') {
-    // Redact Bearer tokens and passwords in raw strings
+    // Redact Bearer tokens, passwords, and Google API keys in raw strings
     return data
       .replace(/Bearer\s+[a-zA-Z0-9._-]+/gi, 'Bearer [REDACTED]')
-      .replace(/password[:=]\s*["']?[^"'\s,]+/gi, 'password=[REDACTED]');
+      .replace(/password[:=]\s*["']?[^"'\s,]+/gi, 'password=[REDACTED]')
+      .replace(/AIzaSy[A-Za-z0-9_-]{33}/g, 'AIzaSy[REDACTED]')
+      .replace(/AIza[0-9A-Za-z-_]{35}/g, 'AIza[REDACTED]');
   }
   if (typeof data !== 'object') return data;
 

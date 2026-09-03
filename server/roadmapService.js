@@ -77,17 +77,35 @@ function extractTextFromPdfStreams(buffer) {
         decompressed = zlib.inflateRawSync(streamBuf).toString('utf8');
       } catch {
         // Stream was uncompressed plain text
-        decompressed = streamRaw;
+        try {
+          decompressed = Buffer.from(streamRaw, 'latin1').toString('utf8');
+        } catch {
+          decompressed = streamRaw;
+        }
       }
     }
 
     if (decompressed) {
-      // 1. Extract strings from array TJ text operator: [(Phase 1) 10 ( - ) 10 (Programming)] TJ
+      // 1. Extract strings from array TJ text operator: [(Duration) 120 (12 Weeks)] TJ
       const tjArrayRegex = /\[([^\]]+)\]\s*TJ/g;
       let arrayMatch;
       while ((arrayMatch = tjArrayRegex.exec(decompressed)) !== null) {
-        const innerStrings = arrayMatch[1].match(/\(([^)]+)\)/g) || [];
-        const combined = innerStrings.map(s => s.slice(1, -1)).join('');
+        const tokens = arrayMatch[1].match(/\((?:[^)\\]|\\.)*\)|-?\d+(?:\.\d+)?/g) || [];
+        let combined = '';
+        for (let k = 0; k < tokens.length; k++) {
+          const tok = tokens[k];
+          if (tok.startsWith('(') && tok.endsWith(')')) {
+            const s = tok.slice(1, -1).replace(/\\([()\\])/g, '$1');
+            if (combined && !combined.endsWith(' ') && !s.startsWith(' ')) {
+              const prev = tokens[k - 1];
+              const offset = prev && !prev.startsWith('(') ? parseFloat(prev) : 0;
+              if (offset < -50 || (/[A-Za-z0-9:]$/.test(combined) && /^[A-Za-z0-9•\-]/.test(s))) {
+                combined += ' ';
+              }
+            }
+            combined += s;
+          }
+        }
         if (combined.trim().length > 1) {
           textPieces.push(combined.trim());
         }
@@ -227,11 +245,24 @@ export function sanitizeExtractedText(rawText) {
     // 1. Strip non-printable ASCII control characters
     line = line.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
-    // 2. Normalize whitespace
+    // 2. Normalize corrupted utf-8 / latin-1 bullets
+    line = line.replace(/(?:\u00e2[\u0080\u20ac]\u00a2|â€¢)/g, '•');
+
+    // 3. Normalize label-value boundaries (e.g. Duration12 Weeks -> Duration: 12 Weeks)
+    line = line.replace(/\b(Duration)\s*:?\s*(\d+)/gi, '$1: $2');
+    line = line.replace(/\b(Daily\s*Study\s*Time)\s*:?\s*(\d+)/gi, '$1: $2');
+    line = line.replace(/\b(Target\s*Role)\s*:?\s*([A-Za-z])/gi, '$1: $2');
+    line = line.replace(/\b(Target)\s*:?\s*(Software|SDE|Engineer|Developer|Frontend|Backend|Full\s*Stack)/gi, '$1: $2');
+
+    // 4. Normalize "Topics• ..." -> "• ..." and discard standalone "Topics:" lines
+    line = line.replace(/^\s*Topics\s*[:•\-\*]?\s*/gi, '• ');
+    if (/^\s*Topics\s*[:\-]?\s*$/i.test(line)) continue;
+
+    // 5. Normalize whitespace
     line = line.replace(/[ \t]+/g, ' ').trim();
     if (line.length < 2) continue;
 
-    // 3. Reject any PDF internal / object syntax
+    // 6. Reject any PDF internal / object syntax
     if (PDF_INTERNAL_KEYWORD_REGEX.test(line)) continue;
     if (PDF_OBJECT_MARKER_REGEX.test(line)) continue;
     if (/(?:\b(?:obj|endobj|stream|endstream|trailer|startxref|xref)\b|<<|>>|%%EOF)/i.test(line)) continue;
@@ -240,10 +271,10 @@ export function sanitizeExtractedText(rawText) {
     if (PDF_GRAPHICS_STATE_REGEX.test(line)) continue;
     if (PDF_HEX_STRING_REGEX.test(line)) continue;
 
-    // 4. Reject standalone page numbers
+    // 7. Reject standalone page numbers
     if (PAGE_NUMBER_REGEX.test(line)) continue;
 
-    // 5. Line must have at least one alphabetic character
+    // 8. Line must have at least one alphabetic character
     if (!/[A-Za-z]/.test(line)) continue;
 
     cleanLines.push(line);
@@ -298,6 +329,107 @@ export function evaluateExtractionQuality(text, fileName = '') {
 }
 
 /**
+ * Detects lines containing document-level metadata, titles, or branding that
+ * must NEVER become curriculum topics.
+ */
+export function isMetadataLine(line, cleanTitle = '', targetRole = '') {
+  if (!line || typeof line !== 'string') return true;
+  const trimmed = line.trim();
+  if (trimmed.length < 2) return true;
+
+  // 1. Application / Product name
+  if (/^(?:NOVARA|Novara|Placeready|PlaceReady)\s*$/i.test(trimmed)) return true;
+
+  // 2. Document title / Header matches
+  if (/(?:Sample\s+.*Placement\s+Preparation\s+Roadmap|Placement\s+Preparation\s+Roadmap|Preparation\s+Roadmap|Curriculum\s+Roadmap)$/i.test(trimmed)) return true;
+  if (cleanTitle && trimmed.toLowerCase() === cleanTitle.toLowerCase()) return true;
+
+  // 3. Duration metadata
+  if (/^(?:Duration|Total\s*Duration)\s*:?\s*\d+\s*(?:weeks?|months?|days?|hrs?|hours?)/i.test(trimmed)) return true;
+  if (/^Duration\s*:?\s*\d+/i.test(trimmed)) return true;
+  if (/^\d+\s*weeks?\s*$/i.test(trimmed)) return true;
+
+  // 4. Daily study time metadata
+  if (/^(?:Daily\s*Study\s*Time|Study\s*Time|Daily\s*Time)\s*:?\s*\d+/i.test(trimmed)) return true;
+  if (/^\d+(?:–|-|\s*to\s*)\d+\s*hours?\s*(?:\/\s*day|daily)?\s*$/i.test(trimmed)) return true;
+
+  // 5. Target role metadata
+  if (/^(?:Target(?:\s*Role)?)\s*:?\s*(?:Software|SDE|Engineer|Developer|Placement)/i.test(trimmed)) return true;
+  if (targetRole && trimmed.toLowerCase().includes(targetRole.toLowerCase()) && /^(?:target|role)/i.test(trimmed)) return true;
+
+  // 6. Section sub-headings or labels
+  if (/^(?:Topics|Curriculum|Syllabus|Modules?)\s*[:\-]?\s*$/i.test(trimmed)) return true;
+
+  // 7. Page numbers / Author / Date / Upload info
+  if (/^(?:Author|Date|Version|Page\s*\d+)\s*:/i.test(trimmed)) return true;
+
+  return false;
+}
+
+/**
+ * Strict validation of extracted roadmap quality.
+ * Rejects roadmaps where metadata was mistakenly extracted as topics,
+ * or where durations were fabricated.
+ */
+export function validateExtractedRoadmapQuality(roadmap, cleanTitle = '', targetRole = '') {
+  if (!roadmap || !Array.isArray(roadmap.phases) || roadmap.phases.length === 0) {
+    return { valid: false, reason: 'No phases found in roadmap.' };
+  }
+
+  let totalTopics = 0;
+  let artificialSixHourCount = 0;
+
+  for (const phase of roadmap.phases) {
+    if (!Array.isArray(phase.topics)) continue;
+    for (const topic of phase.topics) {
+      totalTopics++;
+      const name = (topic.name || '').trim();
+
+      // 1. Reject if application or product name appears as topic
+      if (/^(?:NOVARA|Novara|Placeready|PlaceReady)\s*$/i.test(name)) {
+        return { valid: false, reason: `Product name "${name}" appears as a curriculum topic.` };
+      }
+
+      // 2. Reject if document title appears as topic
+      if (/(?:Sample\s+.*Placement\s+Preparation\s+Roadmap|Placement\s+Preparation\s+Roadmap)$/i.test(name) || (cleanTitle && name.toLowerCase() === cleanTitle.toLowerCase())) {
+        return { valid: false, reason: `Document title "${name}" appears as a curriculum topic.` };
+      }
+
+      // 3. Reject if duration metadata appears as topic
+      if (/^Duration\s*:?\s*\d+/i.test(name) || /^\d+\s*weeks?\s*$/i.test(name)) {
+        return { valid: false, reason: `Duration metadata "${name}" appears as a curriculum topic.` };
+      }
+
+      // 4. Reject if daily study time metadata appears as topic
+      if (/^Daily\s*Study\s*Time/i.test(name) || /\b\d+(?:–|-|\s*to\s*)\d+\s*hours?\s*(?:\/\s*day|daily)?\b/i.test(name)) {
+        return { valid: false, reason: `Daily study time metadata "${name}" appears as a curriculum topic.` };
+      }
+
+      // 5. Reject if target role metadata appears as topic
+      if (/^Target(?:\s*Role)?\s*:?\s*(?:Software|SDE|Placement)/i.test(name)) {
+        return { valid: false, reason: `Target role metadata "${name}" appears as a curriculum topic.` };
+      }
+
+      // 6. Reject if topic still contains "Topics•" or subheaders
+      if (/^Topics\s*[:•\-\*]/i.test(name)) {
+        return { valid: false, reason: `Topic "${name}" contains unprocessed "Topics" label prefix.` };
+      }
+
+      if (topic.duration === '6h') {
+        artificialSixHourCount++;
+      }
+    }
+  }
+
+  // If literally every topic was assigned an artificial 6h duration, flag as suspicious
+  if (totalTopics > 5 && artificialSixHourCount === totalTopics) {
+    return { valid: false, reason: 'All topics were assigned an artificial default duration of 6h without source text support.' };
+  }
+
+  return { valid: true, reason: null };
+}
+
+/**
  * Semantic Document Parser (Zero-Hallucination Parser)
  * Parses sanitized text into structured phases and topics without fabricating content
  * or creating artificial phases from PDF metadata.
@@ -313,7 +445,7 @@ export function parseDocumentTextToRoadmap(rawText, fileName = '', targetRole = 
   const EXPLICIT_PHASE_REGEX = /^(?:#+\s*)?(?:Phase|Module|Part|Week|Section|Sprint|Level|Stage|Chapter|Term|Step)\s*(?:[0-9]+|[IVXLCDM]+)?\s*[:\-\s—–|]+(.*)$/i;
   const BARE_PHASE_REGEX = /^(?:#+\s*)?(?:Phase|Module|Part|Week|Section|Sprint|Level|Stage)\s*(?:[0-9]+|[IVXLCDM]+)\s*$/i;
   const MARKDOWN_HEADER_REGEX = /^(?:#{1,2})\s+([A-Za-z0-9\s&,/\-—–:()]+)$/;
-  const TOPIC_PREFIX_REGEX = /^(\d+[\.\)\-:]|\*|\-|\u2022|\u25E6|\u25AA|\u2713|\u2013|\u2014)\s*/;
+  const TOPIC_PREFIX_REGEX = /^(?:\d+[\.\)\-:]|\*|\-|\u2022|\u25E6|\u25AA|\u2713|\u2013|\u2014|•|â€¢|\u00e2[\u0080\u20ac]\u00a2)\s*/;
 
   const phases = [];
   let currentPhase = null;
@@ -350,12 +482,18 @@ export function parseDocumentTextToRoadmap(rawText, fileName = '', targetRole = 
       continue;
     }
 
-    // 2. If no phase has been opened yet, initialize Phase 1
+    // 2. Pre-phase lines are document prelude/metadata (Title, Product Name, Duration, Daily Study Time, Target Role).
+    // DO NOT create a phantom Phase 01 for document prelude lines!
     if (!currentPhase) {
-      currentPhase = createNewPhase('Phase 01: Core Curriculum & Foundations');
+      continue;
     }
 
-    // 3. Extract topic difficulty if explicitly stated
+    // 3. Discard metadata lines occurring inside phases
+    if (isMetadataLine(line, cleanTitle, targetRole)) {
+      continue;
+    }
+
+    // 4. Extract topic difficulty if explicitly stated
     let difficulty = 'Medium';
     let isExplicitDiff = false;
     if (/\b(easy|basic|beginner|intro)\b/i.test(line)) {
@@ -369,23 +507,29 @@ export function parseDocumentTextToRoadmap(rawText, fileName = '', targetRole = 
       isExplicitDiff = true;
     }
 
-    // 4. Extract problem count if explicitly stated (do NOT invent with modulo arithmetic)
+    // 5. Extract problem count if explicitly stated (do NOT invent with modulo arithmetic)
     const probMatch = line.match(/(\d+)\s*(?:problems|questions|tasks|drills|probs|qns)\b/i);
     const problemsCount = probMatch ? parseInt(probMatch[1], 10) : null;
 
-    // 5. Extract duration if explicitly stated
+    // 6. Extract duration if explicitly stated (Strictly null if not stated in source text! Never default to 6h!)
     const durMatch = line.match(/(\d+)\s*(?:h|hours|hrs)\b/i);
-    const duration = durMatch ? `${durMatch[1]}h` : '6h';
+    const duration = durMatch ? `${durMatch[1]}h` : null;
 
-    // 6. Clean topic name
+    // 7. Clean topic name
     let topicName = line
+      .replace(/^Topics\s*[:•\-\*]?\s*/i, '')
       .replace(TOPIC_PREFIX_REGEX, '')
+      .replace(/^(?:[\u2022\u25E6\u25AA\u2713\u2013\u2014•\-\*]|â€¢|\u00e2[\u0080\u20ac]\u00a2|\d+[\.\)\-:])+\s*/, '')
       .replace(/\((?:easy|medium|hard|beginner|advanced|intermediate)\)/gi, '')
       .replace(/(?:[-–—:]\s*)?\b\d+\s*(?:problems|questions|tasks|drills|probs|qns)\b/gi, '')
       .replace(/(?:[-–—:]\s*)?\b\d+\s*(?:h|hours|hrs)\b/gi, '')
       .replace(/\[.*?\]/g, '')
       .replace(/\s*[-–—:]\s*$/, '')
       .trim();
+
+    if (isMetadataLine(topicName, cleanTitle, targetRole)) {
+      continue;
+    }
 
     // Guard against residual PDF garbage or excessively long text
     if (

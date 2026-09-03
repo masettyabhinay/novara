@@ -199,7 +199,92 @@ trailer <</Size 4 /Root 1 0 R>>
   console.log('Noisy roadmap phase count:', noisyRoadmap.phases.length);
   assert(noisyRoadmap.phases.length <= 2, 'Noisy PDF must NEVER produce dozens or 89 phases');
   assert.strictEqual(noisyRoadmap.needsReview, true, 'Noisy PDF must be marked needsReview: true');
-  console.log('✅ Test 5 Passed: Malformed PDF prevented from producing 89 phases!\n');
+  // -------------------------------------------------------------------------
+  // TEST 6: Production Sample PDF Regression Test (Zero-Hallucination & Metadata Separation)
+  // -------------------------------------------------------------------------
+  console.log('[Test 6] Testing NOVARA Production Sample Roadmap PDF Regression...');
+  const samplePdfLines = [
+    'NOVARA',
+    'Sample Software Engineer Placement Preparation Roadmap',
+    'Duration12 Weeks',
+    'Daily Study Time2',
+    'Target RoleSoftware Engineer / SDE Placement',
+    'Phase 1 — Programming Foundations (Weeks 1–2)',
+    'Topics• Variables, data types and operators',
+    '• Conditional statements',
+    '• Loops',
+    '• Functions',
+    '• Arrays and strings',
+    '• Basic input/output',
+    '• Time and space complexity',
+    '• Basic problem solving',
+    'Phase 2 — Data Structures (Weeks 3–5)',
+    'Topics• Arrays and Matrix Operations',
+    '• Linked Lists, Stacks and Queues',
+    '• Binary Trees and BST',
+    'Phase 3 — Algorithms (Weeks 6–7)',
+    'Topics• Sorting and Searching',
+    '• Graph Algorithms',
+    '• Dynamic Programming',
+    'Phase 4 — Core CS (Weeks 8–9)',
+    'Topics• Operating Systems and Concurrency',
+    '• Database Management and SQL',
+    '• Computer Networks',
+    'Phase 5 — Development (Weeks 10–11)',
+    'Topics• Web Architecture and REST APIs',
+    '• Full Stack Project Implementation',
+    'Phase 6 — Interview Preparation (Week 12)',
+    'Topics• Mock Technical Interviews',
+    '• Behavioral STAR Method'
+  ];
+
+  const samplePdfBuffer = createTestPdf(samplePdfLines);
+  const sampleExtracted = await extractTextFromBuffer(samplePdfBuffer, 'novara_sample_placement_roadmap.pdf');
+  const sampleSanitized = sanitizeExtractedText(sampleExtracted);
+
+  // Normalization verification
+  assert(!sampleSanitized.includes('Duration12'), 'Duration12 must be normalized with boundary');
+  assert(!sampleSanitized.includes('Daily Study Time2'), 'Daily Study Time2 must be normalized with boundary');
+  assert(!sampleSanitized.includes('Topics•'), 'Topics• must be stripped from bullet topics');
+
+  const { validateExtractedRoadmapQuality } = await import('../server/roadmapService.js');
+  const sampleRoadmap = parseDocumentTextToRoadmap(sampleExtracted, 'novara_sample_placement_roadmap.pdf', 'Software Engineer');
+
+  // Hierarchy verification
+  assert.strictEqual(sampleRoadmap.phases.length, 6, 'Must extract EXACTLY 6 phases (no phantom Phase 01)');
+  assert(!sampleRoadmap.phases.some(p => p.title.includes('Core Curriculum & Foundations')), 'Must NOT create phantom Core Curriculum & Foundations phase');
+
+  // Phase 1 verification
+  const p1 = sampleRoadmap.phases[0];
+  assert(p1.title.includes('Programming Foundations'), 'Phase 1 must be Programming Foundations');
+  assert.strictEqual(p1.topics.length, 8, 'Phase 1 must contain exactly 8 topics');
+  assert.strictEqual(p1.topics[0].name, 'Variables, data types and operators', 'Topic 1 must be clean name without Topics• prefix');
+
+  // Metadata isolation verification across all topics
+  const allTopicNames = sampleRoadmap.phases.flatMap(p => p.topics.map(t => t.name));
+  assert(!allTopicNames.includes('NOVARA'), 'Product name NOVARA must never be a topic');
+  assert(!allTopicNames.some(t => t.includes('Placement Preparation Roadmap')), 'Document title must never be a topic');
+  assert(!allTopicNames.some(t => /duration/i.test(t)), 'Duration metadata must never be a topic');
+  assert(!allTopicNames.some(t => /daily study/i.test(t)), 'Daily study time metadata must never be a topic');
+  assert(!allTopicNames.some(t => /target role/i.test(t)), 'Target role metadata must never be a topic');
+  assert(!allTopicNames.some(t => t.startsWith('Topics')), 'Topic name must not start with Topics');
+
+  // Zero-hallucination durations and problem counts
+  for (const phase of sampleRoadmap.phases) {
+    for (const topic of phase.topics) {
+      assert.strictEqual(topic.duration, null, `Topic "${topic.name}" duration must be null, not 6h`);
+      assert.strictEqual(topic.problemsCount, null, `Topic "${topic.name}" problemsCount must be null`);
+    }
+  }
+
+  // Schema & Quality validation
+  const sampleQuality = validateExtractedRoadmapQuality(sampleRoadmap);
+  assert(sampleQuality.valid, `Roadmap must pass quality validation: ${sampleQuality.reason}`);
+
+  const schemaValidation = validateRoadmapSchema(sampleRoadmap);
+  assert(schemaValidation.valid, `Roadmap must pass schema validation: ${schemaValidation.error}`);
+
+  console.log('✅ Test 6 Passed: Production sample PDF parsed with exact 6 phases, zero metadata pollution, and zero artificial 6h values!\n');
 
   console.log('================================================================');
   console.log('🎉 ALL ROADMAP PDF PIPELINE TESTS PASSED SUCCESSFULLY!');

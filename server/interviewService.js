@@ -180,13 +180,16 @@ export function startInterviewSession(userId, config = {}) {
     });
   }
 
-  // Pick questions without repeating immediately asked questions
-  const askedIds = new Set(history.flatMap((h) => h.questions?.map((q) => q.id) || []));
-  const unasked = pool.filter((q) => !askedIds.has(q.id));
-  const candidatePool = unasked.length >= count ? unasked : pool;
-
-  // Shuffle and slice
-  const selected = [...candidatePool].sort(() => 0.5 - Math.random()).slice(0, count);
+  // Pick questions: use custom AI questions if provided, otherwise filter question bank
+  let selected = [];
+  if (Array.isArray(config.customQuestions) && config.customQuestions.length > 0) {
+    selected = config.customQuestions.slice(0, count);
+  } else {
+    const askedIds = new Set(history.flatMap((h) => h.questions?.map((q) => q.id) || []));
+    const unasked = pool.filter((q) => !askedIds.has(q.id));
+    const candidatePool = unasked.length >= count ? unasked : pool;
+    selected = [...candidatePool].sort(() => 0.5 - Math.random()).slice(0, count);
+  }
 
   const interviewId = `mock-int-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
   const activeSession = {
@@ -209,6 +212,7 @@ export function startInterviewSession(userId, config = {}) {
       difficulty: q.difficulty,
       question: q.question,
       expectedKeywords: q.expectedKeywords,
+      idealAnswerOutline: q.idealAnswerOutline || '',
       userAnswer: '',
       skipped: false,
       evaluation: null
@@ -234,7 +238,7 @@ export function startInterviewSession(userId, config = {}) {
 /**
  * Submit an answer for the current question and evaluate using structured rubric.
  */
-export function evaluateInterviewAnswerOnServer(userId, interviewId, questionIndex, answerText = '') {
+export function evaluateInterviewAnswerOnServer(userId, interviewId, questionIndex, answerText = '', customEvaluation = null) {
   const db = loadDb();
   const session = db.activeInterviews?.[userId];
   if (!session || session.id !== interviewId) {
@@ -262,6 +266,8 @@ export function evaluateInterviewAnswerOnServer(userId, interviewId, questionInd
       improvements: [`Review core concepts for ${q.topic}: ${q.expectedKeywords.slice(0, 3).join(', ')}.`],
       missingConcepts: q.expectedKeywords.slice(0, 4)
     };
+  } else if (customEvaluation) {
+    evaluation = customEvaluation;
   } else {
     // Evidence-based evaluation matching expected keywords & structural clarity
     const lowerAnswer = trimmedAnswer.toLowerCase();

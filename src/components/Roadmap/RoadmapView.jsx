@@ -596,9 +596,9 @@ export const RoadmapView = () => {
                                 {topic.name}
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '1px', fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                                <span>{topic.problemsCount || 15} problems</span>
-                                <span>•</span>
-                                <span>{topic.duration || '8h'}</span>
+                                {topic.problemsCount ? <span>{topic.problemsCount} problems</span> : null}
+                                {topic.problemsCount && topic.duration ? <span>•</span> : null}
+                                {topic.duration ? <span>{topic.duration}</span> : null}
                               </div>
                             </div>
                           </div>

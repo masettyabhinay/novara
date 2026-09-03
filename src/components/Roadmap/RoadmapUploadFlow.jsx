@@ -788,7 +788,7 @@ export const RoadmapUploadFlow = ({ onCancel, onComplete }) => {
                             </div>
 
                             <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', flexShrink: 0 }}>
-                              {topic.problemsCount ? `${topic.problemsCount} problems` : topic.duration || '6h'}
+                              {topic.problemsCount ? `${topic.problemsCount} problems` : topic.duration ? topic.duration : ''}
                             </span>
                           </div>
                         );
