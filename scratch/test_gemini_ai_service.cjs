@@ -24,6 +24,9 @@ function assert(condition, message) {
   }
   console.log(`✅ PASS: ${message}`);
 }
+assert.strictEqual = function(actual, expected, message) {
+  assert(actual === expected, message || `${actual} === ${expected}`);
+};
 
 async function runTests() {
   console.log('================================================================');
@@ -44,7 +47,8 @@ async function runTests() {
     analyzeCoachWithAI,
     generateInterviewQuestionsWithAI,
     evaluateInterviewAnswerWithAI,
-    generateRevisionQuestionsWithAI
+    generateRevisionQuestionsWithAI,
+    generateTaskRevisionQuiz
   } = await import('file:///f:/NOVARA/server/aiService.js');
 
   const { validateRoadmapSchema } = await import('file:///f:/NOVARA/server/roadmapService.js');
@@ -253,16 +257,43 @@ async function runTests() {
   assert(answerEval.correctness === 92, 'Correctness metric matches');
   assert(answerEval.isSkipped === false, 'Skipped flag set to false');
 
-  // 2.6 Smart Revision Questions
+  // 2.6 Smart Revision Questions (5 questions)
   const mockRevisionQsResponse = {
     questions: [
       {
-        type: 'mcq',
         question: 'What is the time complexity of searching in a Balanced Binary Search Tree?',
         options: ['O(log N)', 'O(N)', 'O(1)', 'O(N²)'],
-        correctAnswer: 'O(log N)',
+        correctAnswer: 0,
         explanation: 'Balanced BST halves the search space at each depth level.',
-        testedSubconcept: 'BST Search'
+        topic: 'Binary Search Trees'
+      },
+      {
+        question: 'In a BST, the in-order traversal of nodes visits keys in what order?',
+        options: ['Sorted ascending order', 'Reverse sorted order', 'Random order', 'Level by level'],
+        correctAnswer: 0,
+        explanation: 'In-order traversal visits left subtree, root, right subtree, yielding sorted order.',
+        topic: 'Binary Search Trees'
+      },
+      {
+        question: 'What is the worst-case time complexity of BST operations when the tree becomes skewed?',
+        options: ['O(N)', 'O(log N)', 'O(1)', 'O(N log N)'],
+        correctAnswer: 0,
+        explanation: 'When unbalanced/skewed, tree height equals N leading to O(N) operations.',
+        topic: 'Binary Search Trees'
+      },
+      {
+        question: 'Which self-balancing binary search tree maintains a height difference of at most 1 between left and right subtrees?',
+        options: ['AVL Tree', 'B-Tree', 'Trie', 'Segment Tree'],
+        correctAnswer: 0,
+        explanation: 'AVL trees strictly enforce a balance factor in {-1, 0, 1}.',
+        topic: 'Binary Search Trees'
+      },
+      {
+        question: 'What node replaces a deleted node with two children in a standard BST deletion algorithm?',
+        options: ['In-order successor (minimum in right subtree)', 'The root node', 'Any leaf node', 'The parent node'],
+        correctAnswer: 0,
+        explanation: 'The in-order successor maintains BST property when replacing a 2-child node.',
+        topic: 'Binary Search Trees'
       }
     ]
   };
@@ -272,8 +303,8 @@ async function runTests() {
     category: 'DSA',
     difficulty: 'Medium'
   });
-  assert(revisionQuestions !== null && revisionQuestions.length === 1, 'Smart revision questions generated');
-  assert(revisionQuestions[0].correctAnswer === 'O(log N)', 'Correct answer present');
+  assert(revisionQuestions !== null && revisionQuestions.length === 5, 'Smart revision questions generated (5 questions)');
+  assert(revisionQuestions[0].correctAnswer === 0, 'Correct answer index present');
   assert(revisionQuestions[0].explanation.includes('Balanced BST'), 'Educational explanation included');
 
   // ---------------------------------------------------------------------------
@@ -450,11 +481,335 @@ async function runTests() {
   assert(!capturedLog.includes('AIzaSySecretFakeKey123456789012345'), 'Logger does not print raw Google API key');
   assert(capturedLog.includes('"normalField":"safe data"'), 'Logger preserves safe metadata fields');
 
+  // ---------------------------------------------------------------------------
+  // TEST 11: Faithful Curriculum Validation (Anti-Consolidation & Needs Review)
+  // ---------------------------------------------------------------------------
+  console.log('\n[Test 11] Testing Faithful Curriculum Validation & Anti-Consolidation Enforcement...');
+  const { validateCurriculumFaithfulness, extractSourceCurriculumBullets } = await import('file:///f:/NOVARA/server/roadmapService.js');
+
+  const sourceText = `Phase 2 — Data Structures
+• Arrays and strings
+• Linked Lists
+• Stacks
+• Queues
+• Hash Tables`;
+
+  const sourceBullets = extractSourceCurriculumBullets(sourceText);
+
+  // Case A: Merged topic in AI response (e.g. "Stacks and Queues")
+  const mergedAiRoadmap = {
+    title: 'Data Structures Roadmap',
+    phases: [
+      {
+        number: '01',
+        title: 'Phase 2: Data Structures',
+        topics: [
+          { name: 'Arrays and strings' },
+          { name: 'Linked Lists' },
+          { name: 'Stacks and Queues' },
+          { name: 'Hash Tables' }
+        ]
+      }
+    ]
+  };
+
+  const mergeValidation = validateCurriculumFaithfulness(sourceBullets, mergedAiRoadmap);
+  assert(mergeValidation.valid === false, 'Validator correctly detects merged topics ("Stacks" and "Queues" combined into "Stacks and Queues")');
+  assert(mergeValidation.reason.includes('Stacks') && mergeValidation.reason.includes('Queues'), 'Validation error explicitly names merged topics');
+
+  // Case B: Faithful preservation of separate topics
+  const faithfulAiRoadmap = {
+    title: 'Data Structures Roadmap',
+    phases: [
+      {
+        number: '01',
+        title: 'Phase 2: Data Structures',
+        topics: [
+          { name: 'Arrays and strings' },
+          { name: 'Linked Lists' },
+          { name: 'Stacks' },
+          { name: 'Queues' },
+          { name: 'Hash Tables' }
+        ]
+      }
+    ]
+  };
+
+  const faithfulValidation = validateCurriculumFaithfulness(sourceBullets, faithfulAiRoadmap);
+  assert(faithfulValidation.valid === true, 'Validator accepts faithfully preserved individual topics');
+
+  // Case C: End-to-end AI Parsing with Merged Topic triggers needsReview=true
+  const mockAiProvider = new MockAIProvider({ configured: true });
+  mockAiProvider.mockResponses.json = mergedAiRoadmap;
+  setAIProvider(mockAiProvider);
+
+  const parsedWithReview = await parseRoadmapWithAI(sourceText, 'Software Engineer', 'curriculum.txt');
+  assert(parsedWithReview !== null, 'AI parsing returns structured object');
+  assert(parsedWithReview.needsReview === true, 'Roadmap with merged topics is marked needsReview=true');
+  assert(parsedWithReview.reviewReason.includes('Stacks'), 'reviewReason explains why review is needed');
+
+  // ---------------------------------------------------------------------------
+  // TEST 12: Generic Task Revision Quiz Across All 10 Task Domains & Authoritative Task Completion
+  // ---------------------------------------------------------------------------
+  console.log('\n[Test 12] Testing Generic Task Revision Quiz Across All 10 Task Domains & Task Completion...');
+  const {
+    generateRevisionQuestions,
+    recordTaskRevisionAndComplete
+  } = await import('file:///f:/NOVARA/server/revisionService.js');
+
+  const taskDomains = [
+    {
+      taskTitle: 'Arrays and String Manipulation Practice',
+      taskDescription: 'Solve sliding window and two pointers problems on contiguous subarrays',
+      roadmapPhase: 'Phase 1: Programming Foundations',
+      roadmapTopic: 'Arrays and strings',
+      taskCategory: 'DSA',
+      difficulty: 'Medium'
+    },
+    {
+      taskTitle: 'Linked List Pointer Manipulation',
+      taskDescription: 'Implement Floyd cycle detection and iterative list reversal',
+      roadmapPhase: 'Phase 2: Data Structures',
+      roadmapTopic: 'Linked Lists',
+      taskCategory: 'DSA',
+      difficulty: 'Medium'
+    },
+    {
+      taskTitle: 'DBMS Fundamentals & ACID Properties',
+      taskDescription: 'Understand transaction isolation levels, atomicity, and indexing',
+      roadmapPhase: 'Phase 4: Core CS',
+      roadmapTopic: 'DBMS',
+      taskCategory: 'Core CS',
+      difficulty: 'Medium'
+    },
+    {
+      taskTitle: 'SQL Joins & Window Functions',
+      taskDescription: 'Write complex queries with INNER/LEFT joins and RANK() window functions',
+      roadmapPhase: 'Phase 4: Core CS',
+      roadmapTopic: 'SQL',
+      taskCategory: 'SQL',
+      difficulty: 'Medium'
+    },
+    {
+      taskTitle: 'Operating Systems — Processes and Threads',
+      taskDescription: 'Study virtual memory paging, deadlock Coffman conditions, and mutexes',
+      roadmapPhase: 'Phase 4: Core CS',
+      roadmapTopic: 'Operating Systems',
+      taskCategory: 'Core CS',
+      difficulty: 'Medium'
+    },
+    {
+      taskTitle: 'Computer Networks — TCP/IP Protocol Suite',
+      taskDescription: 'Understand TCP 3-way handshake, OSI layers, and DNS resolution',
+      roadmapPhase: 'Phase 4: Core CS',
+      roadmapTopic: 'Computer Networks',
+      taskCategory: 'Core CS',
+      difficulty: 'Medium'
+    },
+    {
+      taskTitle: 'React Basics & Hook Architecture',
+      taskDescription: 'Understand component state, useEffect dependency arrays, and Virtual DOM',
+      roadmapPhase: 'Phase 5: Development',
+      roadmapTopic: 'React basics',
+      taskCategory: 'Development',
+      difficulty: 'Medium'
+    },
+    {
+      taskTitle: 'REST APIs & HTTP Protocols',
+      taskDescription: 'Learn idempotency of HTTP methods, status codes, and statelessness',
+      roadmapPhase: 'Phase 5: Development',
+      roadmapTopic: 'REST APIs',
+      taskCategory: 'Development',
+      difficulty: 'Medium'
+    },
+    {
+      taskTitle: 'Git & GitHub Workflow',
+      taskDescription: 'Master git merge vs rebase, staging index, and pull request reviews',
+      roadmapPhase: 'Phase 5: Development',
+      roadmapTopic: 'Git & GitHub',
+      taskCategory: 'Tools',
+      difficulty: 'Easy'
+    },
+    {
+      taskTitle: 'Aptitude & Quantitative Problem Solving',
+      taskDescription: 'Solve speed, time & distance, work equations, and probability problems',
+      roadmapPhase: 'Phase 6: Interview Preparation',
+      roadmapTopic: 'Aptitude practice',
+      taskCategory: 'Aptitude',
+      difficulty: 'Medium'
+    },
+    {
+      taskTitle: 'Resume Preparation & STAR Method',
+      taskDescription: 'Structure STAR behavioral responses and quantify project impact metrics',
+      roadmapPhase: 'Phase 6: Interview Preparation',
+      roadmapTopic: 'Resume preparation',
+      taskCategory: 'Interview',
+      difficulty: 'Easy'
+    }
+  ];
+
+  // A. Verify Grounded Fallback Question Generation across all 10+ domains
+  for (const taskCtx of taskDomains) {
+    const fallbackQuestions = generateRevisionQuestions(taskCtx);
+    assert(fallbackQuestions !== null, `Fallback question bank exists for task "${taskCtx.taskTitle}"`);
+    assert.strictEqual(fallbackQuestions.length, 5, `Fallback produces exactly 5 questions for "${taskCtx.taskTitle}"`);
+
+    for (let i = 0; i < fallbackQuestions.length; i++) {
+      const q = fallbackQuestions[i];
+      assert(q.question && q.question.length > 5, `Question ${i + 1} has valid text`);
+      assert.strictEqual(q.options.length, 4, `Question ${i + 1} has exactly 4 options`);
+      assert(typeof q.correctAnswer === 'number' && q.correctAnswer >= 0 && q.correctAnswer <= 3, `Question ${i + 1} correctAnswer is 0-3 index`);
+      assert(q.explanation && q.explanation.length > 5, `Question ${i + 1} has educational explanation`);
+      assert(q.topic.length > 0, `Question ${i + 1} corresponds to task topic`);
+    }
+  }
+
+  // B. Verify ungrounded unknown topic returns null (never fabricates random content)
+  const unknownFallback = generateRevisionQuestions({ taskTitle: 'Quantum Teleportation of Asteroids', taskCategory: 'Astrophysics' });
+  assert(unknownFallback === null, 'Ungrounded unknown topic returns null without fabricating random content');
+
+  // C. Verify AI-powered generic task quiz generation with strict schema enforcement
+  const dynamicAiProvider = new MockAIProvider({ configured: true });
+  setAIProvider(dynamicAiProvider);
+
+  for (const taskCtx of taskDomains.slice(0, 3)) {
+    const mockAiQuizResponse = {
+      questions: [
+        {
+          question: `Sample objective question for ${taskCtx.roadmapTopic} concept 1`,
+          options: ['Option A', 'Option B', 'Option C', 'Option D'],
+          correctAnswer: 0,
+          explanation: `Thorough explanation for ${taskCtx.roadmapTopic} concept 1`,
+          topic: taskCtx.roadmapTopic
+        },
+        {
+          question: `Sample objective question for ${taskCtx.roadmapTopic} concept 2`,
+          options: ['Choice 1', 'Choice 2', 'Choice 3', 'Choice 4'],
+          correctAnswer: 1,
+          explanation: `Thorough explanation for ${taskCtx.roadmapTopic} concept 2`,
+          topic: taskCtx.roadmapTopic
+        },
+        {
+          question: `Sample objective question for ${taskCtx.roadmapTopic} concept 3`,
+          options: ['Answer X', 'Answer Y', 'Answer Z', 'Answer W'],
+          correctAnswer: 2,
+          explanation: `Thorough explanation for ${taskCtx.roadmapTopic} concept 3`,
+          topic: taskCtx.roadmapTopic
+        },
+        {
+          question: `Sample objective question for ${taskCtx.roadmapTopic} concept 4`,
+          options: ['Alpha', 'Beta', 'Gamma', 'Delta'],
+          correctAnswer: 3,
+          explanation: `Thorough explanation for ${taskCtx.roadmapTopic} concept 4`,
+          topic: taskCtx.roadmapTopic
+        },
+        {
+          question: `Sample objective question for ${taskCtx.roadmapTopic} concept 5`,
+          options: ['Alpha 2', 'Beta 2', 'Gamma 2', 'Delta 2'],
+          correctAnswer: 0,
+          explanation: `Thorough explanation for ${taskCtx.roadmapTopic} concept 5`,
+          topic: taskCtx.roadmapTopic
+        }
+      ]
+    };
+    dynamicAiProvider.mockResponses.json = mockAiQuizResponse;
+
+    const aiGeneratedQuiz = await generateTaskRevisionQuiz(taskCtx);
+    assert(aiGeneratedQuiz !== null, `generateTaskRevisionQuiz succeeded for ${taskCtx.taskTitle}`);
+    assert.strictEqual(aiGeneratedQuiz.length, 5, `Generated exactly 5 questions for ${taskCtx.taskTitle}`);
+    assert.strictEqual(aiGeneratedQuiz[0].options.length, 4, 'Has 4 options');
+    assert.strictEqual(aiGeneratedQuiz[0].topic, taskCtx.roadmapTopic, 'Grounded in task roadmap topic');
+  }
+
+  // D. Verify Authoritative Task Completion & Deterministic SM-2 Revision Scheduling
+  const testUserId = `user_test_quiz_${Date.now()}`;
+  const taskId = `task_quiz_${Date.now()}`;
+  const sessionId = `session_quiz_${Date.now()}`;
+
+  // Seed user task and focus session in DB
+  const { loadDb, saveDb } = await import('file:///f:/NOVARA/server/db.js');
+  const db = loadDb();
+  if (!db.tasks) db.tasks = {};
+  db.tasks[testUserId] = [
+    {
+      id: taskId,
+      userId: testUserId,
+      name: 'Linked List Pointer Manipulation',
+      category: 'DSA',
+      completed: false,
+      actualMinutesStudied: 0
+    }
+  ];
+  if (!db.focusSessions) db.focusSessions = {};
+  db.focusSessions[testUserId] = [
+    {
+      sessionId: sessionId,
+      userId: testUserId,
+      taskId: taskId,
+      status: 'active',
+      actualMinutes: 45
+    }
+  ];
+  if (!db.streaks) db.streaks = {};
+  db.streaks[testUserId] = {
+    userId: testUserId,
+    currentStreak: 4,
+    longestStreak: 5,
+    todayTargetMet: false,
+    completedDays: 4
+  };
+  saveDb(db);
+
+  // Submit quiz answers (4 out of 5 correct = 80%)
+  const mockQuizAnswers = [
+    { questionId: 'q_1', selectedAnswer: 'Floyd\'s Cycle-Finding Algorithm (Fast & Slow Pointers)', isCorrect: true },
+    { questionId: 'q_2', selectedAnswer: 'Save curr.next in temporary variable before rewiring curr.next to prev', isCorrect: true },
+    { questionId: 'q_3', selectedAnswer: 'Time: O(N), Space: O(1)', isCorrect: true },
+    { questionId: 'q_4', selectedAnswer: 'Linked List only updates head pointer; Arrays must shift all N elements in contiguous memory', isCorrect: true },
+    { questionId: 'q_5', selectedAnswer: 'Wrong Option', isCorrect: false }
+  ];
+
+  const completionResult = recordTaskRevisionAndComplete(testUserId, {
+    taskId,
+    sessionId,
+    answers: mockQuizAnswers,
+    durationMinutes: 45,
+    taskContext: taskDomains[1]
+  });
+
+  assert(completionResult.success === true, 'recordTaskRevisionAndComplete returns success');
+  assert.strictEqual(completionResult.scorePercent, 80, 'Server-side score calculated as 80%');
+  assert.strictEqual(completionResult.correctCount, 4, '4 correct answers recorded');
+  assert.strictEqual(completionResult.totalQuestions, 5, '5 total questions');
+  assert(completionResult.task.completed === true, 'Task is officially finalized as completed');
+  assert.strictEqual(completionResult.session.status, 'completed', 'Focus session marked as completed');
+  assert(completionResult.revision.retentionScore >= 75, 'Deterministic SM-2 retention score boosted');
+  assert(completionResult.nextIntervalDays >= 1, 'Spaced interval scheduled deterministically');
+
+  // Idempotency verification: duplicate completion does not double-increment streak
+  const initialStreak = completionResult.streak?.currentStreak || 4;
+  const duplicateCompletion = recordTaskRevisionAndComplete(testUserId, {
+    taskId,
+    sessionId,
+    answers: mockQuizAnswers,
+    durationMinutes: 45,
+    taskContext: taskDomains[1]
+  });
+  assert.strictEqual(duplicateCompletion.streak.currentStreak, initialStreak, 'Duplicate completion is idempotent');
+
+  // Clean up test records
+  const dbClean = loadDb();
+  delete dbClean.tasks[testUserId];
+  delete dbClean.focusSessions[testUserId];
+  delete dbClean.revisions[testUserId];
+  delete dbClean.streaks[testUserId];
+  saveDb(dbClean);
+
   // Reset provider to live default
   resetAIProvider();
 
   console.log('\n================================================================');
-  console.log('🎉 ALL 10 GEMINI AI INTEGRATION TESTS PASSED SUCCESSFULLY!');
+  console.log('🎉 ALL 12 GEMINI AI INTEGRATION TESTS PASSED SUCCESSFULLY!');
   console.log('================================================================\n');
 }
 

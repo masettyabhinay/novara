@@ -329,39 +329,55 @@ export function evaluateExtractionQuality(text, fileName = '') {
 }
 
 /**
- * Detects lines containing document-level metadata, titles, or branding that
- * must NEVER become curriculum topics.
+ * Detects lines containing document-level metadata, titles, branding, section annotations,
+ * goals, schedules, or testing notes that must NEVER become curriculum topics.
  */
 export function isMetadataLine(line, cleanTitle = '', targetRole = '') {
   if (!line || typeof line !== 'string') return true;
   const trimmed = line.trim();
   if (trimmed.length < 2) return true;
 
+  const stripped = trimmed.replace(/^(?:[\u2022\u25E6\u25AA\u2713\u2013\u2014•\-\*]|â€¢|\u00e2[\u0080\u20ac]\u00a2|\d+[\.\)\-:])+\s*/, '').trim();
+
   // 1. Application / Product name
-  if (/^(?:NOVARA|Novara|Placeready|PlaceReady)\s*$/i.test(trimmed)) return true;
+  if (/^(?:NOVARA|Novara|Placeready|PlaceReady)\s*$/i.test(trimmed) || /^(?:NOVARA|Novara|Placeready|PlaceReady)\s*$/i.test(stripped)) return true;
 
   // 2. Document title / Header matches
   if (/(?:Sample\s+.*Placement\s+Preparation\s+Roadmap|Placement\s+Preparation\s+Roadmap|Preparation\s+Roadmap|Curriculum\s+Roadmap)$/i.test(trimmed)) return true;
-  if (cleanTitle && trimmed.toLowerCase() === cleanTitle.toLowerCase()) return true;
+  if (cleanTitle && (trimmed.toLowerCase() === cleanTitle.toLowerCase() || stripped.toLowerCase() === cleanTitle.toLowerCase())) return true;
 
   // 3. Duration metadata
-  if (/^(?:Duration|Total\s*Duration)\s*:?\s*\d+\s*(?:weeks?|months?|days?|hrs?|hours?)/i.test(trimmed)) return true;
-  if (/^Duration\s*:?\s*\d+/i.test(trimmed)) return true;
-  if (/^\d+\s*weeks?\s*$/i.test(trimmed)) return true;
+  if (/^(?:Duration|Total\s*Duration)\s*:?\s*\d+\s*(?:weeks?|months?|days?|hrs?|hours?)/i.test(trimmed) || /^(?:Duration|Total\s*Duration)\s*:?\s*\d+/i.test(stripped)) return true;
+  if (/^Duration\s*:?\s*\d+/i.test(trimmed) || /^Duration\s*:?\s*\d+/i.test(stripped)) return true;
+  if (/^\d+\s*weeks?\s*$/i.test(trimmed) || /^\d+\s*weeks?\s*$/i.test(stripped)) return true;
 
   // 4. Daily study time metadata
-  if (/^(?:Daily\s*Study\s*Time|Study\s*Time|Daily\s*Time)\s*:?\s*\d+/i.test(trimmed)) return true;
-  if (/^\d+(?:–|-|\s*to\s*)\d+\s*hours?\s*(?:\/\s*day|daily)?\s*$/i.test(trimmed)) return true;
+  if (/^(?:Daily\s*Study\s*Time|Study\s*Time|Daily\s*Time)\s*:?\s*\d+/i.test(trimmed) || /^(?:Daily\s*Study\s*Time|Study\s*Time|Daily\s*Time)\s*:?\s*\d+/i.test(stripped)) return true;
+  if (/^\d+(?:–|-|\s*to\s*)\d+\s*hours?\s*(?:\/\s*day|daily)?\s*$/i.test(trimmed) || /^\d+(?:–|-|\s*to\s*)\d+\s*hours?\s*(?:\/\s*day|daily)?\s*$/i.test(stripped)) return true;
 
   // 5. Target role metadata
-  if (/^(?:Target(?:\s*Role)?)\s*:?\s*(?:Software|SDE|Engineer|Developer|Placement)/i.test(trimmed)) return true;
-  if (targetRole && trimmed.toLowerCase().includes(targetRole.toLowerCase()) && /^(?:target|role)/i.test(trimmed)) return true;
+  if (/^(?:Target(?:\s*Role)?)\s*:?\s*(?:Software|SDE|Engineer|Developer|Placement)/i.test(trimmed) || /^(?:Target(?:\s*Role)?)\s*:?\s*(?:Software|SDE|Engineer|Developer|Placement)/i.test(stripped)) return true;
+  if (targetRole && (trimmed.toLowerCase().includes(targetRole.toLowerCase()) || stripped.toLowerCase().includes(targetRole.toLowerCase())) && /^(?:target|role)/i.test(stripped)) return true;
 
-  // 6. Section sub-headings or labels
-  if (/^(?:Topics|Curriculum|Syllabus|Modules?)\s*[:\-]?\s*$/i.test(trimmed)) return true;
+  // 6. Section sub-headings, labels, and phase annotations
+  if (/^(?:Topics|Curriculum|Syllabus|Modules?)\s*[:\-]?\s*$/i.test(trimmed) || /^(?:Topics|Curriculum|Syllabus|Modules?)\s*[:\-]?\s*$/i.test(stripped)) return true;
+  if (/^Practice\s*:/i.test(trimmed) || /^Practice\s*:/i.test(stripped)) return true;
+  if (/^Project\s*:/i.test(trimmed) || /^Project\s*:/i.test(stripped)) return true;
+  if (/^Focus\s*:/i.test(trimmed) || /^Focus\s*:/i.test(stripped)) return true;
 
-  // 7. Page numbers / Author / Date / Upload info
+  // 7. Goals, targets, and summary metrics
+  if (/^Final\s*Goals\b/i.test(trimmed) || /^Final\s*Goals\b/i.test(stripped)) return true;
+  if (/^\d+\+?\s*(?:coding\s*problems|SQL\s*queries|full-stack\s*projects?|mock\s*interviews|polished\s*resumes?)/i.test(stripped)) return true;
+  if (/^Revise\s+all\s+major\s+CS\s+fundamentals/i.test(stripped)) return true;
+
+  // 8. Weekly routine schedule table
+  if (/^Suggested\s*Weekly\s*Routine\b/i.test(trimmed) || /^Suggested\s*Weekly\s*Routine\b/i.test(stripped)) return true;
+  if (/^Day\s*Primary\s*Focus\b/i.test(trimmed) || /^Day\s*Primary\s*Focus\b/i.test(stripped)) return true;
+  if (/^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)(?:\s*[–\-—]\s*(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday))?\s*(?:Learn|Revision|Project|Weekly|\+)/i.test(stripped)) return true;
+
+  // 9. Page numbers / Author / Date / Upload info / Boilerplate
   if (/^(?:Author|Date|Version|Page\s*\d+)\s*:/i.test(trimmed)) return true;
+  if (/^Sample\s+roadmap\s+for\s+testing/i.test(trimmed) || /^Sample\s+roadmap\s+for\s+testing/i.test(stripped)) return true;
 
   return false;
 }
@@ -410,7 +426,18 @@ export function validateExtractedRoadmapQuality(roadmap, cleanTitle = '', target
         return { valid: false, reason: `Target role metadata "${name}" appears as a curriculum topic.` };
       }
 
-      // 6. Reject if topic still contains "Topics•" or subheaders
+      // 6. Reject if topic contains non-curriculum section markers or goals
+      if (/^Practice\s*:/i.test(name) || /^Project\s*:/i.test(name) || /^Focus\s*:/i.test(name)) {
+        return { valid: false, reason: `Section annotation "${name}" appears as a curriculum topic.` };
+      }
+      if (/^Final\s*Goals\b/i.test(name) || /^\d+\+?\s*(?:coding|SQL|mock|project|resume)/i.test(name)) {
+        return { valid: false, reason: `Target goal metric "${name}" appears as a curriculum topic.` };
+      }
+      if (/^Suggested\s*Weekly\s*Routine\b/i.test(name) || /^Day\s*Primary\s*Focus\b/i.test(name)) {
+        return { valid: false, reason: `Weekly routine table header "${name}" appears as a curriculum topic.` };
+      }
+
+      // 7. Reject if topic still contains "Topics•" or subheaders
       if (/^Topics\s*[:•\-\*]/i.test(name)) {
         return { valid: false, reason: `Topic "${name}" contains unprocessed "Topics" label prefix.` };
       }
@@ -424,6 +451,126 @@ export function validateExtractedRoadmapQuality(roadmap, cleanTitle = '', target
   // If literally every topic was assigned an artificial 6h duration, flag as suspicious
   if (totalTopics > 5 && artificialSixHourCount === totalTopics) {
     return { valid: false, reason: 'All topics were assigned an artificial default duration of 6h without source text support.' };
+  }
+
+  return { valid: true, reason: null };
+}
+
+/**
+ * Extracts authentic curriculum bullet items grouped by phase from sanitized source text.
+ */
+export function extractSourceCurriculumBullets(sanitizedText, cleanTitle = '', targetRole = '') {
+  if (!sanitizedText || typeof sanitizedText !== 'string') return [];
+
+  const EXPLICIT_PHASE_REGEX = /^(?:#+\s*)?(?:Phase|Module|Part|Week|Section|Sprint|Level|Stage|Chapter|Term|Step)\s*(?:[0-9]+|[IVXLCDM]+)?\s*[:\-\s—–|]+(.*)$/i;
+  const BARE_PHASE_REGEX = /^(?:#+\s*)?(?:Phase|Module|Part|Week|Section|Sprint|Level|Stage)\s*(?:[0-9]+|[IVXLCDM]+)\s*$/i;
+  const MARKDOWN_HEADER_REGEX = /^(?:#{1,2})\s+([A-Za-z0-9\s&,/\-—–:()]+)$/;
+  const TOPIC_PREFIX_REGEX = /^(?:\d+[\.\)\-:]|\*|\-|\u2022|\u25E6|\u25AA|\u2713|\u2013|\u2014|•|â€¢|\u00e2[\u0080\u20ac]\u00a2)\s*/;
+
+  const lines = sanitizedText.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+  const phases = [];
+  let currentPhase = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const isExplicitPhase = EXPLICIT_PHASE_REGEX.test(line) || BARE_PHASE_REGEX.test(line) || MARKDOWN_HEADER_REGEX.test(line);
+
+    if (isExplicitPhase) {
+      if (currentPhase && currentPhase.topics.length > 0) {
+        phases.push(currentPhase);
+      }
+      currentPhase = { title: line.replace(/^#+\s*/, '').trim(), topics: [] };
+      continue;
+    }
+
+    if (!currentPhase) continue;
+    if (isMetadataLine(line, cleanTitle, targetRole)) continue;
+
+    let topicName = line
+      .replace(/^Topics\s*[:•\-\*]?\s*/i, '')
+      .replace(TOPIC_PREFIX_REGEX, '')
+      .replace(/^(?:[\u2022\u25E6\u25AA\u2713\u2013\u2014•\-\*]|â€¢|\u00e2[\u0080\u20ac]\u00a2|\d+[\.\)\-:])+\s*/, '')
+      .replace(/\((?:easy|medium|hard|beginner|advanced|intermediate)\)/gi, '')
+      .replace(/(?:[-–—:]\s*)?\b\d+\s*(?:problems|questions|tasks|drills|probs|qns)\b/gi, '')
+      .replace(/(?:[-–—:]\s*)?\b\d+\s*(?:h|hours|hrs)\b/gi, '')
+      .replace(/\[.*?\]/g, '')
+      .replace(/\s*[-–—:]\s*$/, '')
+      .trim();
+
+    if (isMetadataLine(topicName, cleanTitle, targetRole)) continue;
+
+    if (
+      topicName.length >= 2 &&
+      topicName.length <= 120 &&
+      !topicName.startsWith('/') &&
+      !topicName.startsWith('http')
+    ) {
+      currentPhase.topics.push(topicName);
+    }
+  }
+
+  if (currentPhase && currentPhase.topics.length > 0) {
+    phases.push(currentPhase);
+  }
+
+  return phases;
+}
+
+/**
+ * Validates that structured roadmap output faithfully preserves source curriculum topics
+ * without consolidating/merging distinct source bullet points or omitting topics.
+ */
+export function validateCurriculumFaithfulness(sourceCurriculum, roadmap) {
+  if (!roadmap || !Array.isArray(roadmap.phases) || roadmap.phases.length === 0) {
+    return { valid: false, reason: 'Roadmap has no phases.' };
+  }
+
+  if (!Array.isArray(sourceCurriculum) || sourceCurriculum.length === 0) {
+    return { valid: true, reason: null };
+  }
+
+  for (let pIdx = 0; pIdx < Math.min(sourceCurriculum.length, roadmap.phases.length); pIdx++) {
+    const srcPhase = sourceCurriculum[pIdx];
+    const roadPhase = roadmap.phases[pIdx];
+    const srcTopics = srcPhase.topics || [];
+    const roadTopics = (roadPhase.topics || []).map(t => (t.name || '').trim());
+
+    if (srcTopics.length === 0) continue;
+
+    // 1. Detect merged source topics
+    // Check every pair of distinct source bullet items (e.g. Stacks & Queues)
+    for (let i = 0; i < srcTopics.length; i++) {
+      for (let j = i + 1; j < srcTopics.length; j++) {
+        const itemA = srcTopics[i].trim();
+        const itemB = srcTopics[j].trim();
+        if (itemA.length < 3 || itemB.length < 3) continue;
+
+        const regMerge = new RegExp(`\\b${itemA.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+(?:and|&|\\+)\\s+${itemB.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        const regMergeRev = new RegExp(`\\b${itemB.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+(?:and|&|\\+)\\s+${itemA.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+
+        const hasMergedTopic = roadTopics.some(t => regMerge.test(t) || regMergeRev.test(t));
+        const hasSeparateA = roadTopics.some(t => t.toLowerCase() === itemA.toLowerCase());
+        const hasSeparateB = roadTopics.some(t => t.toLowerCase() === itemB.toLowerCase());
+
+        if (hasMergedTopic && (!hasSeparateA || !hasSeparateB)) {
+          return {
+            valid: false,
+            reason: `Distinct source topics "${itemA}" and "${itemB}" were merged into a single topic in Phase ${pIdx + 1} ("${roadPhase.title || srcPhase.title}"). Both topics must be preserved individually.`
+          };
+        }
+      }
+    }
+
+    // 2. Detect topic count deficits where distinct topics were combined
+    if (srcTopics.length > 2 && roadTopics.length < srcTopics.length) {
+      const missing = srcTopics.filter(st => !roadTopics.some(rt => rt.toLowerCase().includes(st.toLowerCase()) || st.toLowerCase().includes(rt.toLowerCase())));
+      if (missing.length > 0) {
+        return {
+          valid: false,
+          reason: `Phase ${pIdx + 1} ("${roadPhase.title || srcPhase.title}") is missing source curriculum topics: "${missing.join('", "')}". Expected ${srcTopics.length} topics, but found ${roadTopics.length}.`
+        };
+      }
+    }
   }
 
   return { valid: true, reason: null };

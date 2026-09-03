@@ -64,7 +64,8 @@ import {
   analyzeCoachWithAI,
   generateInterviewQuestionsWithAI,
   evaluateInterviewAnswerWithAI,
-  generateRevisionQuestionsWithAI
+  generateRevisionQuestionsWithAI,
+  generateTaskRevisionQuiz
 } from './aiService.js';
 
 import { verifyGoogleToken, isValidGoogleClientId } from './authGoogle.js';
@@ -84,6 +85,7 @@ import {
   getRevisionsForUser,
   generateRevisionQuestions,
   submitRevisionAttempt,
+  recordTaskRevisionAndComplete,
   rescheduleRevision
 } from './revisionService.js';
 
@@ -776,8 +778,8 @@ export async function apiMiddlewareHandler(req, res, next) {
             }
           }
 
-          // POST /api/revision/generate
-          if (req.method === 'POST' && pathname === '/api/revision/generate') {
+          // POST /api/revision/generate or POST /api/quiz/generate-task-quiz
+          if (req.method === 'POST' && (pathname === '/api/revision/generate' || pathname === '/api/quiz/generate-task-quiz')) {
             const rateCheck = checkRateLimit(req, 'AI');
             if (!rateCheck.allowed) {
               res.setHeader('Retry-After', String(rateCheck.retryAfterSeconds));
@@ -786,36 +788,57 @@ export async function apiMiddlewareHandler(req, res, next) {
 
             try {
               const body = await readBodyJson(req);
-              const { topic, category, difficulty } = body;
+              const { topic, category, difficulty, taskTitle, taskDescription, roadmapPhase, roadmapTopic, taskCategory, learningObjectives, relevantMetadata } = body;
               let questions = null;
+
+              const taskCtx = {
+                taskTitle: taskTitle || topic || 'Core Curriculum Concept',
+                taskDescription: taskDescription || '',
+                roadmapPhase: roadmapPhase || '',
+                roadmapTopic: roadmapTopic || topic || taskTitle || '',
+                taskCategory: taskCategory || category || 'DSA',
+                difficulty: difficulty || 'Medium',
+                learningObjectives: learningObjectives || '',
+                relevantMetadata: relevantMetadata || '',
+                count: 5
+              };
 
               if (isGeminiConfigured()) {
                 try {
-                  questions = await generateRevisionQuestionsWithAI({
-                    topicName: topic || 'Arrays',
-                    category: category || 'DSA',
-                    difficulty: difficulty || 'Medium'
-                  });
+                  questions = await generateTaskRevisionQuiz(taskCtx);
                 } catch (aiErr) {
-                  console.warn('[apiMiddleware] Gemini revision generation failed, falling back to grounded bank:', aiErr.message);
+                  console.warn('[apiMiddleware] Gemini task revision generation failed, falling back to grounded bank:', aiErr.message);
                 }
               }
 
               if (!questions || questions.length === 0) {
-                questions = generateRevisionQuestions(topic || 'Arrays', category || 'DSA', difficulty || 'Medium');
+                questions = generateRevisionQuestions(taskCtx, taskCtx.taskCategory, taskCtx.difficulty);
               }
 
-              return sendJson(res, 200, { success: true, topic, questions }, req);
+              if (!questions || questions.length === 0) {
+                return sendJson(res, 503, {
+                  success: false,
+                  retryable: true,
+                  error: 'Quiz generation is currently unavailable for this task. Please retry.'
+                }, req);
+              }
+
+              return sendJson(res, 200, { success: true, topic: taskCtx.roadmapTopic || taskCtx.taskTitle, questions }, req);
             } catch (err) {
               return sendJson(res, 400, { success: false, error: err.message }, req);
             }
           }
 
-          // POST /api/revision/submit or POST /api/revision/complete
-          if (req.method === 'POST' && (pathname === '/api/revision/submit' || pathname === '/api/revision/complete')) {
+          // POST /api/revision/submit, POST /api/revision/complete, or POST /api/quiz/complete-task-quiz
+          if (req.method === 'POST' && (pathname === '/api/revision/submit' || pathname === '/api/revision/complete' || pathname === '/api/quiz/complete-task-quiz')) {
             try {
               const body = await readBodyJson(req);
-              const result = submitRevisionAttempt(authUser.id, body);
+              let result;
+              if (body.taskId || body.sessionId || body.taskContext) {
+                result = recordTaskRevisionAndComplete(authUser.id, body);
+              } else {
+                result = submitRevisionAttempt(authUser.id, body);
+              }
               return sendJson(res, 200, { success: true, ...result }, req);
             } catch (err) {
               return sendJson(res, 400, { success: false, error: err.message }, req);

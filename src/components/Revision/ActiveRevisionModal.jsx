@@ -76,14 +76,22 @@ export const ActiveRevisionModal = () => {
     setSelectedOption(opt);
   };
 
+  const checkIsCorrect = (opt, q) => {
+    if (!q || !opt) return false;
+    if (typeof q.correctAnswer === 'number' && Array.isArray(q.options)) {
+      return q.options[q.correctAnswer] === opt;
+    }
+    return q.correctAnswer === opt || q.correctAnswerText === opt;
+  };
+
   const handleRevealAnswer = () => {
     if (!selectedOption || !currentQuestion) return;
 
-    const isCorrect = selectedOption === currentQuestion.correctAnswer;
+    const isCorrect = checkIsCorrect(selectedOption, currentQuestion);
     const answerRecord = {
       questionId: currentQuestion.id,
       selectedAnswer: selectedOption,
-      correctAnswer: currentQuestion.correctAnswer,
+      correctAnswer: currentQuestion.correctAnswerText || currentQuestion.correctAnswer,
       isCorrect
     };
 
@@ -402,7 +410,7 @@ export const ActiveRevisionModal = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
                   {currentQuestion.options.map((opt, i) => {
                     const isSelected = selectedOption === opt;
-                    const isCorrectAnswer = opt === currentQuestion.correctAnswer;
+                    const isCorrectAnswer = checkIsCorrect(opt, currentQuestion);
                     
                     let bg = '#FFFFFF';
                     let border = 'var(--border-beige)';

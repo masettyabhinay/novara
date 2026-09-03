@@ -31,7 +31,9 @@ import {
 import {
   fetchRevisionsApi,
   generateRevisionQuestionsApi,
+  generateTaskRevisionQuizApi,
   submitRevisionAttemptApi,
+  completeTaskWithQuizApi,
   rescheduleRevisionApi
 } from '../services/revisionService';
 import {
@@ -987,7 +989,8 @@ export const AppProvider = ({ children }) => {
       showToast('Preparing Revision Mode 🧠', `Loading recall session for ${item.topic}...`, 'sage');
       const questions = await generateRevisionQuestionsApi({
         topic: item.topic,
-        category: item.category,
+        roadmapTopic: item.topic,
+        taskCategory: item.category,
         difficulty: item.difficulty || 'Medium'
       });
 
@@ -1011,20 +1014,94 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const startTaskRevisionQuiz = async (task, focusSession = null) => {
+    if (!task) return;
+    try {
+      showToast('Generating Knowledge Check 🧠', `Generating quiz for ${task.name || task.title || 'task'}...`, 'sage');
+      
+      let phaseName = '';
+      let topicName = task.name || task.title || task.topic || 'Core Concept';
+      if (activeRoadmap?.phases) {
+        for (const p of activeRoadmap.phases) {
+          const matchTopic = (p.topics || []).find((t) => t.id === task.topicId || t.name === task.name);
+          if (matchTopic) {
+            phaseName = p.title;
+            topicName = matchTopic.name;
+            break;
+          }
+        }
+      }
+
+      const taskContext = {
+        taskId: task.id,
+        sessionId: focusSession?.sessionId || activeFocusSession?.sessionId || null,
+        taskTitle: task.name || task.title || topicName,
+        taskDescription: task.description || '',
+        roadmapPhase: phaseName || task.phase || '',
+        roadmapTopic: topicName,
+        taskCategory: task.category || 'DSA',
+        difficulty: task.difficulty || 'Medium',
+        learningObjectives: Array.isArray(task.subtasks) ? task.subtasks.map((s) => s.name).join(', ') : '',
+        count: 5
+      };
+
+      const questions = await generateTaskRevisionQuizApi(taskContext);
+
+      setActiveRevisionSession({
+        revisionId: task.revisionId || null,
+        taskId: task.id,
+        sessionId: taskContext.sessionId,
+        taskContext,
+        topicId: task.topicId || task.id,
+        topic: topicName,
+        category: task.category || 'DSA',
+        difficulty: task.difficulty || 'Medium',
+        retentionScore: 68,
+        questions: questions,
+        currentQuestionIndex: 0,
+        userAnswers: [],
+        startedAt: Date.now()
+      });
+
+      setIsFocusModalOpen(false);
+      setIsRevisionModeOpen(true);
+      setIsTopicDetailOpen(false);
+    } catch (e) {
+      console.warn('[Start Task Revision Quiz Error]', e);
+      showToast('Notice', 'Could not generate quiz. Please retry.', 'terracotta');
+    }
+  };
+
   const submitAdaptiveRevision = async (answers, durationMinutes) => {
     if (!activeRevisionSession) return null;
     try {
-      const result = await submitRevisionAttemptApi({
+      const result = await completeTaskWithQuizApi({
         revisionId: activeRevisionSession.revisionId,
+        taskId: activeRevisionSession.taskId,
+        sessionId: activeRevisionSession.sessionId,
+        taskContext: activeRevisionSession.taskContext,
         answers,
         durationMinutes
       });
 
       if (result.revision) {
-        setRevisionQueue((prev) =>
-          prev.map((r) => (r.id === result.revision.id ? result.revision : r))
-        );
+        setRevisionQueue((prev) => {
+          const exists = prev.some((r) => r.id === result.revision.id);
+          if (exists) {
+            return prev.map((r) => (r.id === result.revision.id ? result.revision : r));
+          }
+          return [result.revision, ...prev];
+        });
       }
+
+      if (result.tasks) {
+        setTodayTasks(result.tasks);
+      } else if (activeRevisionSession.taskId) {
+        setTodayTasks((prev) => prev.map((t) => (t.id === activeRevisionSession.taskId ? { ...t, completed: true, completedAt: new Date().toISOString() } : t)));
+      }
+
+      if (result.streak) setStreakData(result.streak);
+      if (result.readiness) setReadinessMetrics(result.readiness);
 
       triggerConfetti();
       refreshRevisions();
@@ -1603,6 +1680,7 @@ export const AppProvider = ({ children }) => {
         setIsTopicDetailOpen,
         refreshRevisions,
         startAdaptiveRevision,
+        startTaskRevisionQuiz,
         submitAdaptiveRevision,
         handleRescheduleRevision,
         activeRevisionItem,

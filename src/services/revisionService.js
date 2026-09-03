@@ -36,30 +36,41 @@ export const fetchTopicRevisionDetailsApi = async (topicId) => {
   return data.revision;
 };
 
-export const generateRevisionQuestionsApi = async ({ topic, category, difficulty }) => {
+export const generateTaskRevisionQuizApi = async (taskContext = {}) => {
   const response = await fetch('/api/revision/generate', {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ topic, category, difficulty })
+    body: JSON.stringify(taskContext)
   });
   const data = await response.json();
   if (!response.ok || !data.success) {
-    throw new Error(data.error || 'Failed to generate revision questions.');
+    throw new Error(data.error || 'Failed to generate task revision quiz.');
   }
   return data.questions || [];
 };
 
-export const submitRevisionAttemptApi = async ({ revisionId, answers, durationMinutes }) => {
+export const generateRevisionQuestionsApi = async (taskContextOrTopic) => {
+  if (typeof taskContextOrTopic === 'object' && taskContextOrTopic !== null) {
+    return generateTaskRevisionQuizApi(taskContextOrTopic);
+  }
+  return generateTaskRevisionQuizApi({ topic: taskContextOrTopic });
+};
+
+export const completeTaskWithQuizApi = async ({ taskId, sessionId, revisionId, answers, durationMinutes, taskContext }) => {
   const response = await fetch('/api/revision/submit', {
     method: 'POST',
     headers: getAuthHeaders(),
-    body: JSON.stringify({ revisionId, answers, durationMinutes })
+    body: JSON.stringify({ taskId, sessionId, revisionId, answers, durationMinutes, taskContext })
   });
   const data = await response.json();
   if (!response.ok || !data.success) {
-    throw new Error(data.error || 'Failed to submit revision attempt.');
+    throw new Error(data.error || 'Failed to complete task and record revision.');
   }
   return data;
+};
+
+export const submitRevisionAttemptApi = async ({ revisionId, taskId, sessionId, answers, durationMinutes, taskContext }) => {
+  return completeTaskWithQuizApi({ revisionId, taskId, sessionId, answers, durationMinutes, taskContext });
 };
 
 export const rescheduleRevisionApi = async ({ revisionId, daysAhead, targetDate }) => {

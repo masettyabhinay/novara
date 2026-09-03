@@ -9,7 +9,13 @@
  */
 
 import { logger, ERROR_CATEGORIES } from './logger.js';
-import { validateRoadmapSchema, validateExtractedRoadmapQuality, isMetadataLine } from './roadmapService.js';
+import {
+  validateRoadmapSchema,
+  validateExtractedRoadmapQuality,
+  isMetadataLine,
+  extractSourceCurriculumBullets,
+  validateCurriculumFaithfulness
+} from './roadmapService.js';
 
 // =============================================================================
 // 1. BASE AI PROVIDER (Abstract Interface)
@@ -403,26 +409,43 @@ export async function parseRoadmapWithAI(sanitizedText, targetRole = 'Software E
     return null;
   }
 
+  const sourceCurriculum = extractSourceCurriculumBullets(sanitizedText, fileName, targetRole);
+
   const prompt = `You are the NOVARA Placement Curriculum Specialist.
 Analyze the following SANITIZED curriculum text extracted from an uploaded document (${fileName}) and organize it into a structured placement roadmap.
 
-STRICT ZERO-HALLUCINATION & METADATA EXCLUSION RULES:
-1. Extract ONLY technical curriculum topics explicitly discussed in the text.
-2. CRITICAL - NEVER ADD DOCUMENT METADATA AS TOPICS OR PHASES:
+STRICT FAITHFUL CURRICULUM PRESERVATION RULES:
+1. FAITHFUL TOPIC PRESERVATION (CRITICAL):
+   - Every distinct bullet point, sub-topic, or list item in the source curriculum MUST become its own separate topic in the output roadmap.
+   - Do NOT merge, combine, or consolidate two distinct source bullet points into one topic.
+   - For example, if the source has:
+     - Stacks
+     - Queues
+     the output MUST contain:
+     - Stacks
+     - Queues
+     as two separate topics. NEVER merge them into "Stacks and Queues".
+   - Similarly, preserve every distinct bullet/list item from the source unless the source itself explicitly combined them on a single line.
+2. DO NOT SUMMARIZE, CONSOLIDATE, OR RENAME:
+   - Do not use AI to unnecessarily summarize, consolidate, or rename individual topics.
+   - Topic names MUST remain as close as possible to the exact source wording.
+3. CURRICULUM HIERARCHY & BOUNDED PHASES:
+   - Preserve the source document's phase hierarchy. Group topics into their respective source phases.
+   - Do not invent additional topics that are not in the source text.
+   - Do not remove or omit legitimate topics from the source text.
+4. NEVER ADD DOCUMENT METADATA AS TOPICS OR PHASES:
    - Application or platform name ("NOVARA", "Placeready") MUST NEVER be topics or phases.
    - Document title or header ("Sample Software Engineer Placement Preparation Roadmap") MUST NEVER be topics or phases.
    - Duration metadata ("Duration: 12 Weeks", "12 Weeks") MUST NEVER be topics or phases.
    - Daily study time ("Daily Study Time: 2-3 hours", "2 hours/day") MUST NEVER be topics or phases.
    - Target role ("Target: Software Engineer / SDE Placement") MUST NEVER be topics or phases.
-   - Author, upload date, page numbers, or section labels ("Topics:", "Curriculum:") MUST NEVER be topics or phases.
+   - Section annotations, practice notes, project summaries, focus statements, or routine tables ("Practice: ...", "Project: ...", "Focus: ...", "Final Goals", weekly routine tables) MUST NEVER be topics.
    Document-level metadata should only be stored as top-level JSON fields (title, targetRole).
-3. DO NOT INVENT DURATIONS:
-   If duration is not explicitly stated in the document for a specific topic, set duration to null. NEVER assign an artificial default duration like "6h".
-4. DO NOT INVENT PROBLEM COUNTS:
-   If problem count is not explicitly stated for a topic, set problemsCount to null.
-5. CLEAN TOPIC NAMES:
-   Topic names must be clean skill/concept names. Strip any "Topics:" or bullet markers. For example, "Topics• Variables, data types and operators" MUST become "Variables, data types and operators".
-6. Consolidate topics into a clean, bounded curriculum of 3 to 8 logical phases (e.g. Phase 01: Programming Foundations, Phase 02: Data Structures, etc.). Never produce more than 10 phases.
+5. DURATIONS & PROBLEM COUNTS:
+   - If duration is not explicitly stated in the source text for a specific topic, set duration to null. NEVER assign an artificial default duration like "6h".
+   - If problem count is not explicitly stated for a topic, set problemsCount to null.
+6. CLEAN TOPIC NAMES:
+   - Strip leading "Topics:" or bullet markers (•, -, *).
 
 DOCUMENT TEXT:
 ${sanitizedText.slice(0, 15000)}
@@ -452,44 +475,55 @@ REQUIRED JSON STRUCTURE:
   try {
     let parsed = await provider.generateJSON({
       prompt,
-      systemInstruction: 'You are an expert technical curriculum parser. Return only valid JSON matching the requested roadmap schema. Do not include document metadata (product name, title, duration, study time, target role) as topics. Do not invent 6h durations.',
-      schemaHint: 'Roadmap with title, targetRole, extractedSkills, and phases array with topics.'
+      systemInstruction: 'You are an expert technical curriculum parser. Return only valid JSON matching the requested roadmap schema. Preserve every distinct source bullet point as a separate topic without merging (e.g. Stacks and Queues must remain two separate topics). Do not include document metadata as topics. Do not invent 6h durations.',
+      schemaHint: 'Roadmap with title, targetRole, extractedSkills, and phases array with faithful topics.'
     });
 
-    // Validate with strict schema validator
+    // Validate with strict schema, quality, and faithfulness validators
     let validation = validateRoadmapSchema(parsed);
     let quality = validation.valid ? validateExtractedRoadmapQuality(parsed, fileName, targetRole) : { valid: false, reason: validation.error };
+    let faithfulness = (validation.valid && quality.valid) ? validateCurriculumFaithfulness(sourceCurriculum, parsed) : { valid: false, reason: validation.error || quality.reason };
 
-    // If quality validation fails (e.g. metadata leaked into topics), retry Gemini ONCE with a targeted correction prompt
-    if (!quality.valid) {
-      logger.warn(`[AIService] AI-generated roadmap failed quality check: ${quality.reason}. Retrying Gemini with targeted correction prompt...`);
+    // If validation fails (e.g. metadata leaked or topics merged), retry Gemini ONCE with a targeted correction prompt
+    if (!quality.valid || !faithfulness.valid) {
+      const failureReason = quality.reason || faithfulness.reason;
+      logger.warn(`[AIService] AI-generated roadmap failed check (${failureReason}). Retrying Gemini with targeted correction prompt...`);
       try {
         const retryPrompt = `${prompt}
 
 CRITICAL CORRECTION REQUIRED:
-Your previous response failed quality validation because: ${quality.reason}.
+Your previous response failed validation because:
+${failureReason}
+
 Ensure that:
-1. Product name ("NOVARA"), document title, duration ("12 Weeks"), daily study time, and target role are NEVER included as topics or phases.
-2. No artificial "6h" durations are generated; use null when not stated in source text.
-3. Clean topic names without bullet points or "Topics" prefixes.`;
+1. Every distinct bullet point in the source text MUST be a separate topic (e.g. if the source has "Stacks" and "Queues", output them as two separate topics, NEVER "Stacks and Queues").
+2. Do not merge, consolidate, or omit any source topics.
+3. Product name ("NOVARA"), document title, duration, daily study time, practice notes, and target role are NEVER included as topics or phases.
+4. No artificial "6h" durations are generated; use null when not stated in source text.
+5. Clean topic names without bullet points or "Topics" prefixes.`;
 
         parsed = await provider.generateJSON({
           prompt: retryPrompt,
-          systemInstruction: 'You are an expert technical curriculum parser. Return only valid JSON. Do not include document metadata as topics. Do not invent 6h durations.',
-          schemaHint: 'Clean roadmap without metadata topics and without fabricated durations.'
+          systemInstruction: 'You are an expert technical curriculum parser. Return only valid JSON. Faithfully preserve every bullet item as an individual topic without merging. Do not include document metadata as topics. Do not invent 6h durations.',
+          schemaHint: 'Clean roadmap preserving all individual source topics faithfully.'
         });
 
         validation = validateRoadmapSchema(parsed);
         quality = validation.valid ? validateExtractedRoadmapQuality(parsed, fileName, targetRole) : { valid: false, reason: validation.error };
+        faithfulness = (validation.valid && quality.valid) ? validateCurriculumFaithfulness(sourceCurriculum, parsed) : { valid: false, reason: validation.error || quality.reason };
       } catch (retryErr) {
         logger.warn(`[AIService] Gemini retry failed: ${retryErr.message}`);
       }
     }
 
+    // If schema or severe quality validation completely fails, fall back to deterministic parser
     if (!validation.valid || !quality.valid) {
       logger.warn(`[AIService] AI-generated roadmap rejected due to quality failure: ${quality.reason || validation.error}. Falling back to deterministic parser.`);
       return null;
     }
+
+    const needsReview = !faithfulness.valid;
+    const reviewReason = needsReview ? faithfulness.reason : null;
 
     // Hydrate fields required by NOVARA frontend
     const hydratedPhases = parsed.phases.map((phase, pIdx) => {
@@ -516,7 +550,7 @@ Ensure that:
             problemsCount: typeof topic.problemsCount === 'number' ? topic.problemsCount : null,
             duration: (topic.duration && topic.duration !== '6h' && typeof topic.duration === 'string') ? topic.duration : null,
             status: isCompleted ? 'completed' : isInProgress && tIdx === 0 ? 'in_progress' : 'upcoming',
-            confidence: 'high'
+            confidence: needsReview ? 'medium' : 'high'
           }))
       };
     });
@@ -538,9 +572,9 @@ Ensure that:
       source: 'extracted_from_document',
       fileName,
       uploadedAt: new Date().toISOString(),
-      confidence: 'high',
-      needsReview: false,
-      reviewReason: null,
+      confidence: needsReview ? 'medium' : 'high',
+      needsReview: needsReview,
+      reviewReason: reviewReason,
       extractedTextLength: sanitizedText.length
     };
   } catch (err) {
@@ -882,68 +916,210 @@ REQUIRED JSON OUTPUT:
 }
 
 /**
- * 6. Smart Revision Question Generation
- * Generates verified, topic-grounded active recall questions and explanations.
+ * Validates task-specific revision quiz output from Gemini.
+ */
+function validateTaskQuizSchema(parsed, expectedCount = 5) {
+  if (!parsed || typeof parsed !== 'object') {
+    return { valid: false, reason: 'Quiz response is not a valid JSON object.' };
+  }
+  if (!Array.isArray(parsed.questions)) {
+    return { valid: false, reason: 'Quiz response is missing questions array.' };
+  }
+  if (parsed.questions.length !== expectedCount) {
+    return { valid: false, reason: `Quiz expected ${expectedCount} questions, but got ${parsed.questions.length}.` };
+  }
+
+  for (let i = 0; i < parsed.questions.length; i++) {
+    const q = parsed.questions[i];
+    if (!q || typeof q !== 'object') {
+      return { valid: false, reason: `Question ${i + 1} is not a valid object.` };
+    }
+    if (!q.question || typeof q.question !== 'string' || q.question.trim().length < 5) {
+      return { valid: false, reason: `Question ${i + 1} has invalid or empty question text.` };
+    }
+    if (!Array.isArray(q.options) || q.options.length !== 4) {
+      return { valid: false, reason: `Question ${i + 1} must have exactly 4 options.` };
+    }
+    const hasInvalidOpt = q.options.some(opt => typeof opt !== 'string' || opt.trim().length === 0);
+    if (hasInvalidOpt) {
+      return { valid: false, reason: `Question ${i + 1} contains empty or non-string options.` };
+    }
+    // Check for duplicate options in same question
+    const uniqueOpts = new Set(q.options.map(o => o.trim().toLowerCase()));
+    if (uniqueOpts.size < 4) {
+      return { valid: false, reason: `Question ${i + 1} contains duplicate options.` };
+    }
+    // Validate correctAnswer (accept either 0-3 index or option string matching one of options)
+    let ansIdx = -1;
+    if (typeof q.correctAnswer === 'number' && Number.isInteger(q.correctAnswer) && q.correctAnswer >= 0 && q.correctAnswer <= 3) {
+      ansIdx = q.correctAnswer;
+    } else if (typeof q.correctAnswer === 'string') {
+      ansIdx = q.options.findIndex(opt => opt.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase());
+    }
+    if (ansIdx < 0 || ansIdx > 3) {
+      return { valid: false, reason: `Question ${i + 1} has invalid correctAnswer (must be 0-3 index or match one option).` };
+    }
+    if (!q.explanation || typeof q.explanation !== 'string' || q.explanation.trim().length < 5) {
+      return { valid: false, reason: `Question ${i + 1} is missing educational explanation.` };
+    }
+  }
+
+  return { valid: true, reason: null };
+}
+
+/**
+ * 6. Generic Task-Specific Revision Quiz Generation
+ * Generates verified, task-grounded active recall questions dynamically for ANY completed learning task.
+ * Adheres strictly to grounding rules without fabricating questions or claiming unrelated concepts.
  * Database scheduling intervals remain 100% deterministic.
  */
-export async function generateRevisionQuestionsWithAI({ topicName = 'Arrays & Two Pointers', category = 'DSA', difficulty = 'Medium', count = 5 }) {
+export async function generateTaskRevisionQuiz(taskContext = {}) {
   const provider = getAIProvider();
   if (!provider.isConfigured()) {
     return null;
   }
 
-  const prompt = `You are NOVARA's Adaptive Spaced Revision Question Generator.
-Generate ${count} active recall questions for the topic: "${topicName}" (${category}, difficulty: ${difficulty}).
+  // Normalize task context fields
+  const taskTitle = taskContext.taskTitle || taskContext.taskName || taskContext.topicName || taskContext.topic || 'Core Curriculum Concept';
+  const taskDescription = taskContext.taskDescription || taskContext.description || 'Practice and comprehension of core curriculum topic.';
+  const roadmapPhase = taskContext.roadmapPhase || taskContext.phase || '';
+  const roadmapTopic = taskContext.roadmapTopic || taskContext.topic || taskTitle;
+  const taskCategory = taskContext.taskCategory || taskContext.category || 'DSA';
+  const difficulty = (taskContext.difficulty || 'Medium').toLowerCase();
+  const learningObjectives = Array.isArray(taskContext.learningObjectives)
+    ? taskContext.learningObjectives.join(', ')
+    : (taskContext.learningObjectives || 'Understand and apply core concepts.');
+  const relevantMetadata = taskContext.relevantMetadata || taskContext.metadata || '';
+  const count = typeof taskContext.count === 'number' ? taskContext.count : 5;
 
-QUESTION TYPES TO INCLUDE:
-- Multiple Choice (mcq)
-- Code Output Tracing (code_output)
-- True / False (true_false)
-- Conceptual Explanation (concept_explain)
+  const prompt = `You are generating a knowledge-check quiz for a placement preparation learning task.
 
-CRITICAL REQUIREMENTS:
-1. Every question must have an unambiguous, 100% verified correct answer.
-2. Provide a thorough, educational explanation explaining WHY the answer is correct.
-3. For mcq and code_output, provide exactly 4 distinct options.
+TASK CONTEXT:
+- Task Title: ${taskTitle}
+- Task Description: ${taskDescription}
+- Roadmap Phase: ${roadmapPhase || 'Placement Preparation'}
+- Roadmap Topic: ${roadmapTopic}
+- Task Category: ${taskCategory}
+- Difficulty Level: ${difficulty}
+- Learning Objectives: ${learningObjectives}
+${relevantMetadata ? `- Additional Context: ${relevantMetadata}\n` : ''}
+STRICT GROUNDING RULES:
+1. Generate questions ONLY from concepts supported by the supplied task title, task description, roadmap topic, and learning context.
+2. Do not assume the user studied concepts that are not represented in the provided context.
+3. Do not generate unrelated questions.
+4. Do not claim that the user learned something merely because it exists elsewhere in the roadmap.
+5. Generate exactly ${count} objective questions.
+6. Appropriate question types:
+   - Coding / DSA task: code/output tracing + core complexity/concept questions
+   - DBMS / Database task: ACID properties, transactions, normalization, indexing, query concepts
+   - SQL task: SQL query structure, joins, aggregations, window functions, output interpretation
+   - Operating Systems task: processes/threads, CPU scheduling, concurrency, deadlocks, virtual memory/paging
+   - Computer Networks task: TCP/IP protocols, 3-way handshake, OSI layers, DNS, HTTP/HTTPS, routing
+   - React / Frontend task: hooks, state vs props, component lifecycle, virtual DOM, JSX
+   - REST API task: HTTP methods, status codes, RESTful constraints, idempotency
+   - Git & GitHub task: branch management, commit history, merge vs rebase, pull requests
+   - Aptitude task: objective quantitative problem-solving & logical reasoning questions
+   - Resume / Interview task: STAR method, technical project presentation, behavioral scenarios
+7. Questions should test whether the user actually understood the task, not merely whether they can recognize the task title.
+8. Avoid trivial questions, duplicate questions, ambiguous questions, or answers that are obvious from wording.
+9. Each question must have exactly 4 options and exactly one unambiguous correct answer.
+10. "correctAnswer" must be the 0-indexed integer (0, 1, 2, or 3) pointing to the correct choice in options[].
+11. "explanation" is required for every question explaining WHY the correct answer is true.
+12. "topic" must correspond to the completed task: "${roadmapTopic}".
 
-REQUIRED JSON OUTPUT:
+REQUIRED JSON STRUCTURE:
 {
   "questions": [
     {
-      "type": "mcq" | "code_output" | "true_false" | "concept_explain",
-      "question": "Question text...",
-      "codeSnippet": "optional code snippet or null",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": "Exact matching option text",
-      "explanation": "Detailed explanation of correct answer...",
-      "testedSubconcept": "Specific concept tested"
+      "question": "Objective question text...",
+      "options": [
+        "Option 0",
+        "Option 1",
+        "Option 2",
+        "Option 3"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Thorough educational explanation of why Option 0 is correct...",
+      "difficulty": "${difficulty}",
+      "topic": "${roadmapTopic}"
     }
   ]
 }`;
 
   try {
-    const result = await provider.generateJSON({
+    let result = await provider.generateJSON({
       prompt,
-      systemInstruction: 'You are an expert computer science educator. Output only valid JSON with technically rigorous active recall questions and verified explanations.',
-      schemaHint: 'Object with questions array matching the requested schema.'
+      systemInstruction: 'You are generating a knowledge-check quiz for a placement preparation learning task. Generate questions ONLY from concepts supported by the supplied task title, task description, roadmap topic, and learning context. Do not assume concepts not in context. Output strictly valid JSON.',
+      schemaHint: 'JSON object with questions array of 5 task-grounded questions.'
     });
 
-    if (!result || !Array.isArray(result.questions) || result.questions.length === 0) {
+    let validation = validateTaskQuizSchema(result, count);
+
+    // If schema validation failed, retry Gemini ONCE with targeted correction prompt
+    if (!validation.valid) {
+      logger.warn(`[AIService] Task revision quiz failed validation (${validation.reason}). Retrying Gemini with correction prompt...`);
+      try {
+        const retryPrompt = `${prompt}
+
+CRITICAL CORRECTION REQUIRED:
+Your previous response failed validation because: ${validation.reason}.
+Ensure that:
+1. Exactly ${count} questions are returned in the "questions" array.
+2. Each question has exactly 4 distinct non-empty string options.
+3. "correctAnswer" is an integer index from 0 to 3.
+4. "explanation" is a clear educational explanation.
+5. Questions are strictly grounded in "${roadmapTopic}".`;
+
+        result = await provider.generateJSON({
+          prompt: retryPrompt,
+          systemInstruction: 'You are an expert technical educator. Return only valid JSON with 5 strictly grounded quiz questions matching the exact schema.',
+          schemaHint: 'Valid JSON with exactly 5 grounded questions.'
+        });
+
+        validation = validateTaskQuizSchema(result, count);
+      } catch (retryErr) {
+        logger.warn(`[AIService] Gemini task quiz retry failed: ${retryErr.message}`);
+      }
+    }
+
+    if (!validation.valid || !result || !Array.isArray(result.questions)) {
+      logger.warn(`[AIService] Task revision quiz rejected: ${validation.reason}. Falling back to grounded question bank.`);
       return null;
     }
 
-    return result.questions.map((q, idx) => ({
-      id: `q-rev-gemini-${Date.now()}-${idx + 1}`,
-      type: q.type || 'mcq',
-      question: q.question,
-      codeSnippet: q.codeSnippet || null,
-      options: Array.isArray(q.options) ? q.options : ['True', 'False'],
-      correctAnswer: q.correctAnswer,
-      explanation: q.explanation || 'Verified core conceptual principle.',
-      testedSubconcept: q.testedSubconcept || topicName
-    }));
+    // Format and return normalized questions
+    return result.questions.map((q, idx) => {
+      const options = Array.isArray(q.options) ? q.options.map(o => String(o).trim()) : [];
+      let ansIdx = 0;
+      if (typeof q.correctAnswer === 'number' && Number.isInteger(q.correctAnswer) && q.correctAnswer >= 0 && q.correctAnswer < options.length) {
+        ansIdx = q.correctAnswer;
+      } else if (typeof q.correctAnswer === 'string') {
+        const found = options.findIndex(opt => opt.toLowerCase() === q.correctAnswer.trim().toLowerCase());
+        if (found >= 0) ansIdx = found;
+      }
+
+      return {
+        id: `q-task-ai-${Date.now()}-${idx + 1}`,
+        type: 'mcq',
+        question: q.question.trim(),
+        options,
+        correctAnswer: ansIdx,
+        correctAnswerText: options[ansIdx] || '',
+        explanation: q.explanation ? q.explanation.trim() : 'Core principle validated.',
+        difficulty: (q.difficulty || difficulty).toLowerCase(),
+        topic: q.topic || roadmapTopic,
+        testedSubconcept: q.testedSubconcept || roadmapTopic
+      };
+    });
   } catch (err) {
-    logger.error(ERROR_CATEGORIES.AI_ERROR, 'Revision questions generation with Gemini failed', err);
+    logger.error(ERROR_CATEGORIES.AI_ERROR, 'Task revision quiz generation with Gemini failed', err);
     return null;
   }
+}
+
+/**
+ * Backward compatibility alias for generateTaskRevisionQuiz
+ */
+export async function generateRevisionQuestionsWithAI(taskContext = {}) {
+  return generateTaskRevisionQuiz(taskContext);
 }

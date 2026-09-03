@@ -28,6 +28,7 @@ export const FocusSessionModal = () => {
     pauseFocusSession,
     resumeFocusSession,
     completeFocusSession,
+    startTaskRevisionQuiz,
     abandonFocusSession,
     toggleSubtask,
     showToast 
@@ -125,7 +126,9 @@ export const FocusSessionModal = () => {
 
   const handleConfirmComplete = () => {
     setShowCompleteConfirm(false);
-    if (activeFocusSession?.sessionId) {
+    if (activeFocusTask) {
+      startTaskRevisionQuiz(activeFocusTask, activeFocusSession);
+    } else if (activeFocusSession?.sessionId) {
       completeFocusSession(activeFocusSession.sessionId, sessionNotes);
     } else {
       setIsFocusModalOpen(false);
