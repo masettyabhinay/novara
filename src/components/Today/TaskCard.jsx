@@ -79,7 +79,11 @@ export const TaskCard = ({ task }) => {
   const handleCardClick = (e) => {
     // If clicking buttons inside card, don't trigger modal
     if (e.target.closest('button')) return;
-    openTaskStudyMaterial(task);
+    if (isCurrentActive) {
+      setIsFocusModalOpen(true);
+    } else {
+      openTaskStudyMaterial(task);
+    }
   };
 
   return (
@@ -219,7 +223,11 @@ export const TaskCard = ({ task }) => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                openTaskStudyMaterial(task);
+                if (isCurrentActive) {
+                  setIsFocusModalOpen(true);
+                } else {
+                  openTaskStudyMaterial(task);
+                }
               }}
               className="btn-secondary"
               style={{

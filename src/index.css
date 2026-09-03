@@ -445,3 +445,14 @@ button {
   background: var(--border-beige-dark);
   border-radius: 9999px;
 }
+
+/* Focus + Study Unified Workspace Grid */
+@media (max-width: 880px) {
+  .focus-study-grid {
+    grid-template-columns: 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+  }
+}
+
