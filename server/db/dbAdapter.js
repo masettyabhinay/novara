@@ -55,7 +55,7 @@ export function parseSslCa(rawCa) {
   return normalized;
 }
 
-class DatabaseAdapter {
+export class DatabaseAdapter {
   constructor() {
     this.databaseUrl = process.env.DATABASE_URL || '';
     this.isPostgresConfigured = Boolean(this.databaseUrl && this.databaseUrl.startsWith('postgres'));
@@ -214,6 +214,14 @@ class DatabaseAdapter {
           error: err.message
         };
       }
+    }
+    if (process.env.NODE_ENV === 'production') {
+      return {
+        status: 'error',
+        provider: 'unconfigured',
+        connected: false,
+        error: 'PRODUCTION_DATABASE_URL_REQUIRED'
+      };
     }
     return {
       status: 'healthy',

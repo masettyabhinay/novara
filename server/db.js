@@ -94,8 +94,46 @@ const DEFAULT_DB_STATE = {
   uploadedFiles: {}
 };
 
-function hashPassword(password) {
-  return crypto.createHash('sha256').update(password).digest('hex');
+export function hashPassword(password, salt = null, iterations = 100000) {
+  if (!password || typeof password !== 'string') {
+    throw new Error('PASSWORD_REQUIRED: Valid password string is required for hashing.');
+  }
+  const chosenSalt = salt || crypto.randomBytes(16).toString('hex');
+  const derivedKey = crypto.pbkdf2Sync(password, chosenSalt, iterations, 64, 'sha512').toString('hex');
+  return `pbkdf2$${iterations}$${chosenSalt}$${derivedKey}`;
+}
+
+export function verifyPassword(password, storedHash) {
+  if (!password || !storedHash || typeof storedHash !== 'string') return false;
+
+  try {
+    // 1. Salted PBKDF2 Verification
+    if (storedHash.startsWith('pbkdf2$')) {
+      const parts = storedHash.split('$');
+      if (parts.length !== 4) return false;
+      const iterations = parseInt(parts[1], 10);
+      const salt = parts[2];
+      const expectedKeyHex = parts[3];
+
+      const derivedKey = crypto.pbkdf2Sync(password, salt, iterations, 64, 'sha512');
+      const expectedKey = Buffer.from(expectedKeyHex, 'hex');
+
+      if (derivedKey.length !== expectedKey.length) return false;
+      return crypto.timingSafeEqual(derivedKey, expectedKey);
+    }
+
+    // 2. Backward compatibility: Legacy 64-character hex SHA-256
+    if (storedHash.length === 64 && /^[0-9a-fA-F]+$/.test(storedHash)) {
+      const legacyHash = crypto.createHash('sha256').update(password).digest();
+      const expectedHash = Buffer.from(storedHash, 'hex');
+      if (legacyHash.length !== expectedHash.length) return false;
+      return crypto.timingSafeEqual(legacyHash, expectedHash);
+    }
+  } catch (err) {
+    return false;
+  }
+
+  return false;
 }
 
 function loadDb() {
@@ -262,12 +300,23 @@ export function signupUser({ name, email, password }) {
 
 export function loginUser({ email, password }) {
   const db = loadDb();
-  const normalizedEmail = email.toLowerCase().trim();
-  const pwdHash = hashPassword(password);
+  const normalizedEmail = (email || '').toLowerCase().trim();
 
-  const user = db.users.find((u) => u.email.toLowerCase() === normalizedEmail);
-  if (!user || user.passwordHash !== pwdHash) {
+  const userIdx = db.users.findIndex((u) => u.email && u.email.toLowerCase() === normalizedEmail);
+  if (userIdx === -1) {
     throw new Error('Invalid email address or password.');
+  }
+
+  const user = db.users[userIdx];
+  const isValid = verifyPassword(password, user.passwordHash);
+  if (!isValid) {
+    throw new Error('Invalid email address or password.');
+  }
+
+  // If user is on a legacy hash format, transparently upgrade to salted PBKDF2
+  if (!user.passwordHash.startsWith('pbkdf2$')) {
+    user.passwordHash = hashPassword(password);
+    user.updatedAt = new Date().toISOString();
   }
 
   const sessionToken = `session_${user.id}_${crypto.randomBytes(24).toString('hex')}`;

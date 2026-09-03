@@ -230,7 +230,11 @@ async function runTestSuite() {
   assert.strictEqual(foundUserA.password, undefined, 'Plaintext password field MUST NOT exist');
   assert(foundUserA.passwordHash, 'Password hash exists');
   assert.notStrictEqual(foundUserA.passwordHash, userAPassword, 'Password hash is NOT plaintext');
-  assert.strictEqual(foundUserA.passwordHash.length, 64, 'SHA-256 hash length is 64 hex characters');
+  assert(foundUserA.passwordHash.startsWith('pbkdf2$100000$'), 'Password hash uses salted PBKDF2 with 100,000 iterations');
+  const hashParts = foundUserA.passwordHash.split('$');
+  assert.strictEqual(hashParts.length, 4, 'PBKDF2 hash has 4 sections');
+  assert.strictEqual(hashParts[2].length, 32, 'Salt is 16 bytes hex');
+  assert.strictEqual(hashParts[3].length, 128, 'Key is 64 bytes SHA-512 hex');
 
   const sanitized = getFullUserState(userAId).profile;
   assert.strictEqual(sanitized.password, undefined);
