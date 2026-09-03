@@ -309,6 +309,70 @@
       "avatar": "BI",
       "createdAt": "2026-09-03T17:09:03.094Z",
       "updatedAt": "2026-09-03T17:09:03.215Z"
+    },
+    {
+      "id": "usr_legacy_1788455556519",
+      "name": "Legacy User",
+      "email": "legacy_user_1788455556516@novara.dev",
+      "passwordHash": "pbkdf2$100000$e6a373887f1cab8458b00fac8727bbc4$beb6672decdc1589e2b34bead401e2f9698c33835c02d2bb9242a32b33b11235e1a50e01d5bd5f0bf75a5e8f21ca863f598a3c436c418785c24599edef0f4095",
+      "createdAt": "2026-09-03T17:12:36.519Z",
+      "updatedAt": "2026-09-03T17:12:36.557Z"
+    },
+    {
+      "id": "usr_1788455556561_a1jsqy",
+      "name": "Sec User",
+      "email": "sec_user_1788455556560@novara.dev",
+      "passwordHash": "pbkdf2$100000$f7b3a9fc941d9a5d584fd23236c4e294$c10010b360ad9933d4c003a6831dd118f98395310e83688304e7107615ecd83f3d4e21e2ed51c2b3d268cd924f4cfe9dbf94825da7f7879733a34886619d76ec",
+      "targetRole": "Software Engineer",
+      "dailyStudyMinutes": 180,
+      "placementTargetDate": "2026-11-20",
+      "currentPreparationLevel": "Beginner",
+      "hasCompletedOnboarding": false,
+      "avatar": "SU",
+      "createdAt": "2026-09-03T17:12:36.594Z",
+      "updatedAt": "2026-09-03T17:12:36.594Z"
+    },
+    {
+      "id": "usr_1788455576194_774tyy",
+      "name": "Revision Tester",
+      "email": "rev_1788455576192@novara.dev",
+      "passwordHash": "pbkdf2$100000$f74a911e9c2b893c1eb2e889986f9ee9$70641aa0008983cfe3755568c2f478b622e3b72530f26d1f96d31bfe2fc3b26b7f63dc0f7b4a9ad9041363c48972f0d993fcba6b10a40b4a7a3a48581a055867",
+      "targetRole": "Software Engineer",
+      "dailyStudyMinutes": 180,
+      "placementTargetDate": "2026-11-20",
+      "currentPreparationLevel": "Beginner",
+      "hasCompletedOnboarding": false,
+      "avatar": "RT",
+      "createdAt": "2026-09-03T17:12:56.238Z",
+      "updatedAt": "2026-09-03T17:12:56.238Z"
+    },
+    {
+      "id": "usr_1788455576429_ra0eji",
+      "name": "Alice Security",
+      "email": "audit_user_a_1788455576428@novara.dev",
+      "passwordHash": "pbkdf2$100000$a27b24b20c136911ecc969d5a84ce741$616b229aea6f312f5c2783a4ac1ce591ae471a8b6e50c25d213374db4105048c335f5aba55f5d2e181c63b87beeb5179ab66dd9ec619542b930c809a766f4642",
+      "targetRole": "Software Engineer",
+      "dailyStudyMinutes": 180,
+      "placementTargetDate": "2026-11-20",
+      "currentPreparationLevel": "Beginner",
+      "hasCompletedOnboarding": false,
+      "avatar": "AS",
+      "createdAt": "2026-09-03T17:12:56.464Z",
+      "updatedAt": "2026-09-03T17:12:56.465Z"
+    },
+    {
+      "id": "usr_1788455576469_z2f9hr",
+      "name": "Bob Isolation",
+      "email": "audit_user_b_1788455576428@novara.dev",
+      "passwordHash": "pbkdf2$100000$20342eb2ee1197f60f97b39207b9f16f$354198130f1bd3ba87e50b7db39808ddf765a56a121f2a2f250340e4ff4c4bdf31c3cd1f7626cd1a8b83ef7493cc919b97e1271ab60df343866ec718ee139115",
+      "targetRole": "Software Engineer",
+      "dailyStudyMinutes": 180,
+      "placementTargetDate": "2026-11-20",
+      "currentPreparationLevel": "Beginner",
+      "hasCompletedOnboarding": false,
+      "avatar": "BI",
+      "createdAt": "2026-09-03T17:12:56.503Z",
+      "updatedAt": "2026-09-03T17:12:56.636Z"
     }
   ],
   "sessions": [
@@ -469,6 +533,32 @@
       "token": "session_usr_1788455343061_qbvpg7_edf96ee742ea26a7740b5740a8ad97d0a0c1aec59268ab50",
       "userId": "usr_1788455343061_qbvpg7",
       "expiresAt": "2026-10-03T17:09:03.251Z"
+    },
+    {
+      "token": "session_usr_legacy_1788455556519_cd0c81cdef5e0e882960e0b1ed3eb89db1274301613b865e",
+      "userId": "usr_legacy_1788455556519",
+      "expiresAt": "2026-10-03T17:12:36.557Z"
+    },
+    {
+      "token": "session_usr_1788455556561_a1jsqy_c211c08300c11bb551576bcef8dd6ec93398f0c69352d624",
+      "userId": "usr_1788455556561_a1jsqy",
+      "expiresAt": "2026-10-03T17:12:36.594Z"
+    },
+    {
+      "token": "session_usr_1788455576194_774tyy_e7ae79c8925f0cb008094eb44aeea6b6e71298e37c152348",
+      "userId": "usr_1788455576194_774tyy",
+      "expiresAt": "2026-10-03T17:12:56.239Z"
+    },
+    {
+      "token": "tok_expired_1788455576509",
+      "userId": "usr_1788455576429_ra0eji",
+      "createdAt": "2026-07-25T17:12:56.509Z",
+      "expiresAt": "2026-08-24T17:12:56.509Z"
+    },
+    {
+      "token": "session_usr_1788455576469_z2f9hr_751f0314a2b1d443e5346545771b9e082cbf4152f4421302",
+      "userId": "usr_1788455576469_z2f9hr",
+      "expiresAt": "2026-10-03T17:12:56.675Z"
     }
   ],
   "roadmaps": {
@@ -879,7 +969,27 @@
       "updatedAt": "2026-09-03T17:09:02.842Z"
     },
     "usr_1788455343024_cqiq94": null,
-    "usr_1788455343061_qbvpg7": null
+    "usr_1788455343061_qbvpg7": null,
+    "usr_1788455556561_a1jsqy": null,
+    "usr_1788455576194_774tyy": {
+      "title": "Bootcamp",
+      "phases": [
+        {
+          "title": "DSA Phase",
+          "topics": [
+            {
+              "id": "top_arr",
+              "name": "Arrays & Two Pointers",
+              "status": "completed"
+            }
+          ]
+        }
+      ],
+      "userId": "usr_1788455576194_774tyy",
+      "updatedAt": "2026-09-03T17:12:56.242Z"
+    },
+    "usr_1788455576429_ra0eji": null,
+    "usr_1788455576469_z2f9hr": null
   },
   "tasks": {
     "usr_alex_rivera": [
@@ -1250,7 +1360,49 @@
         "subtasks": []
       }
     ],
-    "usr_1788455343061_qbvpg7": []
+    "usr_1788455343061_qbvpg7": [],
+    "usr_1788455556561_a1jsqy": [],
+    "user_test_quiz_1788455569467": [
+      {
+        "id": "task_quiz_1788455569467",
+        "userId": "user_test_quiz_1788455569467",
+        "name": "Linked List Pointer Manipulation",
+        "category": "DSA",
+        "completed": true,
+        "actualMinutesStudied": 45,
+        "completedAt": "2026-09-03T17:12:49.486Z"
+      }
+    ],
+    "user_test_quiz_1788455575105": [
+      {
+        "id": "task_quiz_1788455575105",
+        "userId": "user_test_quiz_1788455575105",
+        "name": "Linked List Pointer Manipulation",
+        "category": "DSA",
+        "completed": true,
+        "actualMinutesStudied": 45,
+        "completedAt": "2026-09-03T17:12:55.125Z"
+      }
+    ],
+    "usr_1788455576194_774tyy": [],
+    "usr_1788455576429_ra0eji": [
+      {
+        "id": "t1",
+        "name": "Task 1",
+        "completed": true,
+        "completedAt": "2026-09-03T17:12:56.583Z",
+        "subtasks": [],
+        "updatedAt": "2026-09-03T17:12:56.583Z"
+      },
+      {
+        "id": "t2",
+        "name": "Task 2",
+        "completed": true,
+        "completedAt": "2026-09-03T17:12:56.579Z",
+        "subtasks": []
+      }
+    ],
+    "usr_1788455576469_z2f9hr": []
   },
   "streaks": {
     "usr_alex_rivera": {
@@ -2380,6 +2532,205 @@
           "target": 2
         }
       ]
+    },
+    "usr_1788455556561_a1jsqy": {
+      "currentStreak": 0,
+      "longestStreak": 0,
+      "todayTargetMet": false,
+      "lastCompletedDate": null,
+      "freezeCount": 2,
+      "completedDays": 0,
+      "weeklyHistory": [
+        {
+          "day": "M",
+          "date": "2026-08-25",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "T",
+          "date": "2026-08-26",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "W",
+          "date": "2026-08-27",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "T",
+          "date": "2026-08-28",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "F",
+          "date": "2026-08-29",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "S",
+          "date": "2026-08-30",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "S",
+          "date": "2026-08-31",
+          "status": "in_progress",
+          "tasksDone": 0,
+          "target": 2
+        }
+      ]
+    },
+    "user_test_quiz_1788455569467": {
+      "userId": "user_test_quiz_1788455569467",
+      "currentStreak": 5,
+      "longestStreak": 5,
+      "todayTargetMet": true,
+      "completedDays": 5,
+      "lastCompletedDate": "2026-09-03"
+    },
+    "user_test_quiz_1788455575105": {
+      "userId": "user_test_quiz_1788455575105",
+      "currentStreak": 5,
+      "longestStreak": 5,
+      "todayTargetMet": true,
+      "completedDays": 5,
+      "lastCompletedDate": "2026-09-03"
+    },
+    "usr_1788455576194_774tyy": {
+      "currentStreak": 0,
+      "longestStreak": 0,
+      "todayTargetMet": false,
+      "lastCompletedDate": null,
+      "freezeCount": 2,
+      "completedDays": 0,
+      "weeklyHistory": [
+        {
+          "day": "M",
+          "date": "2026-08-25",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "T",
+          "date": "2026-08-26",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "W",
+          "date": "2026-08-27",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "T",
+          "date": "2026-08-28",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "F",
+          "date": "2026-08-29",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "S",
+          "date": "2026-08-30",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "S",
+          "date": "2026-08-31",
+          "status": "in_progress",
+          "tasksDone": 0,
+          "target": 2
+        }
+      ]
+    },
+    "usr_1788455576429_ra0eji": {
+      "currentStreak": 6,
+      "longestStreak": 10,
+      "todayTargetMet": true,
+      "lastCompletedDate": "2026-09-03"
+    },
+    "usr_1788455576469_z2f9hr": {
+      "currentStreak": 0,
+      "longestStreak": 0,
+      "todayTargetMet": false,
+      "lastCompletedDate": null,
+      "freezeCount": 2,
+      "completedDays": 0,
+      "weeklyHistory": [
+        {
+          "day": "M",
+          "date": "2026-08-25",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "T",
+          "date": "2026-08-26",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "W",
+          "date": "2026-08-27",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "T",
+          "date": "2026-08-28",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "F",
+          "date": "2026-08-29",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "S",
+          "date": "2026-08-30",
+          "status": "upcoming",
+          "tasksDone": 0,
+          "target": 2
+        },
+        {
+          "day": "S",
+          "date": "2026-08-31",
+          "status": "in_progress",
+          "tasksDone": 0,
+          "target": 2
+        }
+      ]
     }
   },
   "revisions": {
@@ -2856,7 +3207,139 @@
       }
     ],
     "usr_1788455343024_cqiq94": [],
-    "usr_1788455343061_qbvpg7": []
+    "usr_1788455343061_qbvpg7": [],
+    "usr_1788455556561_a1jsqy": [],
+    "user_test_quiz_1788455569467": [
+      {
+        "id": "rev_1788455569472_77eab9",
+        "userId": "user_test_quiz_1788455569467",
+        "topicId": "topic_1788455569472",
+        "topic": "Linked Lists",
+        "category": "DSA",
+        "difficulty": "Medium",
+        "originalCompletionDate": "2026-09-03",
+        "scheduledDate": "2026-09-10",
+        "revisionDueDate": "In 7 days",
+        "retentionScore": 88,
+        "previousScore": 78,
+        "intervalLevel": 3,
+        "intervalDays": 7,
+        "status": "completed",
+        "lastRevisedAt": "2026-09-03T17:12:49.486Z",
+        "totalAttempts": 2,
+        "history": [
+          {
+            "attemptId": "att_1788455569486",
+            "date": "Sep 3, 2026",
+            "score": 4,
+            "totalQuestions": 5,
+            "scorePercent": 80,
+            "retentionBefore": 78,
+            "retentionAfter": 88,
+            "durationMinutes": 45,
+            "performanceGrade": "strong"
+          },
+          {
+            "attemptId": "att_1788455569472",
+            "date": "Sep 3, 2026",
+            "score": 4,
+            "totalQuestions": 5,
+            "scorePercent": 80,
+            "retentionBefore": 68,
+            "retentionAfter": 78,
+            "durationMinutes": 45,
+            "performanceGrade": "strong"
+          }
+        ],
+        "weakSubtopics": [],
+        "mockInterviewWeakness": false
+      }
+    ],
+    "user_test_quiz_1788455575105": [
+      {
+        "id": "rev_1788455575110_7752aa",
+        "userId": "user_test_quiz_1788455575105",
+        "topicId": "topic_1788455575110",
+        "topic": "Linked Lists",
+        "category": "DSA",
+        "difficulty": "Medium",
+        "originalCompletionDate": "2026-09-03",
+        "scheduledDate": "2026-09-10",
+        "revisionDueDate": "In 7 days",
+        "retentionScore": 88,
+        "previousScore": 78,
+        "intervalLevel": 3,
+        "intervalDays": 7,
+        "status": "completed",
+        "lastRevisedAt": "2026-09-03T17:12:55.125Z",
+        "totalAttempts": 2,
+        "history": [
+          {
+            "attemptId": "att_1788455575125",
+            "date": "Sep 3, 2026",
+            "score": 4,
+            "totalQuestions": 5,
+            "scorePercent": 80,
+            "retentionBefore": 78,
+            "retentionAfter": 88,
+            "durationMinutes": 45,
+            "performanceGrade": "strong"
+          },
+          {
+            "attemptId": "att_1788455575110",
+            "date": "Sep 3, 2026",
+            "score": 4,
+            "totalQuestions": 5,
+            "scorePercent": 80,
+            "retentionBefore": 68,
+            "retentionAfter": 78,
+            "durationMinutes": 45,
+            "performanceGrade": "strong"
+          }
+        ],
+        "weakSubtopics": [],
+        "mockInterviewWeakness": false
+      }
+    ],
+    "usr_1788455576194_774tyy": [
+      {
+        "id": "rev_1788455576245_1e3f81",
+        "userId": "usr_1788455576194_774tyy",
+        "topicId": "top_arr",
+        "topic": "Arrays & Two Pointers",
+        "category": "DSA",
+        "difficulty": "Medium",
+        "originalCompletionDate": "2026-09-03",
+        "scheduledDate": "2026-09-08",
+        "revisionDueDate": "In 5 days",
+        "retentionScore": 82,
+        "previousScore": 68,
+        "intervalLevel": 2,
+        "intervalDays": 3,
+        "status": "rescheduled",
+        "lastRevisedAt": "2026-09-03T17:12:56.248Z",
+        "totalAttempts": 1,
+        "history": [
+          {
+            "attemptId": "att_1788455576248",
+            "date": "Sep 3, 2026",
+            "score": 5,
+            "totalQuestions": 5,
+            "scorePercent": 100,
+            "retentionBefore": 68,
+            "retentionAfter": 82,
+            "durationMinutes": 15,
+            "performanceGrade": "strong"
+          }
+        ],
+        "weakSubtopics": [],
+        "mockInterviewWeakness": false,
+        "priorityScore": 35,
+        "priorityReason": "Due today for spaced recall"
+      }
+    ],
+    "usr_1788455576429_ra0eji": [],
+    "usr_1788455576469_z2f9hr": []
   },
   "notifications": {
     "usr_alex_rivera": [
@@ -3086,6 +3569,46 @@
     "usr_1788455343061_qbvpg7": [
       {
         "id": "notif-1788455343094-1",
+        "title": "Welcome to NOVARA 🚀",
+        "message": "Upload your placement roadmap to convert it into your structured daily preparation plan.",
+        "time": "Just now",
+        "type": "plan",
+        "unread": true
+      }
+    ],
+    "usr_1788455556561_a1jsqy": [
+      {
+        "id": "notif-1788455556594-1",
+        "title": "Welcome to NOVARA 🚀",
+        "message": "Upload your placement roadmap to convert it into your structured daily preparation plan.",
+        "time": "Just now",
+        "type": "plan",
+        "unread": true
+      }
+    ],
+    "usr_1788455576194_774tyy": [
+      {
+        "id": "notif-1788455576238-1",
+        "title": "Welcome to NOVARA 🚀",
+        "message": "Upload your placement roadmap to convert it into your structured daily preparation plan.",
+        "time": "Just now",
+        "type": "plan",
+        "unread": true
+      }
+    ],
+    "usr_1788455576429_ra0eji": [
+      {
+        "id": "notif-1788455576465-1",
+        "title": "Welcome to NOVARA 🚀",
+        "message": "Upload your placement roadmap to convert it into your structured daily preparation plan.",
+        "time": "Just now",
+        "type": "plan",
+        "unread": true
+      }
+    ],
+    "usr_1788455576469_z2f9hr": [
+      {
+        "id": "notif-1788455576503-1",
         "title": "Welcome to NOVARA 🚀",
         "message": "Upload your placement roadmap to convert it into your structured daily preparation plan.",
         "time": "Just now",
@@ -3372,6 +3895,66 @@
       }
     },
     "usr_1788455343457_iu5x8u": {
+      "dailyPlanReminder": true,
+      "studySessionReminder": true,
+      "unfinishedTaskReminder": true,
+      "streakRiskReminder": true,
+      "revisionReminder": true,
+      "weeklySummary": true,
+      "preferredReminderTimes": {
+        "morning": "08:00",
+        "evening": "18:00"
+      }
+    },
+    "usr_1788455556561_a1jsqy": {
+      "dailyPlanReminder": true,
+      "studySessionReminder": true,
+      "unfinishedTaskReminder": true,
+      "streakRiskReminder": true,
+      "revisionReminder": true,
+      "weeklySummary": true,
+      "preferredReminderTimes": {
+        "morning": "08:00",
+        "evening": "18:00"
+      }
+    },
+    "usr_1788455576194_774tyy": {
+      "dailyPlanReminder": true,
+      "studySessionReminder": true,
+      "unfinishedTaskReminder": true,
+      "streakRiskReminder": true,
+      "revisionReminder": true,
+      "weeklySummary": true,
+      "preferredReminderTimes": {
+        "morning": "08:00",
+        "evening": "18:00"
+      }
+    },
+    "usr_1788455576429_ra0eji": {
+      "dailyPlanReminder": true,
+      "studySessionReminder": true,
+      "unfinishedTaskReminder": true,
+      "streakRiskReminder": true,
+      "revisionReminder": true,
+      "weeklySummary": true,
+      "preferredReminderTimes": {
+        "morning": "08:00",
+        "evening": "18:00"
+      }
+    },
+    "usr_1788455576469_z2f9hr": {
+      "dailyPlanReminder": true,
+      "studySessionReminder": true,
+      "unfinishedTaskReminder": true,
+      "streakRiskReminder": true,
+      "revisionReminder": true,
+      "weeklySummary": true,
+      "preferredReminderTimes": {
+        "morning": "08:00",
+        "evening": "18:00"
+      }
+    },
+    "usr_1788455576881_9rv82l": {
       "dailyPlanReminder": true,
       "studySessionReminder": true,
       "unfinishedTaskReminder": true,
@@ -4443,6 +5026,216 @@
         "currentStreak": 0,
         "longestStreak": 0
       }
+    },
+    "usr_1788455556561_a1jsqy": {
+      "overallScore": 0,
+      "benchmarkLabel": "Onboarding (Initial)",
+      "categories": [
+        {
+          "name": "DSA & Problem Solving",
+          "percentage": 0,
+          "color": "terracotta",
+          "totalProblems": 0,
+          "targetProblems": 250
+        },
+        {
+          "name": "Core Computer Science",
+          "percentage": 0,
+          "color": "navy",
+          "completedTopics": 0,
+          "targetTopics": 20
+        },
+        {
+          "name": "System Design & LLD",
+          "percentage": 0,
+          "color": "sage",
+          "completedTopics": 0,
+          "targetTopics": 10
+        },
+        {
+          "name": "Aptitude & Speed Math",
+          "percentage": 0,
+          "color": "amber",
+          "completedTopics": 0,
+          "targetTopics": 15
+        }
+      ],
+      "stats": {
+        "tasksCompleted": 0,
+        "studyHoursLogged": 0,
+        "problemsSolved": 0,
+        "daysCompleted": 0,
+        "currentStreak": 0,
+        "longestStreak": 0
+      }
+    },
+    "usr_1788455576194_774tyy": {
+      "overallScore": 0,
+      "benchmarkLabel": "Onboarding (Initial)",
+      "categories": [
+        {
+          "name": "DSA & Problem Solving",
+          "percentage": 0,
+          "color": "terracotta",
+          "totalProblems": 0,
+          "targetProblems": 250
+        },
+        {
+          "name": "Core Computer Science",
+          "percentage": 0,
+          "color": "navy",
+          "completedTopics": 0,
+          "targetTopics": 20
+        },
+        {
+          "name": "System Design & LLD",
+          "percentage": 0,
+          "color": "sage",
+          "completedTopics": 0,
+          "targetTopics": 10
+        },
+        {
+          "name": "Aptitude & Speed Math",
+          "percentage": 0,
+          "color": "amber",
+          "completedTopics": 0,
+          "targetTopics": 15
+        }
+      ],
+      "stats": {
+        "tasksCompleted": 0,
+        "studyHoursLogged": 0,
+        "problemsSolved": 0,
+        "daysCompleted": 0,
+        "currentStreak": 0,
+        "longestStreak": 0
+      }
+    },
+    "usr_1788455576429_ra0eji": {
+      "overallScore": 0,
+      "benchmarkLabel": "Onboarding (Initial)",
+      "categories": [
+        {
+          "name": "DSA & Problem Solving",
+          "percentage": 0,
+          "color": "terracotta",
+          "totalProblems": 0,
+          "targetProblems": 250
+        },
+        {
+          "name": "Core Computer Science",
+          "percentage": 0,
+          "color": "navy",
+          "completedTopics": 0,
+          "targetTopics": 20
+        },
+        {
+          "name": "System Design & LLD",
+          "percentage": 0,
+          "color": "sage",
+          "completedTopics": 0,
+          "targetTopics": 10
+        },
+        {
+          "name": "Aptitude & Speed Math",
+          "percentage": 0,
+          "color": "amber",
+          "completedTopics": 0,
+          "targetTopics": 15
+        }
+      ],
+      "stats": {
+        "tasksCompleted": 0,
+        "studyHoursLogged": 0,
+        "problemsSolved": 0,
+        "daysCompleted": 0,
+        "currentStreak": 0,
+        "longestStreak": 0
+      }
+    },
+    "usr_1788455576469_z2f9hr": {
+      "overallScore": 0,
+      "benchmarkLabel": "Onboarding (Initial)",
+      "categories": [
+        {
+          "name": "DSA & Problem Solving",
+          "percentage": 0,
+          "color": "terracotta",
+          "totalProblems": 0,
+          "targetProblems": 250
+        },
+        {
+          "name": "Core Computer Science",
+          "percentage": 0,
+          "color": "navy",
+          "completedTopics": 0,
+          "targetTopics": 20
+        },
+        {
+          "name": "System Design & LLD",
+          "percentage": 0,
+          "color": "sage",
+          "completedTopics": 0,
+          "targetTopics": 10
+        },
+        {
+          "name": "Aptitude & Speed Math",
+          "percentage": 0,
+          "color": "amber",
+          "completedTopics": 0,
+          "targetTopics": 15
+        }
+      ],
+      "stats": {
+        "tasksCompleted": 0,
+        "studyHoursLogged": 0,
+        "problemsSolved": 0,
+        "daysCompleted": 0,
+        "currentStreak": 0,
+        "longestStreak": 0
+      }
+    },
+    "usr_1788455576881_9rv82l": {
+      "overallScore": 0,
+      "benchmarkLabel": "Onboarding (Initial)",
+      "categories": [
+        {
+          "name": "DSA & Problem Solving",
+          "percentage": 0,
+          "color": "terracotta",
+          "totalProblems": 0,
+          "targetProblems": 250
+        },
+        {
+          "name": "Core Computer Science",
+          "percentage": 0,
+          "color": "navy",
+          "completedTopics": 0,
+          "targetTopics": 20
+        },
+        {
+          "name": "System Design & LLD",
+          "percentage": 0,
+          "color": "sage",
+          "completedTopics": 0,
+          "targetTopics": 10
+        },
+        {
+          "name": "Aptitude & Speed Math",
+          "percentage": 0,
+          "color": "amber",
+          "completedTopics": 0,
+          "targetTopics": 15
+        }
+      ],
+      "stats": {
+        "tasksCompleted": 0,
+        "studyHoursLogged": 0,
+        "problemsSolved": 0,
+        "daysCompleted": 0,
+        "currentStreak": 0,
+        "longestStreak": 0
+      }
     }
   },
   "uploadedFiles": {
@@ -4547,6 +5340,26 @@
         "actualMinutes": 45,
         "endedAt": "2026-09-03T17:09:01.723Z"
       }
+    ],
+    "user_test_quiz_1788455569467": [
+      {
+        "sessionId": "session_quiz_1788455569467",
+        "userId": "user_test_quiz_1788455569467",
+        "taskId": "task_quiz_1788455569467",
+        "status": "completed",
+        "actualMinutes": 45,
+        "endedAt": "2026-09-03T17:12:49.486Z"
+      }
+    ],
+    "user_test_quiz_1788455575105": [
+      {
+        "sessionId": "session_quiz_1788455575105",
+        "userId": "user_test_quiz_1788455575105",
+        "taskId": "task_quiz_1788455575105",
+        "status": "completed",
+        "actualMinutes": 45,
+        "endedAt": "2026-09-03T17:12:55.125Z"
+      }
     ]
   },
   "processedOperations": {
@@ -4590,6 +5403,20 @@
         "entityType": "TASK",
         "entityId": "t1",
         "processedAt": "2026-09-03T17:09:03.167Z"
+      }
+    ],
+    "usr_1788455576429_ra0eji": [
+      {
+        "operationId": "op_audit_1788455576514",
+        "entityType": "TASK",
+        "entityId": "test_task_1",
+        "processedAt": "2026-09-03T17:12:56.515Z"
+      },
+      {
+        "operationId": "op_streak_hack_1788455576580",
+        "entityType": "TASK",
+        "entityId": "t1",
+        "processedAt": "2026-09-03T17:12:56.583Z"
       }
     ]
   },
@@ -4650,7 +5477,26 @@
         "interviews": []
       }
     ],
-    "usr_1788455343024_cqiq94": []
+    "usr_1788455343024_cqiq94": [],
+    "usr_1788455576469_z2f9hr": [
+      {
+        "id": "app_1788455576530_bqi12",
+        "userId": "usr_1788455576469_z2f9hr",
+        "company": "Google",
+        "role": "Software Engineer",
+        "status": "Applied",
+        "applicationDate": "2026-09-03",
+        "deadline": null,
+        "jobUrl": "",
+        "location": "Remote",
+        "workType": "Remote",
+        "notes": "",
+        "createdAt": "2026-09-03T17:12:56.530Z",
+        "updatedAt": "2026-09-03T17:12:56.530Z",
+        "interviews": []
+      }
+    ],
+    "usr_1788455576429_ra0eji": []
   },
   "calendarEvents": {
     "usr_1788454644761_yp0dn7": [
@@ -4697,7 +5543,22 @@
         "updatedAt": "2026-09-03T17:09:03.124Z"
       }
     ],
-    "usr_1788455343024_cqiq94": []
+    "usr_1788455343024_cqiq94": [],
+    "usr_1788455576469_z2f9hr": [
+      {
+        "id": "evt_personal_1788455576536_xbrg",
+        "userId": "usr_1788455576469_z2f9hr",
+        "title": "Secret Interview Prep",
+        "type": "Study Session",
+        "date": "2026-09-10",
+        "time": "10:00 AM",
+        "durationMinutes": 45,
+        "notes": "",
+        "createdAt": "2026-09-03T17:12:56.536Z",
+        "updatedAt": "2026-09-03T17:12:56.536Z"
+      }
+    ],
+    "usr_1788455576429_ra0eji": []
   },
   "activeInterviews": {
     "usr_1788454644761_yp0dn7": {
@@ -4873,6 +5734,64 @@
           "evaluation": null
         }
       ]
+    },
+    "usr_1788455576469_z2f9hr": {
+      "id": "mock-int-1788455576570-ecf40y",
+      "userId": "usr_1788455576469_z2f9hr",
+      "type": "DSA",
+      "difficulty": "Medium",
+      "targetRole": "Software Engineer",
+      "timeLimitMinutes": 15,
+      "timeLimitSeconds": 900,
+      "startTime": "2026-09-03T17:12:56.570Z",
+      "status": "in_progress",
+      "currentQuestionIndex": 0,
+      "totalQuestions": 2,
+      "questions": [
+        {
+          "id": "q-dsa-1",
+          "index": 0,
+          "category": "DSA",
+          "topic": "Binary Search & Arrays",
+          "difficulty": "Medium",
+          "question": "Explain how Binary Search works. Under what preconditions can it be applied, and what is its time and space complexity?",
+          "expectedKeywords": [
+            "sorted array",
+            "logarithmic time",
+            "O(log n)",
+            "divide and conquer",
+            "midpoint",
+            "two pointers",
+            "O(1) space"
+          ],
+          "idealAnswerOutline": "Binary search operates on sorted collections by repeatedly dividing the search space in half. Precondition: elements must be sorted or have monotonic search space. Time complexity: O(log n), Space complexity: O(1) iterative or O(log n) recursive.",
+          "userAnswer": "",
+          "skipped": false,
+          "evaluation": null
+        },
+        {
+          "id": "q-dsa-2",
+          "index": 1,
+          "category": "DSA",
+          "topic": "Trees & Graph Traversal",
+          "difficulty": "Medium",
+          "question": "Explain the difference between Breadth-First Search (BFS) and Depth-First Search (DFS). When would you choose one over the other?",
+          "expectedKeywords": [
+            "queue",
+            "stack",
+            "recursion",
+            "level order",
+            "shortest path",
+            "unweighted graph",
+            "backtracking",
+            "cycle detection"
+          ],
+          "idealAnswerOutline": "BFS explores neighbor by neighbor using a Queue, making it ideal for shortest path in unweighted graphs. DFS explores deep along each branch using a Stack/recursion, ideal for backtracking, cycle detection, and topological sorting.",
+          "userAnswer": "",
+          "skipped": false,
+          "evaluation": null
+        }
+      ]
     }
   },
   "passwordResetTokens": [
@@ -4892,6 +5811,12 @@
       "token": "rst_ac6f733cffb77ede491a5cab0422159d6cdd26de8ca1b607",
       "userId": "usr_1788455343061_qbvpg7",
       "expiresAt": "2026-09-03T18:09:03.181Z",
+      "used": true
+    },
+    {
+      "token": "rst_f1eddbb2ab11dc89dc5ca9e5d9211fdaa9c5f9caf8492141",
+      "userId": "usr_1788455576469_z2f9hr",
+      "expiresAt": "2026-09-03T18:12:56.598Z",
       "used": true
     }
   ],
@@ -5189,6 +6114,123 @@
       "compactInsight": "DSA is currently your lowest progress area (0%). Consider shifting 30 minutes of study capacity toward DSA this week.",
       "recommendation": {
         "id": "rec-1788455343576",
+        "targetCategory": "DSA",
+        "title": "Strengthen DSA coverage",
+        "summary": "DSA is currently at 0%. For the next 4 days, shift 30 minutes from general practice to accelerate DSA mastery.",
+        "reasoning": "You are currently 65% below the benchmark for DSA.",
+        "dailyCapHours": 3,
+        "days": 4,
+        "beforeAllocation": [
+          {
+            "name": "DSA & Algorithms",
+            "minutes": 75
+          },
+          {
+            "name": "DSA",
+            "minutes": 30
+          },
+          {
+            "name": "Aptitude & Practice",
+            "minutes": 45
+          },
+          {
+            "name": "Revision & Mock",
+            "minutes": 30
+          }
+        ],
+        "afterAllocation": [
+          {
+            "name": "DSA & Algorithms",
+            "minutes": 60
+          },
+          {
+            "name": "DSA",
+            "minutes": 60
+          },
+          {
+            "name": "Aptitude & Practice",
+            "minutes": 35
+          },
+          {
+            "name": "Revision & Mock",
+            "minutes": 25
+          }
+        ]
+      },
+      "weeklyReport": {
+        "weekRange": "Current Week",
+        "tasksCompleted": 13,
+        "tasksMissed": 2,
+        "hoursStudied": "12.6",
+        "topicsCompleted": 4,
+        "revisionsCompleted": 5,
+        "currentStreak": 0,
+        "roadmapProgress": 14,
+        "takeaways": [
+          "Your consistency in Revision is strong. Keep maintaining this pace.",
+          "Focus upcoming sprint sessions on DSA to balance your overall placement readiness."
+        ]
+      }
+    },
+    "usr_1788455576881_9rv82l": {
+      "hasData": true,
+      "lastAnalyzed": "2026-09-03T17:12:57.005Z",
+      "readinessPercent": 26,
+      "status": "at_risk",
+      "pacingStatus": "on_track",
+      "daysRemaining": 78,
+      "roadmapProgress": 14,
+      "weakestCategory": "DSA",
+      "strongestCategory": "Revision",
+      "categories": [
+        {
+          "name": "Revision",
+          "completed": 4,
+          "total": 12,
+          "percentage": 33,
+          "color": "var(--accent-sage)"
+        },
+        {
+          "name": "DSA",
+          "completed": 0,
+          "total": 9,
+          "percentage": 0,
+          "color": "var(--accent-terracotta)"
+        },
+        {
+          "name": "Core CS",
+          "completed": 0,
+          "total": 4,
+          "percentage": 0,
+          "color": "var(--accent-navy)"
+        },
+        {
+          "name": "Communication",
+          "completed": 0,
+          "total": 2,
+          "percentage": 0,
+          "color": "var(--accent-sage)"
+        },
+        {
+          "name": "Aptitude",
+          "completed": 0,
+          "total": 1,
+          "percentage": 0,
+          "color": "var(--accent-amber)"
+        }
+      ],
+      "strengths": [
+        "Your revision health is strong at 82% average retention",
+        "1 placement missions completed today",
+        "Spaced revision queue is completely up to date"
+      ],
+      "weakAreas": [
+        "DSA is currently your lowest progress area (0%)",
+        "5 tasks remaining to extend your daily streak"
+      ],
+      "compactInsight": "DSA is currently your lowest progress area (0%). Consider shifting 30 minutes of study capacity toward DSA this week.",
+      "recommendation": {
+        "id": "rec-1788455577005",
         "targetCategory": "DSA",
         "title": "Strengthen DSA coverage",
         "summary": "DSA is currently at 0%. For the next 4 days, shift 30 minutes from general practice to accelerate DSA mastery.",
