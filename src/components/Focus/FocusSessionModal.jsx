@@ -28,6 +28,7 @@ import {
   FileText
 } from 'lucide-react';
 import { fetchTaskStudyMaterial } from '../../services/studyMaterialService';
+import StudyDiagram from '../Study/StudyDiagram';
 
 export const FocusSessionModal = () => {
   const { 
@@ -753,60 +754,79 @@ export const FocusSessionModal = () => {
                       <span>Core Concepts & Mechanism</span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-                      {studyMaterial.concepts.map((concept, idx) => (
-                        <div key={idx} style={{
-                          padding: '16px',
-                          borderRadius: 'var(--radius-md)',
-                          backgroundColor: '#FFFFFF',
-                          border: '1px solid #E8E2D9',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '8px',
-                          boxShadow: '0 1px 3px rgba(35, 25, 15, 0.03)'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
-                            <span style={{
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '50%',
-                              backgroundColor: 'rgba(200, 90, 50, 0.1)',
-                              color: 'var(--accent-terracotta)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '11px',
-                              fontWeight: 800,
-                              flexShrink: 0
-                            }}>
-                              {idx + 1}
-                            </span>
-                            <span>{concept.name}</span>
+                      {studyMaterial.concepts.map((concept, idx) => {
+                        const matchingDiagram = Array.isArray(studyMaterial.diagrams)
+                          ? studyMaterial.diagrams.find(d => d.conceptName?.toLowerCase() === concept.name?.toLowerCase() || (concept.name?.toLowerCase().includes(d.conceptName?.toLowerCase()) && d.conceptName))
+                          : null;
+
+                        return (
+                          <div key={idx} style={{
+                            padding: '16px',
+                            borderRadius: 'var(--radius-md)',
+                            backgroundColor: '#FFFFFF',
+                            border: '1px solid #E8E2D9',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                            boxShadow: '0 1px 3px rgba(35, 25, 15, 0.03)'
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
+                              <span style={{
+                                width: '20px',
+                                height: '20px',
+                                borderRadius: '50%',
+                                backgroundColor: 'rgba(200, 90, 50, 0.1)',
+                                color: 'var(--accent-terracotta)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyCenter: 'center',
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                flexShrink: 0
+                              }}>
+                                {idx + 1}
+                              </span>
+                              <span>{concept.name}</span>
+                            </div>
+                            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                              {concept.explanation}
+                            </p>
+                            {concept.intuition && (
+                              <div style={{
+                                padding: '8px 10px',
+                                borderRadius: '6px',
+                                backgroundColor: '#FFFDF0',
+                                border: '1px solid #FEEBC8',
+                                fontSize: '11.5px',
+                                color: '#744210',
+                                lineHeight: '1.4'
+                              }}>
+                                <strong>💡 Intuition: </strong>{concept.intuition}
+                              </div>
+                            )}
+                            
+                            {/* Contextual Visual Diagram if matched with concept */}
+                            {matchingDiagram && (
+                              <StudyDiagram diagram={matchingDiagram} />
+                            )}
+
+                            {concept.example && (
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace', paddingTop: '4px', borderTop: '1px solid #F5EFE6' }}>
+                                <span style={{ fontFamily: 'inherit', fontWeight: 700, color: 'var(--text-secondary)' }}>Example: </span>
+                                {concept.example}
+                              </div>
+                            )}
                           </div>
-                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
-                            {concept.explanation}
-                          </p>
-                          {concept.intuition && (
-                            <div style={{
-                              padding: '8px 10px',
-                              borderRadius: '6px',
-                              backgroundColor: '#FFFDF0',
-                              border: '1px solid #FEEBC8',
-                              fontSize: '11.5px',
-                              color: '#744210',
-                              lineHeight: '1.4'
-                            }}>
-                              <strong>💡 Intuition: </strong>{concept.intuition}
-                            </div>
-                          )}
-                          {concept.example && (
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace', paddingTop: '4px', borderTop: '1px solid #F5EFE6' }}>
-                              <span style={{ fontFamily: 'inherit', fontWeight: 700, color: 'var(--text-secondary)' }}>Example: </span>
-                              {concept.example}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
+
+                    {/* Standalone Unmatched Diagrams */}
+                    {Array.isArray(studyMaterial.diagrams) && studyMaterial.diagrams.filter(d => !studyMaterial.concepts?.some(c => c.name?.toLowerCase() === d.conceptName?.toLowerCase() || (c.name?.toLowerCase().includes(d.conceptName?.toLowerCase()) && d.conceptName))).map((diag, idx) => (
+                      <div key={diag.id || idx} style={{ marginTop: '12px' }}>
+                        <StudyDiagram diagram={diag} />
+                      </div>
+                    ))}
                   </div>
                 )}
 

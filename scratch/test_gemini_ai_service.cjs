@@ -894,7 +894,8 @@ async function runTests() {
   const {
     generateTaskStudyMaterial,
     validateTaskStudyMaterialSchema,
-    validateTaskStudyMaterialRelevance
+    validateTaskStudyMaterialRelevance,
+    validateTaskStudyMaterialQuality
   } = await import('file:///f:/NOVARA/server/aiService.js');
   const {
     getFallbackStudyMaterial,
@@ -1006,6 +1007,22 @@ async function runTests() {
         concepts: [
           { name: 'Two Pointers', explanation: 'Move pointers inward in O(N).', intuition: 'Eliminates brute-force combinations.', example: 'Two sum sorted.' }
         ],
+        diagrams: [
+          {
+            id: 'diag_two_pointers',
+            conceptName: 'Two Pointers',
+            title: 'Two Pointers on Sorted Array',
+            purpose: 'Visualize inward pointer movements in O(N)',
+            type: 'algorithm',
+            description: 'Left pointer at idx 0, Right pointer at idx 3.',
+            elements: [
+              { id: 'el_0', label: '2', sublabel: 'idx 0', type: 'array', highlight: true },
+              { id: 'el_3', label: '15', sublabel: 'idx 3', type: 'array', highlight: true }
+            ],
+            connections: [{ from: 'el_0', to: 'el_3', label: 'sum = 17' }],
+            steps: [{ step: 1, title: 'Check boundary sum', description: '2 + 15 = 17 > target 13. Move right pointer left.' }]
+          }
+        ],
         patterns: [{ name: 'Sliding Window', whenToUse: 'Contiguous ranges', howItWorks: 'Expand right, shrink left', example: 'Longest substring' }],
         stepByStep: ['1. Bounds check', '2. Pointer setup', '3. Edge cases'],
         codeExamples: [{ title: 'Kadane Max Subarray', language: 'javascript', code: 'function maxSubArray(nums) {}', explanation: 'Linear scan', complexity: { time: 'O(N)', space: 'O(1)' } }],
@@ -1027,6 +1044,22 @@ async function runTests() {
         overview: 'Linked lists use node pointers to form dynamic chains without contiguous memory.',
         learningObjectives: ['Implement Floyd cycle detection', 'Reverse list in-place'],
         concepts: [{ name: 'Fast & Slow Pointers', explanation: 'Tortoise and hare detection.', intuition: 'Faster pointer laps slower pointer in loop.', example: 'Cycle detection.' }],
+        diagrams: [
+          {
+            id: 'diag_ll_rev',
+            conceptName: 'Fast & Slow Pointers',
+            title: 'Pointer Rewiring Traversal',
+            purpose: 'Visualizes pointer updates in-place',
+            type: 'structure',
+            description: 'In-place next pointer rewiring.',
+            elements: [
+              { id: 'node_1', label: '[ 1 | • ]', sublabel: 'head', type: 'node' },
+              { id: 'node_2', label: '[ 2 | • ]', sublabel: 'curr', type: 'node', highlight: true }
+            ],
+            connections: [{ from: 'node_1', to: 'node_2', label: 'next' }],
+            steps: []
+          }
+        ],
         patterns: [{ name: 'Dummy Head', whenToUse: 'Head deletions', howItWorks: 'Pre-head node', example: 'Merge lists' }],
         stepByStep: ['1. Save nextNode', '2. Rewire curr.next', '3. Advance pointers'],
         codeExamples: [{ title: 'Reverse List', language: 'javascript', code: 'function reverseList(head) {}', explanation: 'In-place reversal', complexity: { time: 'O(N)', space: 'O(1)' } }],
@@ -1048,6 +1081,22 @@ async function runTests() {
         overview: 'SQL standardizes relational queries and analytical calculations.',
         learningObjectives: ['Master INNER and LEFT joins', 'Write DENSE_RANK window queries'],
         concepts: [{ name: 'Window Functions', explanation: 'Computes metrics without collapsing rows.', intuition: 'Partitions dataset on the fly.', example: 'DENSE_RANK() OVER (PARTITION BY dept_id ORDER BY sal DESC).' }],
+        diagrams: [
+          {
+            id: 'diag_sql',
+            conceptName: 'Window Functions',
+            title: 'SQL Relational JOIN Logic',
+            purpose: 'Contrasts matching vs unmatched rows',
+            type: 'flow',
+            description: 'INNER vs LEFT JOIN result sets.',
+            elements: [
+              { id: 't_a', label: 'Table A', sublabel: 'Left table' },
+              { id: 't_b', label: 'Table B', sublabel: 'Right table' }
+            ],
+            connections: [{ from: 'Table A', to: 'Table B', label: 'ON A.id = B.a_id' }],
+            steps: []
+          }
+        ],
         patterns: [{ name: 'CTE with Partition', whenToUse: 'Top-N per group', howItWorks: 'Rank with CTE then filter', example: 'Nth highest salary' }],
         stepByStep: ['1. Base join', '2. WHERE filter', '3. PARTITION ranking'],
         codeExamples: [{ title: 'Nth Highest Salary', language: 'sql', code: 'WITH Ranked AS (...) SELECT ...', explanation: 'CTE window rank', complexity: { time: 'O(N log N)', space: 'O(N)' } }],
@@ -1069,6 +1118,22 @@ async function runTests() {
         overview: 'React builds declarative UIs with reactive state and Virtual DOM diffing.',
         learningObjectives: ['Manage useEffect cleanups', 'Understand state immutability'],
         concepts: [{ name: 'State Immutability', explanation: 'Update state via pure copies.', intuition: 'Enables shallow reference comparisons in Virtual DOM.', example: 'setItems(prev => [...prev, item]).' }],
+        diagrams: [
+          {
+            id: 'diag_react',
+            conceptName: 'State Immutability',
+            title: 'Unidirectional Data Flow & Reconciliation',
+            purpose: 'Visualizes parent props down, child events up',
+            type: 'flow',
+            description: 'Unidirectional state flow.',
+            elements: [
+              { id: 'parent', label: 'Parent Component', sublabel: 'State Owner' },
+              { id: 'child', label: 'Child Component', sublabel: 'Props receiver' }
+            ],
+            connections: [{ from: 'Parent', to: 'Child', label: 'Props' }],
+            steps: []
+          }
+        ],
         patterns: [{ name: 'Custom Hook', whenToUse: 'Reusable effect logic', howItWorks: 'Extract stateful function', example: 'useWindowSize' }],
         stepByStep: ['1. Unidirectional data flow', '2. Pick hook', '3. Add cleanup function'],
         codeExamples: [{ title: 'useWindowSize Custom Hook', language: 'javascript', code: 'export function useWindowSize() {}', explanation: 'Resize listener with cleanup', complexity: { time: 'O(1)', space: 'O(1)' } }],
@@ -1090,6 +1155,7 @@ async function runTests() {
         overview: 'Structured communication and project impact demonstrate technical ownership.',
         learningObjectives: ['Structure STAR stories', 'Quantify project metrics'],
         concepts: [{ name: 'STAR Framework', explanation: 'Situation, Task, Action, Result.', intuition: 'Proves individual engineering ownership with objective outcomes.', example: 'API latency reduction story.' }],
+        diagrams: [], // Resume correctly returns empty diagrams array
         patterns: [{ name: 'Google XYZ Resume Formula', whenToUse: 'Resume bullet points', howItWorks: 'Accomplished X by doing Z as measured by Y', example: 'Reduced latency by 40%' }],
         stepByStep: ['1. Pick project challenge', '2. Define personal action', '3. State metric outcome'],
         codeExamples: [],
@@ -1113,8 +1179,47 @@ async function runTests() {
     assert(generated.overview.length > 20, 'Has comprehensive overview');
     assert(Array.isArray(generated.concepts) && generated.concepts.length >= 1, 'Contains concepts');
     assert(Array.isArray(generated.learningObjectives), 'Contains learning objectives');
-    console.log(`✅ PASS: Gemini study document generated & validated for ${testCase.ctx.taskTitle}`);
+    assert(Array.isArray(generated.diagrams), 'Contains valid diagrams array');
+    console.log(`✅ PASS: Gemini study document & diagrams generated & validated for ${testCase.ctx.taskTitle}`);
   }
+
+  // 3b. Test Contaminated Diagram Rejection
+  console.log('\n[Diagram Quality Test] Testing Contaminated Diagram in Technical Task is Rejected...');
+  const contaminatedDiagramResponse = {
+    title: 'Arrays and String Manipulation Practice',
+    subtitle: 'Two Pointers Practice',
+    overview: 'Arrays are linear contiguous memory blocks.',
+    learningObjectives: ['Master Two Pointers'],
+    concepts: [{ name: 'Two Pointers', explanation: 'Pointers move inward.', intuition: 'Avoids O(N2).', example: 'Sorted pair.' }],
+    diagrams: [
+      {
+        id: 'diag_bad',
+        title: 'STAR Framework in Arrays',
+        type: 'flow',
+        description: 'Behavioral interview and STAR method flow chart.',
+        elements: [{ id: '1', label: 'STAR Framework' }]
+      }
+    ],
+    patterns: [{ name: 'Two Pointers', whenToUse: 'Sorted array', howItWorks: 'Inward shift', example: 'Two Sum II' }],
+    stepByStep: ['1. Sort', '2. Pointers'],
+    codeExamples: [{ title: 'Code', language: 'js', code: 'function () {}', explanation: 'Code', complexity: { time: 'O(N)', space: 'O(1)' } }],
+    workedExamples: [{ title: 'Ex', problem: 'P', approach: 'A', solution: 'S' }],
+    commonMistakes: ['None'],
+    interviewTips: ['Tip'],
+    practiceGuidance: ['Practice'],
+    quickRecap: ['Recap'],
+    keyTakeaways: ['Takeaways'],
+    placementRelevance: 'High',
+    domain: 'arrays'
+  };
+
+  const diagramContaminationCheck = validateTaskStudyMaterialQuality(contaminatedDiagramResponse, {
+    taskTitle: 'Arrays and String Manipulation Practice',
+    roadmapTopic: 'Arrays and strings',
+    taskCategory: 'DSA'
+  });
+  assert(diagramContaminationCheck.valid === false, 'Contaminated diagram caught and rejected by validator');
+  console.log('✅ PASS: Cross-domain / STAR contaminated diagram successfully caught and rejected');
 
   // 4. Test Server-side Cache Layer with Fingerprinting
   const cacheKey = getStudyMaterialCacheKey({ taskTitle: 'Arrays and strings', roadmapTopic: 'Arrays and strings', taskDescription: 'Practice sliding window' });

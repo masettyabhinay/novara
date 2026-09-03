@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { fetchTaskStudyMaterial } from '../../services/studyMaterialService';
 import { useApp } from '../../context/AppContext';
+import StudyDiagram from '../Study/StudyDiagram';
 
 export default function TaskStudyMaterialModal({
   isOpen,
@@ -257,35 +258,54 @@ export default function TaskStudyMaterialModal({
                     Core Concepts & Intuition
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                    {material.concepts.map((concept, idx) => (
-                      <div
-                        key={idx}
-                        className="p-4 rounded-xl bg-white border border-[#E8E2D9] shadow-sm hover:border-[#C85A32]/40 transition-colors space-y-2.5"
-                      >
-                        <div className="flex items-center gap-2 font-bold text-slate-800 text-sm">
-                          <span className="w-5 h-5 rounded-full bg-[#C85A32]/10 text-[#C85A32] flex items-center justify-center text-xs font-bold shrink-0">
-                            {idx + 1}
-                          </span>
-                          <span>{concept.name}</span>
+                    {material.concepts.map((concept, idx) => {
+                      const matchingDiagram = Array.isArray(material.diagrams)
+                        ? material.diagrams.find(d => d.conceptName?.toLowerCase() === concept.name?.toLowerCase() || (concept.name?.toLowerCase().includes(d.conceptName?.toLowerCase()) && d.conceptName))
+                        : null;
+
+                      return (
+                        <div
+                          key={idx}
+                          className="p-4 rounded-xl bg-white border border-[#E8E2D9] shadow-sm hover:border-[#C85A32]/40 transition-colors space-y-2.5"
+                        >
+                          <div className="flex items-center gap-2 font-bold text-slate-800 text-sm">
+                            <span className="w-5 h-5 rounded-full bg-[#C85A32]/10 text-[#C85A32] flex items-center justify-center text-xs font-bold shrink-0">
+                              {idx + 1}
+                            </span>
+                            <span>{concept.name}</span>
+                          </div>
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            {concept.explanation}
+                          </p>
+                          {concept.intuition && (
+                            <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200/80 text-[11.5px] text-amber-950 leading-relaxed">
+                              <span className="font-semibold text-amber-800">💡 Intuition: </span>
+                              {concept.intuition}
+                            </div>
+                          )}
+
+                          {/* Contextual Visual Diagram */}
+                          {matchingDiagram && (
+                            <StudyDiagram diagram={matchingDiagram} />
+                          )}
+
+                          {concept.example && (
+                            <div className="pt-1.5 border-t border-slate-100 text-[11px] text-slate-500 font-mono">
+                              <span className="font-sans font-semibold text-slate-700">Example: </span>
+                              {concept.example}
+                            </div>
+                          )}
                         </div>
-                        <p className="text-xs text-slate-600 leading-relaxed">
-                          {concept.explanation}
-                        </p>
-                        {concept.intuition && (
-                          <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200/80 text-[11.5px] text-amber-950 leading-relaxed">
-                            <span className="font-semibold text-amber-800">💡 Intuition: </span>
-                            {concept.intuition}
-                          </div>
-                        )}
-                        {concept.example && (
-                          <div className="pt-1.5 border-t border-slate-100 text-[11px] text-slate-500 font-mono">
-                            <span className="font-sans font-semibold text-slate-700">Example: </span>
-                            {concept.example}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+
+                  {/* Standalone Unmatched Diagrams */}
+                  {Array.isArray(material.diagrams) && material.diagrams.filter(d => !material.concepts?.some(c => c.name?.toLowerCase() === d.conceptName?.toLowerCase() || (c.name?.toLowerCase().includes(d.conceptName?.toLowerCase()) && d.conceptName))).map((diag, idx) => (
+                    <div key={diag.id || idx} className="mt-3">
+                      <StudyDiagram diagram={diag} />
+                    </div>
+                  ))}
                 </section>
               )}
 

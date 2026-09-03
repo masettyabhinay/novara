@@ -1323,6 +1323,31 @@ export function validateTaskStudyMaterialQuality(parsed, taskContext = {}) {
     return { valid: false, reason: 'Study material must include quickRecap or keyTakeaways.' };
   }
 
+  // Diagram validation & text accumulation
+  const validDiagramTypes = new Set(['flow', 'sequence', 'structure', 'algorithm', 'comparison', 'architecture', 'data-structure', 'array', 'linked-list']);
+  const sanitizedDiagrams = [];
+
+  if (Array.isArray(parsed.diagrams)) {
+    for (const diag of parsed.diagrams) {
+      if (diag && typeof diag === 'object' && diag.title && diag.type) {
+        const normalizedType = String(diag.type).toLowerCase();
+        if (validDiagramTypes.has(normalizedType)) {
+          sanitizedDiagrams.push({
+            id: diag.id || `diag_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            conceptName: diag.conceptName || '',
+            title: diag.title,
+            purpose: diag.purpose || '',
+            type: normalizedType,
+            description: diag.description || '',
+            elements: Array.isArray(diag.elements) ? diag.elements : [],
+            connections: Array.isArray(diag.connections) ? diag.connections : [],
+            steps: Array.isArray(diag.steps) ? diag.steps : []
+          });
+        }
+      }
+    }
+  }
+
   // Domain relevance and anti-contamination validation
   const targetDomain = classifyTaskDomain(taskContext);
   const disallowed = DOMAIN_DISALLOWED_PATTERNS[targetDomain] || [];
@@ -1334,6 +1359,7 @@ export function validateTaskStudyMaterialQuality(parsed, taskContext = {}) {
     parsed.overview || '',
     (parsed.learningObjectives || []).join(' '),
     (parsed.concepts || []).map(c => `${c.name || ''} ${c.explanation || ''} ${c.intuition || ''} ${c.example || ''}`).join(' '),
+    (sanitizedDiagrams || []).map(d => `${d.title || ''} ${d.purpose || ''} ${d.description || ''} ${(d.elements || []).map(e => `${e.label || ''} ${e.sublabel || ''}`).join(' ')} ${(d.steps || []).map(s => `${s.title || ''} ${s.description || ''}`).join(' ')}`).join(' '),
     (parsed.patterns || []).map(p => `${p.name || ''} ${p.whenToUse || ''} ${p.howItWorks || ''} ${p.example || ''}`).join(' '),
     (parsed.stepByStep || []).join(' '),
     (parsed.codeExamples || parsed.examples || []).map(e => `${e.title || ''} ${e.explanation || ''} ${e.code || ''}`).join(' '),
@@ -1372,7 +1398,7 @@ export function validateTaskStudyMaterialQuality(parsed, taskContext = {}) {
     }
   }
 
-  return { valid: true, reason: null };
+  return { valid: true, reason: null, sanitizedDiagrams };
 }
 
 /**
@@ -1428,9 +1454,10 @@ ${relevantMetadata ? `- Additional Context: ${relevantMetadata}\n` : ''}
 STRICT GROUNDING & QUALITY RULES:
 1. Generate study material ONLY for the selected task and its supplied learning context. Do not use unrelated topics from the user's roadmap, question banks, previous tasks, or general placement knowledge.
 2. Focus deeply on the core algorithmic or engineering techniques of "${taskTitle}" (${roadmapTopic}).
-3. Avoid generic motivational filler or chat conversationalisms. Structure content like a high-yield placement revision document.
-4. Never generate unrelated domains (for example: NEVER generate STAR framework, HR, or Resume content for technical topics like Arrays, SQL, React, or Operating Systems).
-5. For coding/technical tasks, provide syntactically valid code examples with Time and Space complexity analysis.
+3. Determine whether a visual representation materially improves understanding of any concept (e.g. pointer movements, node connections, search spaces, table joins, process/threads, protocol handshakes, component trees). Generate diagrams ONLY when they provide genuine educational value. Never generate decorative diagrams. If no diagram is useful, output "diagrams": [].
+4. Avoid generic motivational filler or chat conversationalisms. Structure content like a high-yield placement revision document.
+5. Never generate unrelated domains (for example: NEVER generate STAR framework, HR, or Resume content for technical topics like Arrays, SQL, React, or Operating Systems).
+6. For coding/technical tasks, provide syntactically valid code examples with Time and Space complexity analysis.
 
 REQUIRED JSON STRUCTURE:
 {
@@ -1447,6 +1474,25 @@ REQUIRED JSON STRUCTURE:
       "explanation": "Clear educational explanation of the mechanism...",
       "intuition": "Why this approach works and eliminates brute force...",
       "example": "Brief practical scenario or mini-example..."
+    }
+  ],
+  "diagrams": [
+    {
+      "id": "diag_1",
+      "conceptName": "Matching Concept Name",
+      "title": "Clear descriptive diagram title",
+      "purpose": "Educational purpose of this diagram",
+      "type": "flow | sequence | structure | algorithm | comparison | architecture | data-structure",
+      "description": "Accessible textual description explaining the visual layout",
+      "elements": [
+        { "id": "el_1", "label": "Label text", "sublabel": "Sublabel or index", "type": "node | array | box", "highlight": true }
+      ],
+      "connections": [
+        { "from": "el_1", "to": "el_2", "label": "connection label" }
+      ],
+      "steps": [
+        { "step": 1, "title": "Step 1 name", "description": "Step 1 explanation", "activeElementIds": ["el_1"], "pointerState": { "left": "idx 0", "right": "idx 3" } }
+      ]
     }
   ],
   "patterns": [
@@ -1508,7 +1554,7 @@ REQUIRED JSON STRUCTURE:
     let result = await provider.generateJSON({
       prompt,
       systemInstruction: `You are a world-class technical educator. Generate comprehensive, strictly grounded study guides for "${taskTitle}". Never output content for unrelated domains. Output strictly valid JSON.`,
-      schemaHint: 'JSON object matching the rich learning document schema.'
+      schemaHint: 'JSON object matching the rich learning document schema with optional visual diagrams.'
     });
 
     let qualityValidation = validateTaskStudyMaterialQuality(result, taskContext);
@@ -1541,12 +1587,17 @@ Do not include content from other domains (e.g., STAR framework, resume content,
       return null;
     }
 
+    const finalDiagrams = qualityValidation.sanitizedDiagrams && qualityValidation.sanitizedDiagrams.length > 0
+      ? qualityValidation.sanitizedDiagrams
+      : (Array.isArray(result.diagrams) ? result.diagrams : []);
+
     return {
       title: result.title || taskTitle,
       subtitle: result.subtitle || '',
       overview: result.overview,
       learningObjectives: Array.isArray(result.learningObjectives) ? result.learningObjectives : [],
       concepts: Array.isArray(result.concepts) ? result.concepts : [],
+      diagrams: finalDiagrams,
       patterns: Array.isArray(result.patterns) ? result.patterns : [],
       stepByStep: Array.isArray(result.stepByStep) ? result.stepByStep : [],
       codeExamples: Array.isArray(result.codeExamples) ? result.codeExamples : (Array.isArray(result.examples) ? result.examples : []),
@@ -1564,4 +1615,5 @@ Do not include content from other domains (e.g., STAR framework, resume content,
     return null;
   }
 }
+
 

@@ -1,8 +1,8 @@
 /**
  * Server-Side Task Study Material Service for NOVARA
  * Provides rich, domain-grounded study guides, concept intuitions,
- * algorithmic patterns, code examples with complexity breakdowns,
- * worked examples, common pitfalls, and placement interview tips.
+ * algorithmic patterns, code examples, worked problem examples,
+ * and intelligent visual diagrams with step-by-step visualizations.
  */
 
 import { classifyTaskDomain } from './revisionService.js';
@@ -12,7 +12,7 @@ const STUDY_MATERIAL_CACHE = new Map();
 
 /**
  * Verified Grounded Study Material Fallbacks for all core curriculum domains.
- * Formatted to match the rich AI-generated learning document schema.
+ * Includes structured visual diagrams for algorithmic, architectural, and data structure topics.
  */
 export const GROUNDED_STUDY_MATERIALS = {
   // DSA - Arrays & Strings
@@ -50,6 +50,68 @@ export const GROUNDED_STUDY_MATERIALS = {
         explanation: 'Precomputes cumulative sums prefix[i] = prefix[i-1] + arr[i] to answer any range sum query (L, R) in O(1) time via prefix[R] - prefix[L-1].',
         intuition: 'Transforms repeated range summation queries into instant subtraction of two precalculated boundary values.',
         example: 'Equilibrium index detection or continuous subarray sum divisible by K.'
+      }
+    ],
+    diagrams: [
+      {
+        id: 'diag_two_pointers',
+        conceptName: 'Two Pointers Technique',
+        title: 'Two Pointers on Sorted Array',
+        purpose: 'Visualize how inward pointer movements eliminate candidate pairs in O(N)',
+        type: 'algorithm',
+        description: 'Left pointer at index 0 and Right pointer at index 3. Sum is compared against target value.',
+        elements: [
+          { id: 'el_0', label: '2', sublabel: 'idx 0 (L)', type: 'array', highlight: true },
+          { id: 'el_1', label: '7', sublabel: 'idx 1', type: 'array' },
+          { id: 'el_2', label: '11', sublabel: 'idx 2', type: 'array' },
+          { id: 'el_3', label: '15', sublabel: 'idx 3 (R)', type: 'array', highlight: true }
+        ],
+        connections: [
+          { from: 'el_0', to: 'el_3', label: 'sum = 17 (target = 13)' }
+        ],
+        steps: [
+          {
+            step: 1,
+            title: 'Initial State: Calculate Boundary Sum',
+            description: 'Left at arr[0]=2, Right at arr[3]=15. Sum is 2 + 15 = 17. Since 17 > target (13), decrement Right.',
+            activeElementIds: ['el_0', 'el_3'],
+            pointerState: { left: 'idx 0 (val 2)', right: 'idx 3 (val 15)' }
+          },
+          {
+            step: 2,
+            title: 'Step 2: Decrement Right Pointer',
+            description: 'Left at arr[0]=2, Right at arr[2]=11. Sum is 2 + 11 = 13. Target found in O(N)!',
+            activeElementIds: ['el_0', 'el_2'],
+            pointerState: { left: 'idx 0 (val 2)', right: 'idx 2 (val 11)' }
+          }
+        ]
+      },
+      {
+        id: 'diag_sliding_window',
+        conceptName: 'Sliding Window',
+        title: 'Dynamic Sliding Window Subarray Range',
+        purpose: 'Visualizes expanding right boundary and contracting left boundary',
+        type: 'algorithm',
+        description: 'Window expands right to include elements, and contracts left when condition is exceeded.',
+        elements: [
+          { id: 'w_0', label: 'a', sublabel: '0', type: 'array' },
+          { id: 'w_1', label: 'b', sublabel: '1 (L)', type: 'array', highlight: true },
+          { id: 'w_2', label: 'c', sublabel: '2', type: 'array', highlight: true },
+          { id: 'w_3', label: 'a', sublabel: '3 (R)', type: 'array', highlight: true },
+          { id: 'w_4', label: 'b', sublabel: '4', type: 'array' }
+        ],
+        connections: [
+          { from: 'w_1', to: 'w_3', label: 'Valid unique window [b, c, a]' }
+        ],
+        steps: [
+          {
+            step: 1,
+            title: 'Window Expansion',
+            description: 'Advance right pointer R. Add arr[R] to frequency hash map.',
+            activeElementIds: ['w_1', 'w_2', 'w_3'],
+            pointerState: { left: 'idx 1', right: 'idx 3' }
+          }
+        ]
       }
     ],
     patterns: [
@@ -184,6 +246,47 @@ export const GROUNDED_STUDY_MATERIALS = {
         example: 'Removing the N-th node from end or merging two sorted lists.'
       }
     ],
+    diagrams: [
+      {
+        id: 'diag_ll_reversal',
+        conceptName: 'In-place Iterative Reversal',
+        title: 'Singly Linked List In-Place Pointer Reversal',
+        purpose: 'Visualizes pointer rewiring step: curr.next = prev',
+        type: 'structure',
+        description: 'Pointer arrows reverse one-by-one while next node reference is preserved in nextNode.',
+        elements: [
+          { id: 'node_1', label: '[ 1 | • ]', sublabel: 'head', type: 'node' },
+          { id: 'node_2', label: '[ 2 | • ]', sublabel: 'curr', type: 'node', highlight: true },
+          { id: 'node_3', label: '[ 3 | • ]', sublabel: 'next', type: 'node' },
+          { id: 'node_null', label: 'null', sublabel: 'tail', type: 'node' }
+        ],
+        connections: [
+          { from: 'node_1', to: 'node_2', label: 'next' },
+          { from: 'node_2', to: 'node_3', label: 'next' },
+          { from: 'node_3', to: 'node_null', label: 'next' }
+        ],
+        steps: [
+          {
+            step: 1,
+            title: 'Save Next Reference',
+            description: 'Save nextNode = curr.next before rewiring curr pointer.',
+            activeElementIds: ['node_2', 'node_3']
+          },
+          {
+            step: 2,
+            title: 'Rewire Pointer to Prev',
+            description: 'Set curr.next = prev (points arrow left).',
+            activeElementIds: ['node_1', 'node_2']
+          },
+          {
+            step: 3,
+            title: 'Advance Pointers',
+            description: 'Set prev = curr, curr = nextNode.',
+            activeElementIds: ['node_2', 'node_3']
+          }
+        ]
+      }
+    ],
     patterns: [
       {
         name: 'Fast and Slow Pointers (Tortoise and Hare)',
@@ -281,6 +384,42 @@ export const GROUNDED_STUDY_MATERIALS = {
         example: 'Capacity To Ship Packages Within D Days or Koko Eating Bananas.'
       }
     ],
+    diagrams: [
+      {
+        id: 'diag_bs_partition',
+        conceptName: 'Binary Search on Answer Space',
+        title: 'Monotonic Search Space Reduction',
+        purpose: 'Visualizes eliminating half of search space per step',
+        type: 'algorithm',
+        description: 'Compares mid with target and cuts the unneeded half of search space.',
+        elements: [
+          { id: 'b_0', label: '1', sublabel: 'Low', type: 'array', highlight: true },
+          { id: 'b_1', label: '3', sublabel: '1', type: 'array' },
+          { id: 'b_2', label: '5', sublabel: 'Mid', type: 'array', highlight: true },
+          { id: 'b_3', label: '8', sublabel: '3', type: 'array' },
+          { id: 'b_4', label: '12', sublabel: 'High', type: 'array', highlight: true }
+        ],
+        connections: [
+          { from: 'b_0', to: 'b_4', label: 'mid = 5 < target (8) -> low = mid + 1' }
+        ],
+        steps: [
+          {
+            step: 1,
+            title: 'Evaluate Mid',
+            description: 'Check arr[mid] = 5 against target = 8. Since 5 < 8, target must lie in right half.',
+            activeElementIds: ['b_0', 'b_2', 'b_4'],
+            pointerState: { low: 'idx 0 (1)', mid: 'idx 2 (5)', high: 'idx 4 (12)' }
+          },
+          {
+            step: 2,
+            title: 'Narrow Boundary to Right Half',
+            description: 'Set low = mid + 1 (idx 3). Search space reduced to [8, 12].',
+            activeElementIds: ['b_3', 'b_4'],
+            pointerState: { low: 'idx 3 (8)', high: 'idx 4 (12)' }
+          }
+        ]
+      }
+    ],
     patterns: [
       {
         name: 'Monotonic Predicate Binary Search',
@@ -374,12 +513,22 @@ export const GROUNDED_STUDY_MATERIALS = {
         explanation: 'Clustered index physically sorts and stores data rows on disk (only 1 per table); Non-clustered index stores index keys with pointers to data rows.',
         intuition: 'Clustered index is like the alphabetical page order of a dictionary; non-clustered index is like the index section at the back with page numbers.',
         example: 'Primary key creates the clustered B+ Tree index by default in MySQL InnoDB.'
-      },
+      }
+    ],
+    diagrams: [
       {
-        name: 'Transaction Isolation Levels',
-        explanation: 'Read Uncommitted, Read Committed (prevents Dirty Reads), Repeatable Read (prevents Non-Repeatable Reads), Serializable (prevents Phantom Reads).',
-        intuition: 'Represents a direct trade-off between concurrency throughput and absolute data consistency.',
-        example: 'Repeatable Read ensures reading the same row twice within a transaction yields identical data.'
+        id: 'diag_dbms_indexes',
+        conceptName: 'Clustered vs Non-Clustered Indexes',
+        title: 'Clustered Index vs Non-Clustered Index Architecture',
+        purpose: 'Contrasts physical row storage vs pointer reference lookup',
+        type: 'comparison',
+        description: 'Clustered index stores actual data rows at leaf nodes; non-clustered index stores pointers (row IDs).',
+        elements: [
+          { id: 'c_index', label: 'Clustered Index (1 per table)', sublabel: 'Leaf nodes contain actual table data rows sorted by PK' },
+          { id: 'nc_index', label: 'Non-Clustered Index (Multiple)', sublabel: 'Leaf nodes contain index keys + pointers to clustered PK' }
+        ],
+        connections: [],
+        steps: []
       }
     ],
     patterns: [
@@ -470,12 +619,25 @@ COMMIT;`,
         explanation: 'WHERE filters individual records before aggregation; HAVING filters aggregated group metrics generated by GROUP BY.',
         intuition: 'WHERE cannot see aggregate results like COUNT(*) because aggregation has not happened yet.',
         example: 'SELECT dept, COUNT(*) FROM emp WHERE salary > 50000 GROUP BY dept HAVING COUNT(*) > 5;'
-      },
+      }
+    ],
+    diagrams: [
       {
-        name: 'Window Functions (RANK vs DENSE_RANK)',
-        explanation: 'Performs calculations across related table rows without collapsing them. RANK() leaves gaps after ties; DENSE_RANK() assigns consecutive rank numbers.',
-        intuition: 'Allows calculating running totals, rankings, and moving averages while preserving all individual rows.',
-        example: 'DENSE_RANK() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS sal_rank'
+        id: 'diag_sql_joins',
+        conceptName: 'INNER vs LEFT vs FULL JOIN',
+        title: 'Relational SQL JOIN Venn Comparison',
+        purpose: 'Contrasts matching records vs preserving unmatched table rows',
+        type: 'flow',
+        description: 'INNER JOIN keeps only intersection A ∩ B. LEFT JOIN preserves entire table A.',
+        elements: [
+          { id: 't_a', label: 'Table A (Left)', sublabel: 'All records preserved in LEFT JOIN', highlight: true },
+          { id: 't_match', label: 'A ∩ B (Matching Keys)', sublabel: 'Returned in INNER & LEFT JOIN', highlight: true },
+          { id: 't_b', label: 'Table B (Right)', sublabel: 'NULL filled if unmatched in LEFT JOIN' }
+        ],
+        connections: [
+          { from: 't_a', to: 't_match', label: 'ON A.id = B.a_id' }
+        ],
+        steps: []
       }
     ],
     patterns: [
@@ -566,24 +728,26 @@ WHERE rank_num = 2;`,
         explanation: 'A Process is an isolated execution unit with its own address space. Threads within the same process share code, data, and heap memory but have private call stacks.',
         intuition: 'Processes are separate buildings with private resources; threads are workers inside the same building sharing the common kitchen.',
         example: 'Web browser tabs running as separate processes for fault isolation; worker threads rendering background components.'
-      },
+      }
+    ],
+    diagrams: [
       {
-        name: 'Coffman Deadlock Conditions',
-        explanation: 'Deadlocks occur when 4 conditions hold simultaneously: Mutual Exclusion, Hold & Wait, No Preemption, Circular Wait.',
-        intuition: 'If even one condition is eliminated (such as imposing a global lock acquisition order), deadlocks become mathematically impossible.',
-        example: 'Process 1 holds Resource A waiting for B; Process 2 holds Resource B waiting for A.'
-      },
-      {
-        name: 'Mutex vs Semaphore',
-        explanation: 'Mutex enforces ownership (only the thread that locked can unlock); Semaphore acts as a signaling counter for multiple shared resources.',
-        intuition: 'Mutex is a single key to a bathroom door; Semaphore is a bowl of 5 keys allowing up to 5 people at once.',
-        example: 'Counting semaphore with capacity 5 to throttle concurrent database connections.'
-      },
-      {
-        name: 'Virtual Memory & Thrashing',
-        explanation: 'Virtual memory allows processes to address more memory than physical RAM using paging. Thrashing occurs when CPU spends more time swapping pages to disk than executing code.',
-        intuition: 'When RAM is overcommitted, the system spends 99% of CPU cycles thrashing disk I/O rather than making execution progress.',
-        example: 'OS page replacement algorithms: LRU, FIFO, and Optimal page replacement.'
+        id: 'diag_os_process_threads',
+        conceptName: 'Process vs Thread',
+        title: 'Process Address Space vs Multithreading Topology',
+        purpose: 'Visualizes shared heap and data memory vs isolated thread stacks',
+        type: 'architecture',
+        description: 'Process contains shared Code, Data, and Heap. Threads T1 and T2 each own private Registers and Stack.',
+        elements: [
+          { id: 'p_shared', label: 'Process Shared Memory', sublabel: 'Code Segment • Data Segment • Global Heap', highlight: true },
+          { id: 't_1', label: 'Thread 1', sublabel: 'Registers • Call Stack' },
+          { id: 't_2', label: 'Thread 2', sublabel: 'Registers • Call Stack' }
+        ],
+        connections: [
+          { from: 'p_shared', to: 't_1', label: 'Shared Memory Access' },
+          { from: 'p_shared', to: 't_2', label: 'Shared Memory Access' }
+        ],
+        steps: []
       }
     ],
     patterns: [
@@ -677,18 +841,29 @@ function transferFunds(acc1, acc2, amount) {
         explanation: 'Props are read-only inputs passed downwards from parent to child. State is private mutable data managed locally. State must be updated immutably to trigger reconciliation.',
         intuition: 'React compares object references (prev === next); mutating an existing array in-place preserves the old reference and skips UI re-renders.',
         example: 'Updating array state with `setList(prev => [...prev, newItem])` rather than `list.push()`. '
-      },
+      }
+    ],
+    diagrams: [
       {
-        name: 'useEffect Lifecycle & Dependency Array',
-        explanation: 'Runs side-effects after DOM renders. Empty `[]` runs once on mount; `[dep]` runs when `dep` changes; returning a function executes cleanup before unmount or re-render.',
-        intuition: 'Synchronizes external systems (APIs, timers, event listeners) with React component state.',
-        example: 'Subscribing to WebSocket on mount and unsubscribing in cleanup return function.'
-      },
-      {
-        name: 'Virtual DOM & Reconciliation',
-        explanation: 'React maintains an in-memory Virtual DOM tree, computes diffs with previous renders using the heuristic Diffing algorithm, and applies minimal batched mutations to real DOM.',
-        intuition: 'Manipulating real DOM trees is expensive; batching diffs in lightweight JavaScript objects minimizes browser reflows.',
-        example: 'Using stable `key` props on list items to prevent unneeded re-renders.'
+        id: 'diag_react_flow',
+        conceptName: 'State vs Props & Immutability',
+        title: 'Unidirectional Data Flow & State Reconciliation',
+        purpose: 'Visualizes parent props flowing down and child event callbacks firing up',
+        type: 'flow',
+        description: 'State changes trigger Virtual DOM diffing, applying minimal batched mutations to Real DOM.',
+        elements: [
+          { id: 'parent', label: 'Parent Component (State Owner)', sublabel: 'Holds state & handlers', highlight: true },
+          { id: 'vdom', label: 'Virtual DOM Diffing', sublabel: 'Reconciliation algorithm (heuristic O(N))' },
+          { id: 'child', label: 'Child Component', sublabel: 'Receives props, fires callbacks' },
+          { id: 'dom', label: 'Browser Real DOM', sublabel: 'Batched mutations applied' }
+        ],
+        connections: [
+          { from: 'parent', to: 'child', label: 'Props (Data Flow Down)' },
+          { from: 'child', to: 'parent', label: 'Events (Callbacks Up)' },
+          { from: 'parent', to: 'vdom', label: 'State change re-render' },
+          { from: 'vdom', to: 'dom', label: 'Minimal commit patch' }
+        ],
+        steps: []
       }
     ],
     patterns: [
@@ -765,86 +940,6 @@ export function useWindowDimensions() {
     domain: 'react'
   },
 
-  // Resume & Interview Preparation
-  'resume_interview': {
-    title: 'Resume Preparation & STAR Interview Framework',
-    subtitle: 'Behavioral Communication, Project Impact Quantification & Pitch Delivery',
-    overview: 'Behavioral and technical interviews evaluate structured communication, project ownership, problem-solving methodologies, and cultural alignment.',
-    learningObjectives: [
-      'Structure behavioral responses using the STAR (Situation, Task, Action, Result) methodology',
-      'Quantify resume achievements with concrete business and performance metrics',
-      'Deliver a concise 2-minute elevator pitch highlighting technical strengths',
-      'Articulate architectural trade-offs made in academic and personal projects'
-    ],
-    concepts: [
-      {
-        name: 'STAR Response Framework',
-        explanation: 'Situation (context & challenge) → Task (your specific responsibility) → Action (technical decisions and tools used) → Result (measurable impact & metrics).',
-        intuition: 'Gives interviewers a clear narrative arc proving that positive outcomes resulted directly from your engineering actions.',
-        example: 'Explaining how you optimized an API endpoint response time by 40% using Redis caching.'
-      },
-      {
-        name: 'Project Quantification & Metric Impact',
-        explanation: 'Always quantify achievements on your resume (e.g. "reduced latency by 35%", "scaled to 10k users", "improved test coverage from 60% to 90%").',
-        intuition: 'Numbers provide objective proof of project scale, efficiency, and engineering maturity.',
-        example: 'Action Verb + Technical Tool + Problem + Quantified Business Outcome.'
-      },
-      {
-        name: 'The 2-Minute Elevator Pitch',
-        explanation: 'A structured introduction: 1. Academic & current status, 2. Core technical strengths & languages, 3. Highlight project win, 4. Career aspiration for the role.',
-        intuition: 'Sets a confident, professional tone for the entire interview without reciting your high school history.',
-        example: 'Answering "Tell me about yourself" crisply in under 120 seconds.'
-      }
-    ],
-    patterns: [
-      {
-        name: 'Google XYZ Resume Formula',
-        whenToUse: 'Writing bullet points for resume experience and project descriptions.',
-        howItWorks: 'Accomplished [X] as measured by [Y], by doing [Z].',
-        example: 'Decreased page load time by 42% (Y) by implementing lazy loading and WebP compression (Z).'
-      }
-    ],
-    stepByStep: [
-      '1. Map each resume project to a STAR story with verified metrics.',
-      '2. Prepare clear technical rationales: Why did you choose React vs Vanilla JS? Why PostgreSQL vs MongoDB?',
-      '3. Rehearse the 2-minute elevator pitch under a timer.',
-      '4. Prepare 2-3 thoughtful questions for the interviewer regarding engineering culture and tech stack.'
-    ],
-    codeExamples: [],
-    workedExamples: [
-      {
-        title: 'STAR Behavioral Story Response Example',
-        problem: 'Interviewer asks: "Tell me about a time you resolved a difficult technical bug in a team project."',
-        approach: 'Apply Situation (dashboard API latency was 1.8s), Task (improve latency under 500ms), Action (analyzed query execution plan, added composite index, introduced Redis cache), Result (latency dropped to 240ms, an 86% improvement).',
-        solution: 'Answers question concisely in 90 seconds highlighting personal engineering ownership.'
-      }
-    ],
-    commonMistakes: [
-      'Speaking in generic terms without explaining YOUR specific individual contribution (using "we" exclusively instead of "I").',
-      'Listing technologies on your resume that you cannot explain the internal workings of.',
-      'Not quantifying results with numbers, percentages, or concrete metrics.'
-    ],
-    interviewTips: [
-      'Spend 60% of your STAR response time on the Action and Result stages.',
-      'Always have a polite, curious question ready when asked: "Do you have any questions for us?"'
-    ],
-    practiceGuidance: [
-      'Write out 4 STAR stories: (1) Technical Challenge, (2) Team Conflict, (3) Innovation, (4) Failure & Learning',
-      'Record your elevator pitch on video and evaluate clarity and pacing'
-    ],
-    quickRecap: [
-      'STAR: Situation, Task, Action, Result.',
-      'Quantify project outcomes with concrete impact numbers and percentages.',
-      'State clear technical justifications for every architecture and technology choice.'
-    ],
-    keyTakeaways: [
-      'Focus heavily on individual Action and measurable Result',
-      'Prepare XYZ formula bullet points for every project'
-    ],
-    placementRelevance: 'HR and Technical Manager rounds evaluate your problem-solving maturity and communication skills using behavioral questions.',
-    domain: 'resume_interview'
-  },
-
   // Core CS - Computer Networks
   'computer_networks': {
     title: 'Computer Networks — TCP/IP & Protocol Suite',
@@ -862,12 +957,45 @@ export function useWindowDimensions() {
         explanation: 'Client sends SYN; Server responds with SYN-ACK; Client sends ACK to establish a reliable, sequenced, full-duplex byte stream.',
         intuition: 'Synchronizes initial sequence numbers on both sides so missing packets can be detected and retransmitted in order.',
         example: 'Initial connection setup before sending HTTP requests.'
-      },
+      }
+    ],
+    diagrams: [
       {
-        name: 'OSI Reference Model (7 Layers)',
-        explanation: 'Physical (L1), Data Link (L2 - MAC), Network (L3 - IP), Transport (L4 - TCP/UDP), Session (L5), Presentation (L6), Application (L7 - HTTP/DNS).',
-        intuition: 'Separates network responsibilities so application software does not need to know physical cable or fiber optic hardware details.',
-        example: 'Routers operate at Layer 3 using IP addresses; Switches operate at Layer 2 using MAC addresses.'
+        id: 'diag_tcp_handshake',
+        conceptName: 'TCP 3-Way Handshake',
+        title: 'TCP 3-Way Handshake Connection Sequence',
+        purpose: 'Visualizes client-server sequence number synchronization',
+        type: 'sequence',
+        description: 'SYN (seq=x) -> SYN-ACK (seq=y, ack=x+1) -> ACK (ack=y+1). Connection established.',
+        elements: [
+          { id: 'client', label: 'Client', sublabel: 'Initiator' },
+          { id: 'server', label: 'Server', sublabel: 'Receiver' }
+        ],
+        connections: [
+          { from: 'Client', to: 'Server', label: 'SYN (seq=100)' },
+          { from: 'Server', to: 'Client', label: 'SYN-ACK (seq=300, ack=101)' },
+          { from: 'Client', to: 'Server', label: 'ACK (ack=301) -> ESTABLISHED' }
+        ],
+        steps: [
+          {
+            step: 1,
+            title: 'SYN Packet',
+            description: 'Client chooses random initial sequence number X and sends SYN.',
+            activeElementIds: ['client']
+          },
+          {
+            step: 2,
+            title: 'SYN-ACK Packet',
+            description: 'Server acknowledges X (ack=X+1) and sends its own sequence number Y.',
+            activeElementIds: ['server']
+          },
+          {
+            step: 3,
+            title: 'ACK Packet',
+            description: 'Client acknowledges Y (ack=Y+1). Socket state transitions to ESTABLISHED.',
+            activeElementIds: ['client', 'server']
+          }
+        ]
       }
     ],
     patterns: [],
@@ -918,59 +1046,6 @@ export function useWindowDimensions() {
     domain: 'computer_networks'
   },
 
-  // Development - REST APIs
-  'rest_apis': {
-    title: 'RESTful API Architecture & HTTP Semantics',
-    subtitle: 'Resource URIs, HTTP Verbs, Idempotency, Status Codes & Statelessness',
-    overview: 'REST APIs standardize client-server communication using HTTP protocols, resource URIs, standardized HTTP methods, and status codes.',
-    learningObjectives: [
-      'Understand idempotency across GET, POST, PUT, PATCH, and DELETE',
-      'Apply standard HTTP status codes (2xx, 3xx, 4xx, 5xx)',
-      'Design resource-oriented RESTful endpoints'
-    ],
-    concepts: [
-      {
-        name: 'HTTP Method Semantics & Idempotency',
-        explanation: 'GET (safe/idempotent read), POST (non-idempotent create), PUT (idempotent full replace), PATCH (partial update), DELETE (idempotent remove).',
-        intuition: 'Calling an idempotent operation N times produces the exact same server resource state as calling it once.',
-        example: 'PUT /users/123 with full payload sets exact state regardless of how many times it retries.'
-      }
-    ],
-    patterns: [],
-    stepByStep: [
-      '1. Design resource-oriented URIs using plural nouns (/api/v1/tasks).',
-      '2. Map CRUD operations to HTTP methods.',
-      '3. Return appropriate status codes and error payloads.'
-    ],
-    codeExamples: [
-      {
-        title: 'RESTful Endpoint Matrix',
-        language: 'text',
-        code: `GET    /api/v1/tasks          -> List all tasks (200 OK)
-POST   /api/v1/tasks          -> Create new task (201 Created)
-GET    /api/v1/tasks/:id      -> Get task details (200 OK / 404 Not Found)
-PATCH  /api/v1/tasks/:id      -> Update task fields (200 OK)
-DELETE /api/v1/tasks/:id      -> Delete task (204 No Content)`,
-        explanation: 'Standard REST conventions.',
-        complexity: {
-          time: 'O(1) routing',
-          space: 'O(1)'
-        }
-      }
-    ],
-    workedExamples: [],
-    commonMistakes: [
-      'Using verbs in URIs (/api/deleteUser instead of DELETE /api/users/123)',
-      'Returning 200 OK with error payloads in JSON body'
-    ],
-    interviewTips: ['Differentiate 401 Unauthorized (Unauthenticated) vs 403 Forbidden (Unauthorized permissions).'],
-    practiceGuidance: ['Design a complete REST API schema for an e-commerce platform'],
-    quickRecap: ['PUT is idempotent; POST is non-idempotent.'],
-    keyTakeaways: ['Stateless architecture enables seamless horizontal scaling'],
-    placementRelevance: 'API design is evaluated across all backend and full-stack technical rounds.',
-    domain: 'rest_apis'
-  },
-
   // Development - Git & GitHub
   'git_github': {
     title: 'Git Version Control & Collaboration Workflows',
@@ -987,6 +1062,22 @@ DELETE /api/v1/tasks/:id      -> Delete task (204 No Content)`,
         explanation: '`git merge` creates a non-destructive merge commit preserving full branching history. `git rebase` reapplies commits on top of another base tip, creating a linear history.',
         intuition: 'Merge records what actually happened in chronological branch time; Rebase rewrites history to make it read like a single clean line.',
         example: 'Using rebase on local feature branch before creating a PR.'
+      }
+    ],
+    diagrams: [
+      {
+        id: 'diag_git_merge_rebase',
+        conceptName: 'Merge vs Rebase',
+        title: 'Git Merge Commit vs Linear Git Rebase',
+        purpose: 'Contrasts 3-way merge commit topology with linear rebase history',
+        type: 'comparison',
+        description: 'Merge creates a diamond commit preserving chronological history; Rebase linearizes commits.',
+        elements: [
+          { id: 'git_merge', label: 'git merge feature', sublabel: 'Creates dedicated merge commit (Preserves non-linear history)' },
+          { id: 'git_rebase', label: 'git rebase main', sublabel: 'Replays commits onto main tip (Creates clean linear history)', highlight: true }
+        ],
+        connections: [],
+        steps: []
       }
     ],
     patterns: [],
@@ -1018,6 +1109,131 @@ git push origin feature/topic-name`,
     domain: 'git_github'
   },
 
+  // Resume & Interview Preparation (No diagrams needed - diagrams: [])
+  'resume_interview': {
+    title: 'Resume Preparation & STAR Interview Framework',
+    subtitle: 'Behavioral Communication, Project Impact Quantification & Pitch Delivery',
+    overview: 'Behavioral and technical interviews evaluate structured communication, project ownership, problem-solving methodologies, and cultural alignment.',
+    learningObjectives: [
+      'Structure behavioral responses using the STAR (Situation, Task, Action, Result) methodology',
+      'Quantify resume achievements with concrete business and performance metrics',
+      'Deliver a concise 2-minute elevator pitch highlighting technical strengths',
+      'Articulate architectural trade-offs made in academic and personal projects'
+    ],
+    concepts: [
+      {
+        name: 'STAR Response Framework',
+        explanation: 'Situation (context & challenge) → Task (your specific responsibility) → Action (technical decisions and tools used) → Result (measurable impact & metrics).',
+        intuition: 'Gives interviewers a clear narrative arc proving that positive outcomes resulted directly from your engineering actions.',
+        example: 'Explaining how you optimized an API endpoint response time by 40% using Redis caching.'
+      },
+      {
+        name: 'Project Quantification & Metric Impact',
+        explanation: 'Always quantify achievements on your resume (e.g. "reduced latency by 35%", "scaled to 10k users", "improved test coverage from 60% to 90%").',
+        intuition: 'Numbers provide objective proof of project scale, efficiency, and engineering maturity.',
+        example: 'Action Verb + Technical Tool + Problem + Quantified Business Outcome.'
+      },
+      {
+        name: 'The 2-Minute Elevator Pitch',
+        explanation: 'A structured introduction: 1. Academic & current status, 2. Core technical strengths & languages, 3. Highlight project win, 4. Career aspiration for the role.',
+        intuition: 'Sets a confident, professional tone for the entire interview without reciting your high school history.',
+        example: 'Answering "Tell me about yourself" crisply in under 120 seconds.'
+      }
+    ],
+    diagrams: [],
+    patterns: [
+      {
+        name: 'Google XYZ Resume Formula',
+        whenToUse: 'Writing bullet points for resume experience and project descriptions.',
+        howItWorks: 'Accomplished [X] as measured by [Y], by doing [Z].',
+        example: 'Decreased page load time by 42% (Y) by implementing lazy loading and WebP compression (Z).'
+      }
+    ],
+    stepByStep: [
+      '1. Map each resume project to a STAR story with verified metrics.',
+      '2. Prepare clear technical rationales: Why did you choose React vs Vanilla JS? Why PostgreSQL vs MongoDB?',
+      '3. Rehearse the 2-minute elevator pitch under a timer.',
+      '4. Prepare 2-3 thoughtful questions for the interviewer regarding engineering culture and tech stack.'
+    ],
+    codeExamples: [],
+    workedExamples: [
+      {
+        title: 'STAR Behavioral Story Response Example',
+        problem: 'Interviewer asks: "Tell me about a time you resolved a difficult technical bug in a team project."',
+        approach: 'Apply Situation (dashboard API latency was 1.8s), Task (improve latency under 500ms), Action (analyzed query execution plan, added composite index, introduced Redis cache), Result (latency dropped to 240ms, an 86% improvement).',
+        solution: 'Answers question concisely in 90 seconds highlighting personal engineering ownership.'
+      }
+    ],
+    commonMistakes: [
+      'Speaking in generic terms without explaining YOUR specific individual contribution (using "we" exclusively instead of "I").',
+      'Listing technologies on your resume that you cannot explain the internal workings of.',
+      'Not quantifying results with numbers, percentages, or concrete metrics.'
+    ],
+    interviewTips: [
+      'Spend 60% of your STAR response time on the Action and Result stages.',
+      'Always have a polite, curious question ready when asked: "Do you have any questions for us?"'
+    ],
+    practiceGuidance: [
+      'Write out 4 STAR stories: (1) Technical Challenge, (2) Team Conflict, (3) Innovation, (4) Failure & Learning',
+      'Record your elevator pitch on video and evaluate clarity and pacing'
+    ],
+    quickRecap: [
+      'STAR: Situation, Task, Action, Result.',
+      'Quantify project outcomes with concrete impact numbers and percentages.',
+      'State clear technical justifications for every architecture and technology choice.'
+    ],
+    keyTakeaways: [
+      'Focus heavily on individual Action and measurable Result',
+      'Prepare XYZ formula bullet points for every project'
+    ],
+    placementRelevance: 'HR and Technical Manager rounds evaluate your problem-solving maturity and communication skills using behavioral questions.',
+    domain: 'resume_interview'
+  },
+
+  // Development - REST APIs
+  'rest_apis': {
+    title: 'RESTful API Architecture & HTTP Semantics',
+    subtitle: 'Resource URIs, HTTP Verbs, Idempotency, Status Codes & Statelessness',
+    overview: 'REST APIs standardize client-server communication using HTTP protocols, resource URIs, standardized HTTP methods, and status codes.',
+    learningObjectives: [
+      'Understand idempotency across GET, POST, PUT, PATCH, and DELETE',
+      'Apply standard HTTP status codes (2xx, 3xx, 4xx, 5xx)',
+      'Design resource-oriented RESTful endpoints'
+    ],
+    concepts: [
+      {
+        name: 'HTTP Method Semantics & Idempotency',
+        explanation: 'GET (safe/idempotent read), POST (non-idempotent create), PUT (idempotent full replace), PATCH (partial update), DELETE (idempotent remove).',
+        intuition: 'Calling an idempotent operation N times produces the exact same server resource state as calling it once.',
+        example: 'PUT /users/123 with full payload sets exact state regardless of how many times it retries.'
+      }
+    ],
+    diagrams: [],
+    patterns: [],
+    stepByStep: ['1. Design resource-oriented URIs using plural nouns (/api/v1/tasks).', '2. Map CRUD operations to HTTP methods.', '3. Return appropriate status codes and error payloads.'],
+    codeExamples: [
+      {
+        title: 'RESTful Endpoint Matrix',
+        language: 'text',
+        code: `GET    /api/v1/tasks          -> List all tasks (200 OK)
+POST   /api/v1/tasks          -> Create new task (201 Created)
+GET    /api/v1/tasks/:id      -> Get task details (200 OK / 404 Not Found)
+PATCH  /api/v1/tasks/:id      -> Update task fields (200 OK)
+DELETE /api/v1/tasks/:id      -> Delete task (204 No Content)`,
+        explanation: 'Standard REST conventions.',
+        complexity: { time: 'O(1) routing', space: 'O(1)' }
+      }
+    ],
+    workedExamples: [],
+    commonMistakes: ['Using verbs in URIs (/api/deleteUser instead of DELETE /api/users/123)'],
+    interviewTips: ['Differentiate 401 Unauthorized (Unauthenticated) vs 403 Forbidden (Unauthorized permissions).'],
+    practiceGuidance: ['Design a complete REST API schema for an e-commerce platform'],
+    quickRecap: ['PUT is idempotent; POST is non-idempotent.'],
+    keyTakeaways: ['Stateless architecture enables seamless horizontal scaling'],
+    placementRelevance: 'API design is evaluated across all backend and full-stack technical rounds.',
+    domain: 'rest_apis'
+  },
+
   // Aptitude
   'aptitude': {
     title: 'Aptitude & Quantitative Problem Solving',
@@ -1036,6 +1252,7 @@ git push origin feature/topic-name`,
         example: 'A takes 6 days, B takes 12 days. Combined = (6 * 12) / 18 = 4 days.'
       }
     ],
+    diagrams: [],
     patterns: [],
     stepByStep: ['1. Normalize units -> 2. Formulate rate equation -> 3. Simplify fractions -> 4. Check bounds.'],
     codeExamples: [
@@ -1045,10 +1262,7 @@ git push origin feature/topic-name`,
         code: `const daysA = 6, daysB = 12;
 const combinedDays = (daysA * daysB) / (daysA + daysB); // 4 days`,
         explanation: 'Calculates combined duration.',
-        complexity: {
-          time: 'O(1)',
-          space: 'O(1)'
-        }
+        complexity: { time: 'O(1)', space: 'O(1)' }
       }
     ],
     workedExamples: [],
@@ -1077,28 +1291,37 @@ const combinedDays = (daysA * daysB) / (daysA + daysB); // 4 days`,
         explanation: 'Horizontal scaling (scale-out) adds more server nodes behind a load balancer; Vertical scaling (scale-up) adds CPU/RAM to a single server.',
         intuition: 'Vertical scaling has hardware limits and single points of failure; horizontal scaling allows virtually infinite scaling.',
         example: 'Stateless web application servers scaled horizontally with NGINX.'
-      },
+      }
+    ],
+    diagrams: [
       {
-        name: 'CAP Theorem',
-        explanation: 'In a distributed system with Network Partitions (P), you must choose between Consistency (CP) or Availability (AP).',
-        intuition: 'When communication between nodes breaks, you either reject writes to guarantee consistency or accept writes and risk stale reads.',
-        example: 'MongoDB (CP) vs Cassandra (AP).'
+        id: 'diag_sys_architecture',
+        conceptName: 'Horizontal vs Vertical Scaling',
+        title: 'Distributed Tiered Web Architecture',
+        purpose: 'Visualizes client -> load balancer -> stateless app nodes -> cache -> db',
+        type: 'architecture',
+        description: 'Load Balancer distributes client traffic across horizontal App Servers.',
+        elements: [
+          { id: 'client', label: 'Clients (Web/Mobile)', sublabel: 'HTTPS Requests' },
+          { id: 'lb', label: 'Load Balancer (NGINX / ALB)', sublabel: 'Round-Robin / Least Connections', highlight: true },
+          { id: 'app1', label: 'App Server 1', sublabel: 'Stateless Node' },
+          { id: 'app2', label: 'App Server 2', sublabel: 'Stateless Node' },
+          { id: 'cache', label: 'Redis Cache', sublabel: 'Sub-millisecond read cache', highlight: true },
+          { id: 'db', label: 'Primary DB / Replicas', sublabel: 'Persistent Storage' }
+        ],
+        connections: [
+          { from: 'client', to: 'lb', label: 'Requests' },
+          { from: 'lb', to: 'app1', label: 'Balanced load' },
+          { from: 'lb', to: 'app2', label: 'Balanced load' },
+          { from: 'app1', to: 'cache', label: 'Cache-Aside' },
+          { from: 'app1', to: 'db', label: 'Read/Write' }
+        ],
+        steps: []
       }
     ],
     patterns: [],
     stepByStep: ['1. Clarify requirements & scale -> 2. High-level diagram -> 3. Deep-dive into bottlenecks.'],
-    codeExamples: [
-      {
-        title: 'Distributed System Topology',
-        language: 'text',
-        code: `[Client] -> [Load Balancer] -> [Web App Servers] -> [Redis Cache] -> [DB Master / Replicas]`,
-        explanation: 'Tiered architecture.',
-        complexity: {
-          time: 'O(1) cache lookup',
-          space: 'O(N)'
-        }
-      }
-    ],
+    codeExamples: [],
     workedExamples: [],
     commonMistakes: ['Jumping into microservices before clarifying scale requirements.'],
     interviewTips: ['Always clarify read-to-write ratio before designing database and caching tiers.'],
@@ -1124,6 +1347,7 @@ export function getFallbackStudyMaterial(taskContextOrTopic) {
     return {
       ...base,
       title: taskTitle,
+      diagrams: Array.isArray(base.diagrams) ? base.diagrams : [],
       domain: domain
     };
   }
@@ -1142,7 +1366,6 @@ export function getStudyMaterialCacheKey(taskContext = {}) {
     ? taskContext.learningObjectives.join(',')
     : (taskContext.learningObjectives || '');
   
-  // Fingerprint ensures if task content or learning objectives change, cache is invalidated
   return `study_${taskId}_${taskTitle}_${topic}_${desc.slice(0, 30)}_${objectives.slice(0, 30)}`.trim().toLowerCase().replace(/\s+/g, '_');
 }
 
