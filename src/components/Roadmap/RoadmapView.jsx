@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   Map, 
@@ -10,14 +10,15 @@ import {
   Sparkles, 
   UploadCloud, 
   Search,
-  Filter,
-  Flame,
-  Check,
-  Edit3,
-  Circle,
-  ArrowRight,
-  X,
-  AlertTriangle
+  Check, 
+  Edit3, 
+  Circle, 
+  ArrowRight, 
+  X, 
+  AlertTriangle,
+  BookOpen,
+  Award,
+  Target
 } from 'lucide-react';
 import { RoadmapUploadFlow } from './RoadmapUploadFlow';
 import { RoadmapEditorModal } from './RoadmapEditorModal';
@@ -30,6 +31,7 @@ export const RoadmapView = () => {
     completedRoadmapTopics,
     updateRoadmapTopicStatus, 
     updateFullRoadmap, 
+    userProfile,
     showToast,
     openTaskStudyMaterial 
   } = useApp();
@@ -37,7 +39,16 @@ export const RoadmapView = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isReplaceConfirmOpen, setIsReplaceConfirmOpen] = useState(false);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [expandedPhases, setExpandedPhases] = useState({ 'phase-1': true, 'phase-2': true, 'ep-1': true, 'ep-2': true, 'p-custom-2': true });
+  const [expandedPhases, setExpandedPhases] = useState(() => {
+    // Default expand all phases on first load for rapid scanning
+    const initial = {};
+    if (activeRoadmap?.phases) {
+      activeRoadmap.phases.forEach((p, idx) => {
+        initial[p.id] = idx === 0 || p.status === 'in_progress' || true;
+      });
+    }
+    return initial;
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
 
@@ -61,14 +72,51 @@ export const RoadmapView = () => {
     setIsUploading(true);
   };
 
-  // If no active roadmap, show empty state
+  // Authoritative State Calculation
+  const isAllComplete = totalRoadmapTopics > 0 && completedRoadmapTopics === totalRoadmapTopics;
+  const remainingTopicsCount = Math.max(0, totalRoadmapTopics - completedRoadmapTopics);
+
+  // Determine current active phase deterministically from authoritative state
+  const currentPhaseIndex = useMemo(() => {
+    if (!activeRoadmap?.phases || isAllComplete) return -1;
+    // Find the first phase where topics completed < total topics
+    const idx = activeRoadmap.phases.findIndex((p) => {
+      const total = p.topics?.length || 0;
+      const done = p.topics?.filter((t) => t.status === 'completed').length || 0;
+      return total > 0 && done < total;
+    });
+    return idx !== -1 ? idx : 0;
+  }, [activeRoadmap, isAllComplete]);
+
+  const currentPhase = currentPhaseIndex !== -1 && activeRoadmap?.phases ? activeRoadmap.phases[currentPhaseIndex] : null;
+
+  // Determine current next topic to study in current phase
+  const currentTopic = useMemo(() => {
+    if (!currentPhase?.topics) return null;
+    return currentPhase.topics.find((t) => t.status !== 'completed') || currentPhase.topics[0];
+  }, [currentPhase]);
+
+  // If no active roadmap, show clean, dedicated empty state
   if (!activeRoadmap && !isUploading) {
     return (
-      <div style={{ animation: 'fadeIn 200ms ease', width: '100%', padding: '10px 0' }}>
+      <div 
+        style={{ 
+          animation: 'fadeIn 200ms ease', 
+          width: '100%', 
+          maxWidth: '840px', 
+          margin: '0 auto', 
+          padding: '12px 0 32px 0' 
+        }}
+      >
         <div style={{ marginBottom: '20px' }}>
-          <span className="pill-badge pill-terracotta" style={{ marginBottom: '6px' }}>
-            Preparation Roadmap
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+            <span className="pill-badge pill-terracotta" style={{ fontSize: '11px', fontWeight: 700 }}>
+              NOVARA
+            </span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              • Target Role: {userProfile?.targetRole || 'Software Engineer'}
+            </span>
+          </div>
           <h1 style={{ 
             fontSize: '24px', 
             fontWeight: 800, 
@@ -76,33 +124,40 @@ export const RoadmapView = () => {
             letterSpacing: '-0.02em',
             marginBottom: '4px'
           }}>
-            Your Roadmap
+            Preparation Roadmap
           </h1>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+          <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>
             Turn your placement syllabus into an adaptive, daily preparation plan.
           </p>
         </div>
 
-        <div className="card-white" style={{ textAlign: 'center', padding: '48px 24px' }}>
+        <div className="card-white" style={{ textAlign: 'center', padding: '52px 24px' }}>
           <div style={{
-            width: '56px',
-            height: '56px',
+            width: '60px',
+            height: '60px',
             borderRadius: '50%',
             backgroundColor: 'var(--accent-terracotta-light)',
             color: 'var(--accent-terracotta)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px auto'
+            margin: '0 auto 18px auto',
+            boxShadow: 'var(--shadow-sm)'
           }}>
-            <UploadCloud size={28} />
+            <UploadCloud size={30} />
           </div>
 
-          <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '6px' }}>
-            No roadmap uploaded yet.
-          </h3>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '380px', margin: '0 auto 20px auto', lineHeight: '1.45' }}>
-            Upload your placement roadmap and NOVARA will turn it into your daily preparation plan.
+          <h2 style={{ fontSize: '19px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '8px' }}>
+            No roadmap yet
+          </h2>
+          <p style={{ 
+            fontSize: '13.5px', 
+            color: 'var(--text-secondary)', 
+            maxWidth: '420px', 
+            margin: '0 auto 24px auto', 
+            lineHeight: '1.5' 
+          }}>
+            Upload your placement roadmap to build your personalized study plan.
           </p>
 
           <button
@@ -114,18 +169,19 @@ export const RoadmapView = () => {
               fontSize: '14px',
               fontWeight: 700,
               borderRadius: 'var(--radius-pill)',
-              gap: '8px'
+              gap: '8px',
+              minHeight: '44px'
             }}
           >
-            <UploadCloud size={16} />
-            <span>+ Upload Roadmap</span>
+            <UploadCloud size={17} />
+            <span>Upload Roadmap</span>
           </button>
         </div>
       </div>
     );
   }
 
-  // If user initiated upload flow, display the 6-step RoadmapUploadFlow
+  // If user initiated upload flow, display the RoadmapUploadFlow component
   if (isUploading) {
     return (
       <RoadmapUploadFlow
@@ -135,13 +191,9 @@ export const RoadmapView = () => {
     );
   }
 
-  // Find current active phase and topic
-  const currentPhase = activeRoadmap.phases?.find(p => p.status === 'in_progress') || activeRoadmap.phases?.[0];
-  const currentTopic = currentPhase?.topics?.find(t => t.status === 'in_progress') || currentPhase?.topics?.find(t => t.status === 'upcoming') || currentPhase?.topics?.[0];
-
-  // Check if any topics match the current search and level filter
+  // Filtered topics count
   const totalFilteredTopicsCount = activeRoadmap.phases?.reduce((acc, phase) => {
-    const count = phase.topics?.filter(t => {
+    const count = phase.topics?.filter((t) => {
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch = !query || 
         t.name.toLowerCase().includes(query) || 
@@ -154,208 +206,352 @@ export const RoadmapView = () => {
   }, 0) || 0;
 
   return (
-    <div style={{ animation: 'fadeIn 200ms ease', width: '100%' }}>
-      {/* 1. Header & Prominent Upload Action */}
+    <div 
+      style={{ 
+        animation: 'fadeIn 200ms ease', 
+        width: '100%', 
+        maxWidth: '840px', 
+        margin: '0 auto',
+        padding: '8px 0 24px 0' 
+      }}
+    >
+      {/* ------------------------------------------------------------------ */}
+      {/* 1. HEADER & ACTIONS                                                */}
+      {/* ------------------------------------------------------------------ */}
       <div style={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
         gap: '12px',
         marginBottom: '16px'
       }}>
         <div>
-          <span className="pill-badge pill-terracotta" style={{ marginBottom: '4px' }}>
-            Active Journey
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+            <span className="pill-badge pill-terracotta" style={{ fontSize: '10.5px', fontWeight: 800 }}>
+              NOVARA
+            </span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+              Target: {userProfile?.targetRole || activeRoadmap.targetRole || 'Software Development Engineer'}
+            </span>
+          </div>
           <h1 style={{ 
             fontSize: '22px', 
             fontWeight: 800, 
             color: 'var(--text-charcoal)',
             letterSpacing: '-0.02em',
             lineHeight: '1.25',
-            marginBottom: '2px'
+            marginBottom: '3px'
           }}>
-            Your Roadmap
+            Preparation Roadmap
           </h1>
           <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-            {activeRoadmap.title || 'Placement Preparation Masterplan'} • <strong style={{ color: 'var(--accent-terracotta)' }}>{roadmapProgress}% complete</strong>
+            {activeRoadmap.title || 'Placement Preparation Masterplan'} • <strong style={{ color: roadmapProgress === 100 ? 'var(--accent-sage)' : 'var(--accent-terracotta)' }}>{roadmapProgress}% overall progress</strong>
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleUploadNewRoadmapClick}
-          className="btn-primary"
-          style={{
-            padding: '9px 18px',
-            fontSize: '12.5px',
-            fontWeight: 700,
-            borderRadius: 'var(--radius-pill)',
-            gap: '6px',
-            whiteSpace: 'nowrap',
-            boxShadow: '0 2px 8px rgba(200, 90, 50, 0.2)'
-          }}
-        >
-          <UploadCloud size={15} />
-          <span>+ Upload New Roadmap</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setIsEditorOpen(true)}
+            className="btn-secondary"
+            style={{
+              padding: '8px 14px',
+              fontSize: '12px',
+              fontWeight: 700,
+              borderRadius: 'var(--radius-pill)',
+              gap: '6px',
+              minHeight: '44px',
+              backgroundColor: '#FFFFFF',
+              border: '1px solid var(--border-beige)'
+            }}
+            title="Customize phases and topics"
+          >
+            <Edit3 size={14} color="var(--text-secondary)" />
+            <span>Customize</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleUploadNewRoadmapClick}
+            className="btn-primary"
+            style={{
+              padding: '8px 16px',
+              fontSize: '12px',
+              fontWeight: 700,
+              borderRadius: 'var(--radius-pill)',
+              gap: '6px',
+              whiteSpace: 'nowrap',
+              minHeight: '44px',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+          >
+            <UploadCloud size={15} />
+            <span>+ Upload New Roadmap</span>
+          </button>
+        </div>
       </div>
 
-      {/* 2. Compact Roadmap Progress Card (Single Source of Truth) */}
-      <div className="card-white" style={{ marginBottom: '16px', padding: '16px 18px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+      {/* ------------------------------------------------------------------ */}
+      {/* 2. OVERALL PROGRESS CARD (AUTHORITATIVE SOURCE OF TRUTH)           */}
+      {/* ------------------------------------------------------------------ */}
+      <div 
+        className="card-white" 
+        style={{ 
+          marginBottom: '16px', 
+          padding: '18px 20px',
+          border: '1px solid var(--border-beige)'
+        }}
+      >
+        {/* Progress Header Stats */}
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'flex-start', 
+          justifyContent: 'space-between', 
+          marginBottom: '10px',
+          flexWrap: 'wrap',
+          gap: '8px'
+        }}>
           <div>
-            <div style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
-              Roadmap Progress
+            <div style={{ 
+              fontSize: '10.5px', 
+              fontWeight: 800, 
+              textTransform: 'uppercase', 
+              letterSpacing: '0.05em', 
+              color: 'var(--text-muted)',
+              marginBottom: '2px'
+            }}>
+              Curriculum Completion
             </div>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
-              {roadmapProgress}%
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span style={{ 
+                fontSize: '28px', 
+                fontWeight: 800, 
+                color: roadmapProgress === 100 ? 'var(--accent-sage)' : 'var(--text-charcoal)',
+                letterSpacing: '-0.02em',
+                lineHeight: 1
+              }}>
+                {roadmapProgress}%
+              </span>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                ({completedRoadmapTopics} / {totalRoadmapTopics} topics)
+              </span>
             </div>
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--accent-terracotta)' }}>
-              {completedRoadmapTopics} of {totalRoadmapTopics} topics
+            <span style={{ 
+              fontSize: '12px', 
+              fontWeight: 700, 
+              color: roadmapProgress === 100 ? 'var(--accent-sage)' : 'var(--accent-terracotta)' 
+            }}>
+              {isAllComplete ? 'All Topics Mastered 🎉' : `${remainingTopicsCount} topics remaining`}
             </span>
-            <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)', marginTop: '1px' }}>
-              You're making steady progress.
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+              {activeRoadmap.phases?.length || 0} preparation phases
             </div>
           </div>
         </div>
 
-        {/* Global Progress Track */}
-        <div style={{
-          width: '100%',
-          height: '7px',
-          borderRadius: '9999px',
-          backgroundColor: 'var(--bg-warm-cream-alt)',
-          overflow: 'hidden',
-          marginBottom: '12px'
-        }}>
+        {/* Global Authoritative Progress Bar */}
+        <div 
+          role="progressbar"
+          aria-valuenow={roadmapProgress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Overall curriculum progress"
+          style={{
+            width: '100%',
+            height: '8px',
+            borderRadius: '9999px',
+            backgroundColor: 'var(--bg-warm-cream-alt)',
+            overflow: 'hidden',
+            marginBottom: '14px'
+          }}
+        >
           <div style={{
             width: `${roadmapProgress}%`,
             height: '100%',
-            backgroundColor: 'var(--accent-terracotta)',
+            backgroundColor: roadmapProgress === 100 ? 'var(--accent-sage)' : 'var(--accent-terracotta)',
             borderRadius: '9999px',
             transition: 'width 300ms ease'
           }} />
         </div>
 
-        {/* Current Focus Highlight (Clean wrapping, no edge clipping) */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '10px',
-          backgroundColor: 'var(--bg-warm-cream)',
-          borderRadius: 'var(--radius-md)',
-          padding: '10px 12px',
-          marginBottom: '14px'
-        }}>
-          <div>
-            <div style={{ fontSize: '9.5px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '2px' }}>
-              Current Phase
-            </div>
+        {/* Dynamic Context Navigator: Where am I? What should I study next? */}
+        {isAllComplete ? (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            backgroundColor: 'var(--accent-sage-light)',
+            border: '1px solid rgba(94, 140, 113, 0.25)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 14px'
+          }}>
             <div style={{
-              fontSize: '12px',
-              fontWeight: 700,
-              color: 'var(--text-charcoal)',
-              lineHeight: '1.3',
-              wordBreak: 'break-word'
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--accent-sage)',
+              color: '#FFFFFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
             }}>
-              {currentPhase?.title || 'Data Structures'}
+              <Award size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent-sage)', letterSpacing: '0.04em' }}>
+                ROADMAP COMPLETE
+              </div>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-charcoal)', lineHeight: '1.3' }}>
+                You have completed all {totalRoadmapTopics} topics in your placement syllabus!
+              </div>
             </div>
           </div>
-
-          <div>
-            <div style={{ fontSize: '9.5px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '2px' }}>
-              Current Topic
-            </div>
-            <div style={{
-              fontSize: '12px',
-              fontWeight: 700,
-              color: 'var(--accent-terracotta)',
-              lineHeight: '1.3',
-              wordBreak: 'break-word'
-            }}>
-              {currentTopic?.name || 'Graphs'}
-            </div>
-          </div>
-        </div>
-
-        {/* Phase-Level Progress Rows (Clean 2-line wrap on mobile, full names on desktop) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {activeRoadmap.phases?.map((phase) => {
-            const phaseTotal = phase.topics?.length || 0;
-            const phaseDone = phase.topics?.filter(t => t.status === 'completed').length || 0;
-            const phasePercent = phaseTotal > 0 ? Math.round((phaseDone / phaseTotal) * 100) : 0;
-            const cleanPhaseName = phase.title.replace(/^Phase \d+:\s*/i, '').replace(/^Phase \d+ - \s*/i, '');
-
-            return (
-              <div key={phase.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '11px' }}>
-                <div style={{
-                  flex: '0 0 115px',
-                  color: 'var(--text-secondary)',
-                  fontWeight: 600,
-                  fontSize: '11px',
-                  lineHeight: '1.25',
-                  wordBreak: 'break-word'
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '10px',
+            backgroundColor: 'var(--bg-warm-cream)',
+            borderRadius: 'var(--radius-md)',
+            padding: '12px 14px'
+          }}>
+            {/* Where am I? Current Phase */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                <span style={{ fontSize: '9.5px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                  Current Phase
+                </span>
+                <span style={{ 
+                  fontSize: '9px', 
+                  fontWeight: 800, 
+                  padding: '1px 6px', 
+                  borderRadius: '9999px', 
+                  backgroundColor: 'var(--accent-terracotta)', 
+                  color: '#FFFFFF' 
                 }}>
-                  {cleanPhaseName}
-                </div>
-
-                <div style={{ flex: 1, height: '6px', borderRadius: '9999px', backgroundColor: 'var(--bg-warm-cream-alt)', overflow: 'hidden' }}>
-                  <div style={{
-                    width: `${phasePercent}%`,
-                    height: '100%',
-                    backgroundColor: phasePercent === 100 ? 'var(--accent-sage)' : phasePercent > 0 ? 'var(--accent-terracotta)' : 'transparent',
-                    borderRadius: '9999px',
-                    transition: 'width 250ms ease'
-                  }} />
-                </div>
-
-                <span style={{ width: '34px', textAlign: 'right', fontWeight: 700, color: phasePercent === 100 ? 'var(--accent-sage)' : 'var(--text-charcoal)' }}>
-                  {phasePercent}%
+                  CURRENT
                 </span>
               </div>
-            );
-          })}
-        </div>
+              <div style={{
+                fontSize: '13px',
+                fontWeight: 700,
+                color: 'var(--text-charcoal)',
+                lineHeight: '1.35',
+                wordBreak: 'break-word'
+              }}>
+                {currentPhase ? `Phase ${currentPhase.number}: ${currentPhase.title.replace(/^Phase \d+:\s*/i, '')}` : 'Foundations'}
+              </div>
+            </div>
+
+            {/* What should I study next? Current Next Topic */}
+            {currentTopic && (
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: '9.5px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.04em', marginBottom: '3px' }}>
+                    What to Study Next
+                  </div>
+                  <div style={{
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    color: 'var(--accent-terracotta)',
+                    lineHeight: '1.35',
+                    wordBreak: 'break-word'
+                  }}>
+                    {currentTopic.name}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    openTaskStudyMaterial({
+                      id: currentTopic.id || `topic_${currentPhase?.id}_${currentTopic.name}`,
+                      taskId: currentTopic.id || `topic_${currentPhase?.id}_${currentTopic.name}`,
+                      name: currentTopic.name,
+                      topic: currentTopic.name,
+                      taskTitle: currentTopic.name,
+                      phase: currentPhase?.title || '',
+                      roadmapPhase: currentPhase?.title || '',
+                      difficulty: currentTopic.difficulty || 'Medium',
+                      learningObjectives: Array.isArray(currentTopic.learningObjectives) && currentTopic.learningObjectives.length > 0
+                        ? currentTopic.learningObjectives
+                        : [
+                            `Master foundational principles of ${currentTopic.name}`,
+                            `Understand key patterns, algorithmic approaches, and complexity analysis`,
+                            `Solve standard placement interview problems for ${currentTopic.name}`
+                          ],
+                      duration: currentTopic.duration || '45m',
+                      estimatedMinutes: 45
+                    });
+                  }}
+                  style={{
+                    alignSelf: 'flex-start',
+                    marginTop: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    color: 'var(--accent-terracotta)',
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    padding: '2px 0',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <span>Open Study Guide</span>
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* 3. Search & Filter Bar (Real-time Filtering & Reset) */}
+      {/* ------------------------------------------------------------------ */}
+      {/* 3. SEARCH & DIFFICULTY FILTER                                      */}
+      {/* ------------------------------------------------------------------ */}
       <div style={{
         display: 'flex',
-        gap: '6px',
-        marginBottom: '14px'
+        gap: '8px',
+        marginBottom: '14px',
+        alignItems: 'center'
       }}>
         <div style={{
           flex: 1,
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
+          gap: '8px',
           backgroundColor: '#FFFFFF',
           border: '1px solid var(--border-beige)',
           borderRadius: 'var(--radius-pill)',
-          padding: '6px 12px',
+          padding: '8px 14px',
           boxShadow: 'var(--shadow-sm)'
         }}>
-          <Search size={14} color="var(--text-muted)" flexShrink={0} />
+          <Search size={15} color="var(--text-muted)" style={{ flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Search topics or algorithms..."
+            placeholder="Search topics, algorithms, or concepts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search roadmap topics"
             style={{
               border: 'none',
               outline: 'none',
               width: '100%',
-              fontSize: '12px',
-              backgroundColor: 'transparent'
+              fontSize: '13px',
+              backgroundColor: 'transparent',
+              color: 'var(--text-charcoal)'
             }}
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
               style={{
                 background: 'none',
@@ -366,11 +562,13 @@ export const RoadmapView = () => {
                 justifyContent: 'center',
                 color: 'var(--text-muted)',
                 cursor: 'pointer',
-                minHeight: '20px'
+                minHeight: '24px',
+                minWidth: '24px'
               }}
               title="Clear search"
+              aria-label="Clear search query"
             >
-              <X size={13} />
+              <X size={14} />
             </button>
           )}
         </div>
@@ -378,16 +576,18 @@ export const RoadmapView = () => {
         <select
           value={selectedDifficulty}
           onChange={(e) => setSelectedDifficulty(e.target.value)}
+          aria-label="Filter by difficulty"
           style={{
             backgroundColor: selectedDifficulty !== 'all' ? 'var(--accent-terracotta-light)' : '#FFFFFF',
             border: `1px solid ${selectedDifficulty !== 'all' ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
             borderRadius: 'var(--radius-pill)',
-            padding: '6px 10px',
-            fontSize: '11.5px',
+            padding: '8px 12px',
+            fontSize: '12px',
             fontWeight: 700,
             color: selectedDifficulty !== 'all' ? 'var(--accent-terracotta)' : 'var(--text-secondary)',
             outline: 'none',
             cursor: 'pointer',
+            minHeight: '40px',
             boxShadow: 'var(--shadow-sm)'
           }}
         >
@@ -398,55 +598,60 @@ export const RoadmapView = () => {
         </select>
       </div>
 
-      {/* 4. Empty State if Search / Filter Yields 0 Results */}
+      {/* ------------------------------------------------------------------ */}
+      {/* 4. ZERO RESULTS EMPTY STATE                                       */}
+      {/* ------------------------------------------------------------------ */}
       {totalFilteredTopicsCount === 0 && (
         <div 
           className="card-white"
           style={{
-            padding: '30px 20px',
+            padding: '36px 20px',
             textAlign: 'center',
             marginBottom: '16px'
           }}
         >
           <div style={{
-            width: '44px',
-            height: '44px',
+            width: '48px',
+            height: '48px',
             borderRadius: '50%',
             backgroundColor: 'var(--bg-warm-cream)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 10px auto',
+            margin: '0 auto 12px auto',
             color: 'var(--text-muted)'
           }}>
-            <Search size={20} />
+            <Search size={22} />
           </div>
-          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-charcoal)', marginBottom: '3px' }}>
-            No topics found
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-charcoal)', marginBottom: '4px' }}>
+            No matching topics found
           </h3>
-          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '14px' }}>
+          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
             Try another search term or reset your level filter.
           </p>
           <button
+            type="button"
             onClick={() => {
               setSearchQuery('');
               setSelectedDifficulty('all');
             }}
             className="btn-secondary"
-            style={{ padding: '6px 14px', fontSize: '12px', minHeight: '32px' }}
+            style={{ padding: '8px 18px', fontSize: '12.5px', minHeight: '40px', borderRadius: 'var(--radius-pill)' }}
           >
             Clear Filters
           </button>
         </div>
       )}
 
-      {/* 5. Visual Roadmap Timeline: Phases Accordion */}
+      {/* ------------------------------------------------------------------ */}
+      {/* 5. PHASE CARDS ACCORDION                                           */}
+      {/* ------------------------------------------------------------------ */}
       {totalFilteredTopicsCount > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {activeRoadmap.phases?.map((phase) => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {activeRoadmap.phases?.map((phase, pIdx) => {
             const isExpanded = expandedPhases[phase.id] ?? false;
             const query = searchQuery.toLowerCase().trim();
-            const filteredTopics = phase.topics?.filter(t => {
+            const filteredTopics = phase.topics?.filter((t) => {
               const matchesSearch = !query || 
                 t.name.toLowerCase().includes(query) || 
                 (t.description && t.description.toLowerCase().includes(query)) ||
@@ -457,180 +662,356 @@ export const RoadmapView = () => {
 
             if (filteredTopics.length === 0 && (searchQuery || selectedDifficulty !== 'all')) return null;
 
-            const isPhaseCompleted = phase.status === 'completed';
-            const isPhaseInProgress = phase.status === 'in_progress';
+            const phaseTotal = phase.topics?.length || 0;
+            const phaseDone = phase.topics?.filter((t) => t.status === 'completed').length || 0;
+            const phasePercent = phaseTotal > 0 ? Math.round((phaseDone / phaseTotal) * 100) : 0;
+            const isPhaseCompleted = phaseTotal > 0 && phaseDone === phaseTotal;
+            const isPhaseCurrent = !isAllComplete && pIdx === currentPhaseIndex;
+            const cleanPhaseTitle = phase.title.replace(/^Phase \d+:\s*/i, '').replace(/^Phase \d+ - \s*/i, '');
+            const formattedPhaseNum = String(phase.number || pIdx + 1).padStart(2, '0');
 
             return (
               <div 
-                key={phase.id}
+                key={phase.id || `phase_${pIdx}`}
                 className="card-white"
                 style={{
                   padding: '0',
                   overflow: 'hidden',
-                  borderColor: isPhaseInProgress ? 'var(--accent-terracotta)' : 'var(--border-beige)'
+                  borderRadius: 'var(--radius-lg)',
+                  border: isPhaseCurrent 
+                    ? '1.5px solid var(--accent-terracotta)' 
+                    : isPhaseCompleted 
+                      ? '1px solid rgba(94, 140, 113, 0.35)' 
+                      : '1px solid var(--border-beige)',
+                  boxShadow: isPhaseCurrent ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+                  transition: 'all 200ms ease'
                 }}
               >
                 {/* Phase Header */}
                 <div 
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isExpanded}
+                  aria-controls={`phase-panel-${phase.id}`}
                   onClick={() => togglePhase(phase.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      togglePhase(phase.id);
+                    }
+                  }}
                   style={{
-                    padding: '13px 16px',
+                    padding: '14px 18px',
                     cursor: 'pointer',
-                    backgroundColor: isPhaseInProgress ? 'var(--accent-terracotta-light)' : '#FFFFFF',
+                    backgroundColor: isPhaseCurrent ? 'var(--accent-terracotta-light)' : isPhaseCompleted ? 'var(--accent-sage-light)' : '#FFFFFF',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    transition: 'background-color 150ms ease'
+                    transition: 'background-color 150ms ease',
+                    userSelect: 'none',
+                    outline: 'none'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                    {/* Phase Number / Completion Circle */}
                     <div style={{
-                      width: '32px',
-                      height: '32px',
-                      minWidth: '32px',
-                      borderRadius: '10px',
+                      width: '36px',
+                      height: '36px',
+                      minWidth: '36px',
+                      borderRadius: '12px',
                       backgroundColor: isPhaseCompleted 
                         ? 'var(--accent-sage)' 
-                        : isPhaseInProgress 
+                        : isPhaseCurrent 
                           ? 'var(--accent-terracotta)' 
                           : 'var(--bg-warm-cream-alt)',
-                      color: isPhaseCompleted || isPhaseInProgress ? '#FFFFFF' : 'var(--text-secondary)',
+                      color: isPhaseCompleted || isPhaseCurrent ? '#FFFFFF' : 'var(--text-secondary)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontWeight: 800,
-                      fontSize: '12px'
+                      fontSize: '13px',
+                      flexShrink: 0
                     }}>
-                      {isPhaseCompleted ? <Check size={16} strokeWidth={2.5} /> : phase.number}
+                      {isPhaseCompleted ? <Check size={18} strokeWidth={3} /> : formattedPhaseNum}
                     </div>
 
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: isPhaseInProgress ? 'var(--accent-terracotta)' : 'var(--text-muted)' }}>
-                          Phase {phase.number}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                        <span style={{ 
+                          fontSize: '10px', 
+                          fontWeight: 800, 
+                          textTransform: 'uppercase', 
+                          letterSpacing: '0.06em', 
+                          color: isPhaseCurrent ? 'var(--accent-terracotta)' : isPhaseCompleted ? 'var(--accent-sage)' : 'var(--text-muted)' 
+                        }}>
+                          PHASE {formattedPhaseNum}
                         </span>
-                        {isPhaseInProgress && (
-                          <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '9999px', backgroundColor: 'var(--accent-terracotta)', color: '#FFFFFF' }}>
-                            Current
+
+                        {isPhaseCurrent && (
+                          <span style={{ 
+                            fontSize: '9px', 
+                            fontWeight: 800, 
+                            padding: '1px 6px', 
+                            borderRadius: '9999px', 
+                            backgroundColor: 'var(--accent-terracotta)', 
+                            color: '#FFFFFF' 
+                          }}>
+                            CURRENT
+                          </span>
+                        )}
+
+                        {isPhaseCompleted && (
+                          <span style={{ 
+                            fontSize: '9px', 
+                            fontWeight: 800, 
+                            padding: '1px 6px', 
+                            borderRadius: '9999px', 
+                            backgroundColor: 'var(--accent-sage)', 
+                            color: '#FFFFFF' 
+                          }}>
+                            COMPLETED
                           </span>
                         )}
                       </div>
-                      <h3 style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text-charcoal)', wordBreak: 'break-word', lineHeight: '1.25' }}>
-                        {phase.title}
-                      </h3>
+
+                      <h2 style={{ 
+                        fontSize: '15px', 
+                        fontWeight: 700, 
+                        color: 'var(--text-charcoal)', 
+                        wordBreak: 'break-word', 
+                        lineHeight: '1.25' 
+                      }}>
+                        {cleanPhaseTitle}
+                      </h2>
+
+                      <div style={{ 
+                        fontSize: '11.5px', 
+                        color: 'var(--text-secondary)', 
+                        fontWeight: 600, 
+                        marginTop: '2px' 
+                      }}>
+                        {phaseDone} / {phaseTotal} topics completed
+                      </div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                    <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                      {phase.progress}%
+                  {/* Right Side: Percentage & Chevron */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0, paddingLeft: '8px' }}>
+                    <span style={{ 
+                      fontSize: '13px', 
+                      fontWeight: 800, 
+                      color: isPhaseCompleted ? 'var(--accent-sage)' : isPhaseCurrent ? 'var(--accent-terracotta)' : 'var(--text-secondary)' 
+                    }}>
+                      {phasePercent}%
                     </span>
-                    {isExpanded ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
+
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '50%',
+                      backgroundColor: 'rgba(0,0,0,0.03)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--text-secondary)'
+                    }}>
+                      {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </div>
                   </div>
                 </div>
 
-                {/* Topics Drilldown */}
-                {isExpanded && (
+                {/* Phase Progress Bar Track */}
+                <div 
+                  role="progressbar"
+                  aria-valuenow={phasePercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label={`${cleanPhaseTitle} completion`}
+                  style={{
+                    width: '100%',
+                    height: '4px',
+                    backgroundColor: 'var(--border-beige-light)',
+                    overflow: 'hidden'
+                  }}
+                >
                   <div style={{
-                    borderTop: '1px solid var(--border-beige-light)',
-                    padding: '6px 12px 12px 12px',
-                    backgroundColor: 'var(--bg-warm-cream-alt)'
-                  }}>
-                    {filteredTopics.map((topic) => {
+                    width: `${phasePercent}%`,
+                    height: '100%',
+                    backgroundColor: isPhaseCompleted ? 'var(--accent-sage)' : isPhaseCurrent ? 'var(--accent-terracotta)' : 'var(--accent-terracotta)',
+                    transition: 'width 250ms ease'
+                  }} />
+                </div>
+
+                {/* Topics List Drilldown */}
+                {isExpanded && (
+                  <div 
+                    id={`phase-panel-${phase.id}`}
+                    style={{
+                      borderTop: '1px solid var(--border-beige-light)',
+                      padding: '8px 14px 14px 14px',
+                      backgroundColor: 'var(--bg-warm-cream-alt)'
+                    }}
+                  >
+                    {filteredTopics.map((topic, tIdx) => {
                       const isDone = topic.status === 'completed';
-                      const isCurrentTopic = topic.status === 'in_progress';
+                      const isTopicCurrent = isPhaseCurrent && currentTopic?.name === topic.name;
 
                       return (
                         <div
-                          key={topic.id}
+                          key={topic.id || `topic_${phase.id}_${tIdx}`}
                           style={{
                             backgroundColor: '#FFFFFF',
-                            border: '1px solid var(--border-beige)',
+                            border: `1px solid ${isTopicCurrent ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
                             borderRadius: 'var(--radius-md)',
-                            padding: '10px 12px',
-                            marginTop: '6px',
+                            padding: '10px 14px',
+                            marginTop: '8px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            gap: '8px',
-                            cursor: 'pointer'
-                          }}
-                          onClick={(e) => {
-                            if (e.target.closest('button')) return;
-                            openTaskStudyMaterial({
-                              name: topic.name,
-                              topic: topic.name,
-                              taskTitle: topic.name,
-                              phase: phase.title,
-                              roadmapPhase: phase.title,
-                              difficulty: topic.difficulty || 'Medium'
-                            });
+                            gap: '10px',
+                            minHeight: '44px',
+                            transition: 'border-color 150ms ease, box-shadow 150ms ease',
+                            boxShadow: isTopicCurrent ? 'var(--shadow-sm)' : 'none'
                           }}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                            {/* Interactive Status Indicator Toggle */}
+                          {/* Left: Checkmark & Details */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                            {/* Interactive Completion Status Toggle */}
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 updateRoadmapTopicStatus(phase.id, topic.id, isDone ? 'in_progress' : 'completed');
                               }}
                               style={{
-                                width: '22px',
-                                height: '22px',
-                                minWidth: '22px',
-                                minHeight: '22px',
+                                width: '28px',
+                                height: '28px',
+                                minWidth: '28px',
+                                minHeight: '28px',
                                 borderRadius: '50%',
-                                backgroundColor: isDone ? 'var(--accent-sage-light)' : isCurrentTopic ? 'var(--accent-terracotta-light)' : 'var(--bg-warm-cream)',
-                                border: `1px solid ${isDone ? 'var(--accent-sage)' : isCurrentTopic ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
+                                backgroundColor: isDone ? 'var(--accent-sage)' : isTopicCurrent ? 'var(--accent-terracotta-light)' : 'var(--bg-warm-cream)',
+                                border: `1.5px solid ${isDone ? 'var(--accent-sage)' : isTopicCurrent ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)'}`,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                color: isDone ? 'var(--accent-sage)' : isCurrentTopic ? 'var(--accent-terracotta)' : 'transparent',
+                                color: isDone ? '#FFFFFF' : isTopicCurrent ? 'var(--accent-terracotta)' : 'transparent',
                                 padding: 0,
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                flexShrink: 0
                               }}
-                              title="Toggle topic completion"
+                              title={isDone ? 'Mark as incomplete' : 'Mark as complete'}
+                              aria-label={isDone ? `Mark ${topic.name} as incomplete` : `Mark ${topic.name} as complete`}
                             >
                               {isDone ? (
-                                <Check size={13} strokeWidth={3} />
-                              ) : isCurrentTopic ? (
-                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--accent-terracotta)' }} />
+                                <Check size={15} strokeWidth={3} />
+                              ) : isTopicCurrent ? (
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-terracotta)' }} />
                               ) : (
-                                <Circle size={10} color="var(--border-beige-dark)" />
+                                <Circle size={12} color="var(--border-beige-dark)" />
                               )}
                             </button>
 
-                            <div style={{ minWidth: 0 }}>
+                            {/* Topic Title & Subtitle (Readable, NO aggressive strikethrough) */}
+                            <div style={{ minWidth: 0, flex: 1 }}>
                               <div style={{
-                                fontSize: '12.5px',
-                                fontWeight: 600,
+                                fontSize: '13px',
+                                fontWeight: isDone ? 600 : 700,
                                 color: isDone ? 'var(--text-secondary)' : 'var(--text-charcoal)',
-                                textDecoration: isDone ? 'line-through' : 'none',
                                 wordBreak: 'break-word',
-                                lineHeight: '1.3'
+                                lineHeight: '1.35'
                               }}>
                                 {topic.name}
                               </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '1px', fontSize: '10.5px', color: 'var(--text-muted)' }}>
+
+                              <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '6px', 
+                                marginTop: '2px', 
+                                fontSize: '11px', 
+                                color: 'var(--text-muted)',
+                                flexWrap: 'wrap'
+                              }}>
                                 {topic.problemsCount ? <span>{topic.problemsCount} problems</span> : null}
                                 {topic.problemsCount && topic.duration ? <span>•</span> : null}
                                 {topic.duration ? <span>{topic.duration}</span> : null}
+                                {isDone && (
+                                  <span style={{ color: 'var(--accent-sage)', fontWeight: 700 }}>
+                                    • Completed
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
 
-                          {/* Difficulty pill */}
-                          <span style={{
-                            fontSize: '9.5px',
-                            fontWeight: 700,
-                            padding: '2px 7px',
-                            borderRadius: 'var(--radius-pill)',
-                            backgroundColor: topic.difficulty === 'Hard' ? 'var(--accent-terracotta-light)' : topic.difficulty === 'Medium' ? 'var(--accent-amber-light)' : 'var(--accent-sage-light)',
-                            color: topic.difficulty === 'Hard' ? 'var(--accent-terracotta)' : topic.difficulty === 'Medium' ? 'var(--accent-amber)' : 'var(--accent-sage)',
-                            flexShrink: 0
-                          }}>
-                            {topic.difficulty || 'Medium'}
-                          </span>
+                          {/* Right: Difficulty Pill & Study Action */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                            {/* Difficulty Pill */}
+                            <span style={{
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: 'var(--radius-pill)',
+                              backgroundColor: topic.difficulty === 'Hard' 
+                                ? 'var(--accent-terracotta-light)' 
+                                : topic.difficulty === 'Medium' 
+                                  ? 'var(--accent-amber-light)' 
+                                  : 'var(--accent-sage-light)',
+                              color: topic.difficulty === 'Hard' 
+                                ? 'var(--accent-terracotta)' 
+                                : topic.difficulty === 'Medium' 
+                                  ? 'var(--accent-amber)' 
+                                  : 'var(--accent-sage)',
+                              flexShrink: 0
+                            }}>
+                              {topic.difficulty || 'Medium'}
+                            </span>
+
+                            {/* Study Guide Action Button (Ensures Topic A opens Topic A) */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                openTaskStudyMaterial({
+                                  id: topic.id || `topic_${phase.id}_${topic.name}`,
+                                  taskId: topic.id || `topic_${phase.id}_${topic.name}`,
+                                  name: topic.name,
+                                  topic: topic.name,
+                                  taskTitle: topic.name,
+                                  phase: phase.title,
+                                  roadmapPhase: phase.title,
+                                  difficulty: topic.difficulty || 'Medium',
+                                  learningObjectives: Array.isArray(topic.learningObjectives) && topic.learningObjectives.length > 0
+                                    ? topic.learningObjectives
+                                    : [
+                                        `Master foundational concepts of ${topic.name}`,
+                                        `Understand key patterns, algorithmic approaches, and complexity analysis`,
+                                        `Solve standard placement interview problems for ${topic.name}`
+                                      ],
+                                  duration: topic.duration || '45m',
+                                  estimatedMinutes: 45
+                                });
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '6px 12px',
+                                borderRadius: 'var(--radius-pill)',
+                                backgroundColor: isTopicCurrent ? 'var(--accent-terracotta)' : 'var(--bg-warm-cream)',
+                                color: isTopicCurrent ? '#FFFFFF' : 'var(--text-charcoal)',
+                                border: `1px solid ${isTopicCurrent ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                minHeight: '34px'
+                              }}
+                              title={`Open study guide for ${topic.name}`}
+                              aria-label={`Study ${topic.name}`}
+                            >
+                              <BookOpen size={13} />
+                              <span>Study</span>
+                            </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -642,13 +1023,15 @@ export const RoadmapView = () => {
         </div>
       )}
 
-      {/* Replace Roadmap Confirmation Modal */}
+      {/* ------------------------------------------------------------------ */}
+      {/* 6. REPLACE ROADMAP CONFIRMATION MODAL                               */}
+      {/* ------------------------------------------------------------------ */}
       {isReplaceConfirmOpen && (
         <div className="modal-overlay" onClick={() => setIsReplaceConfirmOpen(false)}>
           <div 
             className="modal-content-sheet"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '420px', padding: '24px' }}
+            style={{ maxWidth: '440px', padding: '24px' }}
           >
             <div style={{
               width: '48px',
@@ -664,11 +1047,11 @@ export const RoadmapView = () => {
               <AlertTriangle size={24} />
             </div>
 
-            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '6px' }}>
-              Replace current roadmap?
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '8px' }}>
+              Upload New Placement Roadmap?
             </h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.45', marginBottom: '22px' }}>
-              Your current roadmap will be replaced after you confirm.
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', marginBottom: '22px' }}>
+              Your current roadmap and active daily schedule will be replaced with the new syllabus once confirmed. Your historical study logs and analytics are safely preserved.
             </p>
 
             <div style={{ display: 'flex', gap: '10px' }}>
@@ -676,25 +1059,27 @@ export const RoadmapView = () => {
                 type="button"
                 onClick={() => setIsReplaceConfirmOpen(false)}
                 className="btn-secondary"
-                style={{ flex: 1, padding: '10px', fontSize: '13px' }}
+                style={{ flex: 1, padding: '10px', fontSize: '13px', minHeight: '44px' }}
               >
-                Cancel
+                Keep Current
               </button>
 
               <button
                 type="button"
                 onClick={handleConfirmReplace}
                 className="btn-primary"
-                style={{ flex: 1, padding: '10px', fontSize: '13px' }}
+                style={{ flex: 1, padding: '10px', fontSize: '13px', minHeight: '44px' }}
               >
-                Continue
+                Upload New
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Edit Roadmap Modal */}
+      {/* ------------------------------------------------------------------ */}
+      {/* 7. CUSTOMIZE / EDIT ROADMAP MODAL                                  */}
+      {/* ------------------------------------------------------------------ */}
       {isEditorOpen && activeRoadmap && (
         <RoadmapEditorModal
           isOpen={isEditorOpen}
@@ -707,7 +1092,7 @@ export const RoadmapView = () => {
         />
       )}
 
-      {/* Safe bottom spacer: Guarantees 100% visibility past floating bottom navigation */}
+      {/* Safe bottom spacer for mobile floating navigation */}
       <div style={{ height: '70px', width: '100%', flexShrink: 0 }} />
     </div>
   );
