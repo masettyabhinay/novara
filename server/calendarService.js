@@ -154,7 +154,11 @@ export function getAggregatedCalendarEvents(userId, startDateStr = null, endDate
   // 2. Spaced Revisions (from adaptive revision queue)
   revisions.forEach((rev, idx) => {
     let revDate = toDateKey(new Date());
-    if (rev.revisionDueDate === 'Tomorrow') {
+    if (rev.scheduledDate) {
+      revDate = toDateKey(rev.scheduledDate);
+    } else if (rev.nextRevisionDate) {
+      revDate = toDateKey(rev.nextRevisionDate);
+    } else if (rev.revisionDueDate === 'Tomorrow') {
       const d = new Date();
       d.setDate(d.getDate() + 1);
       revDate = toDateKey(d);
@@ -163,8 +167,6 @@ export function getAggregatedCalendarEvents(userId, startDateStr = null, endDate
       const d = new Date();
       d.setDate(d.getDate() + days);
       revDate = toDateKey(d);
-    } else if (rev.nextRevisionDate) {
-      revDate = toDateKey(rev.nextRevisionDate);
     }
 
     const hour = (8 + (idx * 2)) % 20;
