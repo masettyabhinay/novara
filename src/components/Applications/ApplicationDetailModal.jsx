@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   X, 
@@ -23,6 +23,16 @@ import {
 import { AddApplicationModal } from './AddApplicationModal';
 import { AddInterviewModal } from './AddInterviewModal';
 
+const STATUS_OPTIONS = [
+  'Saved',
+  'Applied',
+  'Online Assessment',
+  'Interview',
+  'Offer',
+  'Rejected',
+  'Withdrawn'
+];
+
 const STATUS_BADGE_CLASS = {
   'Saved': 'pill-neutral',
   'Applied': 'pill-navy',
@@ -33,12 +43,35 @@ const STATUS_BADGE_CLASS = {
   'Withdrawn': 'pill-neutral'
 };
 
+const getRelativeDeadlineInfo = (deadlineStr) => {
+  if (!deadlineStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(deadlineStr);
+  target.setHours(0, 0, 0, 0);
+  
+  if (isNaN(target.getTime())) return null;
+
+  const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return { label: `Overdue by ${Math.abs(diffDays)}d`, isOverdue: true };
+  } else if (diffDays === 0) {
+    return { label: 'Due Today', isDueSoon: true };
+  } else if (diffDays === 1) {
+    return { label: 'Due Tomorrow', isDueSoon: true };
+  } else {
+    return { label: `In ${diffDays} days`, isDueSoon: diffDays <= 3 };
+  }
+};
+
 export const ApplicationDetailModal = () => {
   const { 
     selectedApplication, 
     setSelectedApplication, 
     isAppDetailsModalOpen, 
     setIsAppDetailsModalOpen,
+    updateApplication,
     deleteApplication,
     updateInterviewStage,
     deleteInterviewStage,
@@ -49,18 +82,47 @@ export const ApplicationDetailModal = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingInterview, setIsAddingInterview] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isAppDetailsModalOpen && !isEditing && !isAddingInterview && !showDeleteConfirm) {
+        setIsAppDetailsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isAppDetailsModalOpen, isEditing, isAddingInterview, showDeleteConfirm]);
 
   if (!isAppDetailsModalOpen || !selectedApplication) return null;
 
   const app = selectedApplication;
   const interviews = app.interviews || [];
+  const deadlineInfo = getRelativeDeadlineInfo(app.deadline);
 
   // Check for upcoming interview
   const upcomingInterview = interviews.find((i) => i.status === 'scheduled');
 
+  const handleStatusChange = async (newStatus) => {
+    if (newStatus === app.status || isUpdatingStatus) return;
+    setIsUpdatingStatus(true);
+    try {
+      await updateApplication(app.id, { status: newStatus });
+      setSelectedApplication({ ...app, status: newStatus });
+      showToast('Status Updated', `${app.company} updated to ${newStatus}`, 'sage');
+    } catch (e) {
+      showToast('Error', 'Failed to update application status', 'terracotta');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
   const handleDelete = async () => {
     try {
       await deleteApplication(app.id);
+      setIsAppDetailsModalOpen(false);
+      setShowDeleteConfirm(false);
     } catch (e) {
       showToast('Error', 'Failed to delete application', 'terracotta');
     }
@@ -80,7 +142,9 @@ export const ApplicationDetailModal = () => {
         status: newStatus,
         result: newResult
       });
-    } catch (e) {}
+    } catch (e) {
+      showToast('Error', 'Failed to update interview stage', 'terracotta');
+    }
   };
 
   const formatDateTime = (isoStr) => {
@@ -115,34 +179,43 @@ export const ApplicationDetailModal = () => {
             justifyContent: 'space-between',
             marginBottom: '14px',
             paddingBottom: '12px',
-            borderBottom: '1px solid var(--border-beige-light)'
+            borderBottom: '1px solid var(--border-beige-light)',
+            gap: '10px'
           }}>
-            <div style={{ flex: 1, minWidth: 0, paddingRight: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span className={`pill-badge ${STATUS_BADGE_CLASS[app.status] || 'pill-neutral'}`}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                <span className={`pill-badge ${STATUS_BADGE_CLASS[app.status] || 'pill-neutral'}`} style={{ fontSize: '10px', padding: '1px 8px' }}>
                   {app.status}
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  {app.workType} • {app.location}
+                  {app.workType || 'Hybrid'} • {app.location || 'Remote'}
                 </span>
               </div>
 
-              <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-charcoal)', lineHeight: '1.25', marginBottom: '2px' }}>
+              <h2 style={{ 
+                fontSize: '19px', 
+                fontWeight: 800, 
+                color: 'var(--text-charcoal)', 
+                lineHeight: '1.25', 
+                marginBottom: '2px',
+                wordBreak: 'break-word' 
+              }}>
                 {app.company}
               </h2>
-              <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
                 {app.role}
               </p>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
                 title="Edit Application"
+                aria-label="Edit Application"
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '34px',
+                  height: '34px',
                   borderRadius: '8px',
                   backgroundColor: 'var(--bg-card)',
                   border: '1px solid var(--border-beige)',
@@ -153,16 +226,17 @@ export const ApplicationDetailModal = () => {
                   cursor: 'pointer'
                 }}
               >
-                <Edit3 size={14} />
+                <Edit3 size={15} />
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(true)}
                 title="Delete Application"
+                aria-label="Delete Application"
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '34px',
+                  height: '34px',
                   borderRadius: '8px',
                   backgroundColor: 'var(--bg-card)',
                   border: '1px solid var(--border-beige)',
@@ -173,15 +247,17 @@ export const ApplicationDetailModal = () => {
                   cursor: 'pointer'
                 }}
               >
-                <Trash2 size={14} />
+                <Trash2 size={15} />
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsAppDetailsModalOpen(false)}
+                title="Close"
+                aria-label="Close"
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '34px',
+                  height: '34px',
                   borderRadius: '8px',
                   backgroundColor: 'var(--bg-card)',
                   border: '1px solid var(--border-beige)',
@@ -199,6 +275,39 @@ export const ApplicationDetailModal = () => {
 
           {/* Scrollable Body */}
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            
+            {/* Quick Status Lifecycle Selector */}
+            <div>
+              <div style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                Update Pipeline Status
+              </div>
+              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {STATUS_OPTIONS.map((statusOpt) => (
+                  <button
+                    key={statusOpt}
+                    type="button"
+                    disabled={isUpdatingStatus}
+                    onClick={() => handleStatusChange(statusOpt)}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 'var(--radius-pill)',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      backgroundColor: app.status === statusOpt ? 'var(--text-charcoal)' : '#FFFFFF',
+                      color: app.status === statusOpt ? '#FFFFFF' : 'var(--text-secondary)',
+                      border: `1px solid ${app.status === statusOpt ? 'var(--text-charcoal)' : 'var(--border-beige)'}`,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      minHeight: '32px',
+                      opacity: isUpdatingStatus ? 0.7 : 1
+                    }}
+                  >
+                    {statusOpt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Metadata Summary Banner */}
             <div style={{
               display: 'grid',
@@ -225,6 +334,11 @@ export const ApplicationDetailModal = () => {
                 </div>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: app.deadline ? 'var(--accent-terracotta)' : 'var(--text-secondary)', marginTop: '2px' }}>
                   {app.deadline || 'No deadline set'}
+                  {deadlineInfo && (
+                    <span style={{ fontSize: '10.5px', marginLeft: '6px', color: deadlineInfo.isOverdue ? 'var(--accent-terracotta)' : 'var(--accent-amber)', fontWeight: 700 }}>
+                      ({deadlineInfo.label})
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -270,16 +384,16 @@ export const ApplicationDetailModal = () => {
                 gap: '10px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
-                  <Sparkles size={16} color="var(--accent-sage)" style={{ marginTop: '2px' }} />
+                  <Sparkles size={16} color="var(--accent-sage)" style={{ marginTop: '2px', flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent-sage)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--accent-sage)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                       Prepare for this interview
                     </div>
-                    <div style={{ fontSize: '12.5px', color: 'var(--text-charcoal)', fontWeight: 600, marginTop: '2px' }}>
+                    <div style={{ fontSize: '12.5px', color: 'var(--text-charcoal)', fontWeight: 700, marginTop: '2px' }}>
                       {upcomingInterview.title} ({formatDateTime(upcomingInterview.scheduledAt)})
                     </div>
-                    <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                      Focus your daily preparation on relevant DSA patterns and mock interview simulation.
+                    <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: '1.4' }}>
+                      Focus your daily preparation on relevant DSA patterns, behavioral framing, and mock simulation.
                     </p>
                   </div>
                 </div>
@@ -289,7 +403,7 @@ export const ApplicationDetailModal = () => {
                     type="button"
                     onClick={handleStartMockInterview}
                     className="btn-primary"
-                    style={{ flex: 1, padding: '7px 12px', fontSize: '11.5px', borderRadius: 'var(--radius-pill)', gap: '5px' }}
+                    style={{ flex: 1, padding: '7px 12px', fontSize: '11.5px', borderRadius: 'var(--radius-pill)', gap: '5px', minHeight: '36px' }}
                   >
                     <Video size={13} />
                     <span>Start Mock Interview</span>
@@ -302,9 +416,9 @@ export const ApplicationDetailModal = () => {
                       setActiveTab('today');
                     }}
                     className="btn-secondary"
-                    style={{ padding: '7px 12px', fontSize: '11.5px', borderRadius: 'var(--radius-pill)' }}
+                    style={{ padding: '7px 12px', fontSize: '11.5px', borderRadius: 'var(--radius-pill)', minHeight: '36px' }}
                   >
-                    Open Today's Plan
+                    Today's Plan
                   </button>
                 </div>
               </div>
@@ -314,14 +428,14 @@ export const ApplicationDetailModal = () => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
-                  Interview Rounds & Timeline
+                  Interview Rounds & Timeline ({interviews.length})
                 </h3>
 
                 <button
                   type="button"
                   onClick={() => setIsAddingInterview(true)}
                   className="btn-secondary"
-                  style={{ padding: '4px 10px', fontSize: '11px', borderRadius: 'var(--radius-pill)', gap: '4px' }}
+                  style={{ padding: '5px 12px', fontSize: '11px', borderRadius: 'var(--radius-pill)', gap: '4px', minHeight: '32px' }}
                 >
                   <Plus size={12} />
                   <span>Add Round</span>
@@ -341,17 +455,20 @@ export const ApplicationDetailModal = () => {
                         borderRadius: 'var(--radius-lg)',
                         backgroundColor: intItem.status === 'completed' ? 'var(--bg-warm-cream)' : '#FFFFFF',
                         border: `1.5px solid ${intItem.status === 'scheduled' ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
-                        fontSize: '12.5px'
+                        fontSize: '12.5px',
+                        gap: '10px'
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1 }}>
-                        <div
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
+                        <button
+                          type="button"
                           onClick={() => handleToggleInterviewDone(intItem)}
+                          aria-label={intItem.status === 'completed' ? 'Mark interview as scheduled' : 'Mark interview as completed'}
                           style={{
-                            width: '22px',
-                            height: '22px',
+                            width: '24px',
+                            height: '24px',
                             borderRadius: '50%',
-                            border: `2px solid ${intItem.status === 'completed' ? 'var(--accent-sage)' : 'var(--border-beige)'}`,
+                            border: `2px solid ${intItem.status === 'completed' ? 'var(--accent-sage)' : 'var(--border-beige-dark)'}`,
                             backgroundColor: intItem.status === 'completed' ? 'var(--accent-sage)' : '#FFFFFF',
                             display: 'flex',
                             alignItems: 'center',
@@ -359,18 +476,19 @@ export const ApplicationDetailModal = () => {
                             color: '#FFFFFF',
                             cursor: 'pointer',
                             flexShrink: 0,
-                            marginTop: '2px'
+                            marginTop: '2px',
+                            padding: 0
                           }}
                         >
-                          {intItem.status === 'completed' && <Check size={13} strokeWidth={3} />}
-                        </div>
+                          {intItem.status === 'completed' && <Check size={14} strokeWidth={3} />}
+                        </button>
 
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span className="pill-badge pill-terracotta" style={{ padding: '1px 6px', fontSize: '9px' }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <span className="pill-badge pill-terracotta" style={{ padding: '1px 6px', fontSize: '9.5px' }}>
                               {intItem.type}
                             </span>
-                            <span style={{ fontWeight: 700, color: 'var(--text-charcoal)' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--text-charcoal)', wordBreak: 'break-word' }}>
                               {intItem.title}
                             </span>
                           </div>
@@ -380,7 +498,7 @@ export const ApplicationDetailModal = () => {
                           </div>
 
                           {intItem.notes && (
-                            <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: '1.4' }}>
+                            <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: '1.4', wordBreak: 'break-word' }}>
                               {intItem.notes}
                             </p>
                           )}
@@ -390,15 +508,18 @@ export const ApplicationDetailModal = () => {
                       <button
                         type="button"
                         onClick={() => deleteInterviewStage(app.id, intItem.id)}
+                        aria-label={`Delete interview ${intItem.title}`}
                         style={{
                           background: 'none',
                           border: 'none',
                           color: 'var(--text-muted)',
                           cursor: 'pointer',
-                          padding: '4px'
+                          padding: '6px',
+                          minHeight: '28px',
+                          minWidth: '28px'
                         }}
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   ))}
@@ -412,7 +533,7 @@ export const ApplicationDetailModal = () => {
                   fontSize: '12px',
                   color: 'var(--text-secondary)'
                 }}>
-                  No interview rounds scheduled yet. Click <strong>+ Add Round</strong> to track online tests and interviews.
+                  No interview rounds scheduled yet. Click <strong>+ Add Round</strong> to track online assessments and interviews.
                 </div>
               )}
             </div>
@@ -420,7 +541,7 @@ export const ApplicationDetailModal = () => {
             {/* Application Notes */}
             {app.notes && (
               <div>
-                <h4 style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
+                <h4 style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
                   Notes & Contacts
                 </h4>
                 <div style={{
@@ -430,7 +551,8 @@ export const ApplicationDetailModal = () => {
                   fontSize: '12.5px',
                   color: 'var(--text-charcoal)',
                   lineHeight: '1.45',
-                  whiteSpace: 'pre-wrap'
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
                 }}>
                   {app.notes}
                 </div>
@@ -458,24 +580,25 @@ export const ApplicationDetailModal = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="modal-overlay" style={{ zIndex: 1070 }}>
+        <div className="modal-overlay" style={{ zIndex: 1070 }} onClick={() => setShowDeleteConfirm(false)}>
           <div 
             className="modal-content-sheet" 
+            onClick={(e) => e.stopPropagation()}
             style={{ padding: '24px', maxWidth: '400px', textAlign: 'center' }}
           >
             <AlertCircle size={32} color="var(--accent-terracotta)" style={{ margin: '0 auto 12px auto' }} />
             <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '6px' }}>
               Delete Application?
             </h3>
-            <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '18px' }}>
-              Are you sure you want to remove <strong>{app.company}</strong> from your application tracker?
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: '1.45' }}>
+              Are you sure you want to remove <strong>{app.company}</strong> from your application tracker? This cannot be undone.
             </p>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
                 className="btn-secondary"
-                style={{ flex: 1, padding: '10px' }}
+                style={{ flex: 1, padding: '10px', minHeight: '44px' }}
               >
                 Cancel
               </button>
@@ -483,7 +606,7 @@ export const ApplicationDetailModal = () => {
                 type="button"
                 onClick={handleDelete}
                 className="btn-primary"
-                style={{ flex: 1, padding: '10px', backgroundColor: 'var(--accent-terracotta)' }}
+                style={{ flex: 1, padding: '10px', backgroundColor: 'var(--accent-terracotta)', minHeight: '44px' }}
               >
                 Delete
               </button>

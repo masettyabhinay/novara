@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   X, 
@@ -37,6 +37,17 @@ export const AddInterviewModal = ({ application, onClose }) => {
   const [result, setResult] = useState('pending');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Escape key handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   const handleTypeChange = (newType) => {
     setType(newType);
@@ -109,9 +120,10 @@ export const AddInterviewModal = ({ application, onClose }) => {
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close modal"
             style={{
-              width: '30px',
-              height: '30px',
+              width: '32px',
+              height: '32px',
               borderRadius: '50%',
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-beige)',
@@ -122,7 +134,7 @@ export const AddInterviewModal = ({ application, onClose }) => {
               cursor: 'pointer'
             }}
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         </div>
 
@@ -142,7 +154,7 @@ export const AddInterviewModal = ({ application, onClose }) => {
         )}
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form onSubmit={handleSubmit} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', paddingRight: '4px' }}>
           {/* Interview Type Selector */}
           <div>
             <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', marginBottom: '6px' }}>
@@ -155,7 +167,7 @@ export const AddInterviewModal = ({ application, onClose }) => {
                   type="button"
                   onClick={() => handleTypeChange(t)}
                   style={{
-                    padding: '7px 8px',
+                    padding: '8px',
                     borderRadius: 'var(--radius-md)',
                     fontSize: '11.5px',
                     fontWeight: 700,
@@ -163,8 +175,10 @@ export const AddInterviewModal = ({ application, onClose }) => {
                     color: type === t ? '#FFFFFF' : 'var(--text-charcoal)',
                     border: `1px solid ${type === t ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
                     cursor: 'pointer',
-                    transition: 'all 150ms ease'
+                    transition: 'all 150ms ease',
+                    minHeight: '36px'
                   }}
+                  aria-pressed={type === t}
                 >
                   {t}
                 </button>
@@ -174,10 +188,11 @@ export const AddInterviewModal = ({ application, onClose }) => {
 
           {/* Title */}
           <div>
-            <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', marginBottom: '4px' }}>
+            <label htmlFor="int-title" style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', marginBottom: '4px' }}>
               Round Title *
             </label>
             <input
+              id="int-title"
               type="text"
               required
               value={title}
@@ -189,17 +204,20 @@ export const AddInterviewModal = ({ application, onClose }) => {
                 border: '1px solid var(--border-beige)',
                 fontSize: '13px',
                 backgroundColor: 'var(--bg-warm-cream)',
-                outline: 'none'
+                outline: 'none',
+                color: 'var(--text-charcoal)',
+                minHeight: '40px'
               }}
             />
           </div>
 
           {/* Scheduled Date & Time */}
           <div>
-            <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', marginBottom: '4px' }}>
+            <label htmlFor="int-scheduled-at" style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', marginBottom: '4px' }}>
               Scheduled Date & Time *
             </label>
             <input
+              id="int-scheduled-at"
               type="datetime-local"
               required
               value={scheduledAt}
@@ -211,17 +229,20 @@ export const AddInterviewModal = ({ application, onClose }) => {
                 border: '1px solid var(--border-beige)',
                 fontSize: '13px',
                 backgroundColor: 'var(--bg-warm-cream)',
-                outline: 'none'
+                outline: 'none',
+                color: 'var(--text-charcoal)',
+                minHeight: '40px'
               }}
             />
           </div>
 
           {/* Round Notes & Agenda */}
           <div>
-            <label style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', marginBottom: '4px' }}>
+            <label htmlFor="int-notes" style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', marginBottom: '4px' }}>
               Preparation Notes / Interviewer Info
             </label>
             <textarea
+              id="int-notes"
               rows={3}
               placeholder="Interviewer name, platform (Google Meet/Teams), topics to revise, questions asked..."
               value={notes}
@@ -235,18 +256,19 @@ export const AddInterviewModal = ({ application, onClose }) => {
                 backgroundColor: 'var(--bg-warm-cream)',
                 outline: 'none',
                 resize: 'vertical',
-                fontFamily: 'inherit'
+                fontFamily: 'inherit',
+                color: 'var(--text-charcoal)'
               }}
             />
           </div>
 
           {/* Actions */}
-          <div style={{ display: 'flex', gap: '10px', paddingTop: '10px', borderTop: '1px solid var(--border-beige-light)', marginTop: '4px' }}>
+          <div style={{ display: 'flex', gap: '10px', paddingTop: '12px', borderTop: '1px solid var(--border-beige-light)', marginTop: '4px' }}>
             <button
               type="button"
               onClick={onClose}
               className="btn-secondary"
-              style={{ flex: 1, padding: '11px', fontSize: '13px' }}
+              style={{ flex: 1, padding: '10px', fontSize: '13px', minHeight: '44px' }}
             >
               Cancel
             </button>
@@ -255,10 +277,16 @@ export const AddInterviewModal = ({ application, onClose }) => {
               type="submit"
               disabled={isSubmitting}
               className="btn-primary"
-              style={{ flex: 1, padding: '11px', fontSize: '13px' }}
+              style={{ flex: 1, padding: '10px', fontSize: '13px', minHeight: '44px', opacity: isSubmitting ? 0.7 : 1 }}
             >
-              <Check size={15} />
-              <span>Save Round</span>
+              {isSubmitting ? (
+                <span>Saving...</span>
+              ) : (
+                <>
+                  <Check size={15} />
+                  <span>Save Round</span>
+                </>
+              )}
             </button>
           </div>
         </form>
