@@ -1459,10 +1459,15 @@ export function submitRevisionAttempt(userId, { revisionId, answers = [], durati
   const totalQuestions = Math.max(1, answers.length);
 
   answers.forEach((ans) => {
-    const isAnsCorrect = ans.isCorrect || 
-      ans.selectedAnswer === ans.correctAnswer || 
-      ans.selectedAnswer === ans.correctAnswerText ||
-      (typeof ans.correctAnswer === 'number' && ans.selectedAnswer === ans.options?.[ans.correctAnswer]);
+    if (!ans) return;
+    let isAnsCorrect = false;
+    if (typeof ans.isCorrect === 'boolean') {
+      isAnsCorrect = ans.isCorrect;
+    } else if (ans.selectedAnswer !== undefined && (ans.correctAnswer !== undefined || ans.correctAnswerText !== undefined)) {
+      isAnsCorrect = ans.selectedAnswer === ans.correctAnswer || 
+        ans.selectedAnswer === ans.correctAnswerText ||
+        (typeof ans.correctAnswer === 'number' && ans.selectedAnswer === ans.options?.[ans.correctAnswer]);
+    }
     if (isAnsCorrect) {
       correctCount += 1;
     }
@@ -1583,10 +1588,15 @@ export function recordTaskRevisionAndComplete(userId, { taskId, sessionId, revis
   const totalQuestions = Math.max(1, answers.length);
 
   answers.forEach((ans) => {
-    const isAnsCorrect = ans.isCorrect || 
-      ans.selectedAnswer === ans.correctAnswer || 
-      ans.selectedAnswer === ans.correctAnswerText ||
-      (typeof ans.correctAnswer === 'number' && ans.selectedAnswer === ans.options?.[ans.correctAnswer]);
+    if (!ans) return;
+    let isAnsCorrect = false;
+    if (typeof ans.isCorrect === 'boolean') {
+      isAnsCorrect = ans.isCorrect;
+    } else if (ans.selectedAnswer !== undefined && (ans.correctAnswer !== undefined || ans.correctAnswerText !== undefined)) {
+      isAnsCorrect = ans.selectedAnswer === ans.correctAnswer || 
+        ans.selectedAnswer === ans.correctAnswerText ||
+        (typeof ans.correctAnswer === 'number' && ans.selectedAnswer === ans.options?.[ans.correctAnswer]);
+    }
     if (isAnsCorrect) {
       correctCount += 1;
     }
