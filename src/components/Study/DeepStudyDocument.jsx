@@ -42,8 +42,20 @@ export default function DeepStudyDocument({
   if (!material) return null;
 
   const containerRef = useRef(null);
-  const [readingProgress, setReadingProgress] = useState(0);
-  const [activeSection, setActiveSection] = useState('overview');
+  
+  // Real reading progress persistence per task session
+  const storageKey = task?.id ? `novara_study_prog_${task.id}` : null;
+  const [readingProgress, setReadingProgress] = useState(() => {
+    if (!storageKey) return 0;
+    try {
+      const saved = sessionStorage.getItem(storageKey);
+      return saved ? Math.min(100, Math.max(0, parseInt(saved, 10))) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  const [activeSection, setActiveSection] = useState('sec-overview');
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [activeCodeForTutor, setActiveCodeForTutor] = useState(null);
 
@@ -61,23 +73,52 @@ export default function DeepStudyDocument({
     { id: 'sec-recap', label: 'Recap' }
   ].filter(Boolean);
 
-  // Track reading scroll progress
+  // Track authentic reading progress across ancestor scroll container
   useEffect(() => {
-    const handleScroll = () => {
-      if (!containerRef.current) return;
-      const el = containerRef.current;
-      const scrollTop = el.scrollTop || window.scrollY;
-      const scrollHeight = (el.scrollHeight || document.documentElement.scrollHeight) - (el.clientHeight || window.innerHeight);
-      if (scrollHeight > 0) {
-        const progress = Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100));
-        setReadingProgress(progress);
+    // Find nearest scrollable container
+    let scrollTarget = null;
+    let node = containerRef.current?.parentElement;
+    while (node && node !== document.body && node !== document.documentElement) {
+      const overflowY = window.getComputedStyle(node).overflowY;
+      if (overflowY === 'auto' || overflowY === 'scroll') {
+        scrollTarget = node;
+        break;
       }
+      node = node.parentElement;
+    }
+
+    if (!scrollTarget) scrollTarget = window;
+
+    const calculateProgress = () => {
+      if (!containerRef.current) return;
+      let pct = 0;
+      if (scrollTarget === window) {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        pct = scrollHeight > 0 ? Math.min(100, Math.max(0, Math.round((scrollTop / scrollHeight) * 100))) : 0;
+      } else {
+        const scrollTop = scrollTarget.scrollTop;
+        const scrollHeight = scrollTarget.scrollHeight - scrollTarget.clientHeight;
+        pct = scrollHeight > 0 ? Math.min(100, Math.max(0, Math.round((scrollTop / scrollHeight) * 100))) : 0;
+      }
+
+      setReadingProgress((prev) => {
+        const next = Math.max(prev, pct);
+        if (storageKey && next > 0) {
+          try {
+            sessionStorage.setItem(storageKey, String(next));
+          } catch {}
+        }
+        return next;
+      });
     };
 
-    const targetEl = containerRef.current || window;
-    targetEl.addEventListener('scroll', handleScroll, { passive: true });
-    return () => targetEl.removeEventListener('scroll', handleScroll);
-  }, []);
+    // Calculate initial reading progress
+    calculateProgress();
+
+    scrollTarget.addEventListener('scroll', calculateProgress, { passive: true });
+    return () => scrollTarget.removeEventListener('scroll', calculateProgress);
+  }, [task?.id, storageKey]);
 
   const handleJumpToSection = (sectionId) => {
     setActiveSection(sectionId);

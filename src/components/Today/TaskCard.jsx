@@ -148,7 +148,18 @@ export const TaskCard = ({ task }) => {
           aria-label={task.completed ? "Mark incomplete" : "Open study material"}
         >
           {task.completed ? (
-            <CheckCircle2 size={22} fill="var(--accent-terracotta-light)" strokeWidth={2.2} />
+            <div style={{
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--accent-sage-light)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--accent-sage)'
+            }}>
+              <CheckCircle2 size={20} color="var(--accent-sage)" strokeWidth={2.4} />
+            </div>
           ) : (
             <Circle size={22} strokeWidth={2} />
           )}
@@ -163,8 +174,9 @@ export const TaskCard = ({ task }) => {
             style={{
               fontSize: '14px',
               fontWeight: 700,
-              color: task.completed ? 'var(--text-secondary)' : 'var(--text-charcoal)',
-              textDecoration: task.completed ? 'line-through' : 'none',
+              color: task.completed ? 'var(--text-charcoal)' : 'var(--text-charcoal)',
+              opacity: task.completed ? 0.9 : 1,
+              textDecoration: 'none',
               lineHeight: '1.3',
               cursor: 'pointer',
               marginBottom: '2px',
@@ -176,9 +188,10 @@ export const TaskCard = ({ task }) => {
 
           <p style={{
             fontSize: '11.5px',
-            color: task.completed ? 'var(--text-muted)' : 'var(--text-secondary)',
+            color: task.completed ? 'var(--text-secondary)' : 'var(--text-secondary)',
             lineHeight: '1.4',
-            wordBreak: 'break-word'
+            wordBreak: 'break-word',
+            margin: 0
           }}>
             {task.description || task.notes}
           </p>

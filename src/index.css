@@ -456,3 +456,56 @@ button {
   }
 }
 
+/* Mobile Focus/Study Header Responsive Hierarchy */
+@media (max-width: 768px) {
+  .focus-header-task-desktop {
+    display: none !important;
+  }
+  .focus-header-task-mobile {
+    display: flex !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .roadmap-label-full {
+    display: none !important;
+  }
+  .roadmap-label-compact {
+    display: inline !important;
+  }
+  .top-header-role-text {
+    max-width: 105px !important;
+  }
+}
+
+/* Study Tabs Scroll Row */
+.study-tabs-scroll-row::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Ensure code blocks only scroll within pre, never breaking page width */
+.deep-study-document pre {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Mobile Sheet Viewport Fill & Safe Area Inset */
+@media (max-width: 640px) {
+  .focus-study-modal-overlay {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+  .focus-study-sheet {
+    max-height: 100dvh !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    border-top-left-radius: var(--radius-xl) !important;
+    border-top-right-radius: var(--radius-xl) !important;
+  }
+  .bottom-nav-tab-btn {
+    min-height: 42px !important;
+    padding: 4px 1px !important;
+  }
+}
+

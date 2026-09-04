@@ -218,22 +218,23 @@ export const FocusSessionModal = () => {
 
   return (
     <div 
-      className="modal-overlay" 
+      className="modal-overlay focus-study-modal-overlay" 
       style={{
         zIndex: 1000,
         backgroundColor: 'rgba(24, 20, 16, 0.82)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
-        padding: '8px'
+        padding: '0'
       }}
     >
       <div 
-        className="modal-content-sheet" 
+        className="modal-content-sheet focus-study-sheet" 
         onClick={(e) => e.stopPropagation()}
         style={{
           width: '100%',
           maxWidth: '1240px',
-          maxHeight: '94vh',
+          height: '100%',
+          maxHeight: '96vh',
           display: 'flex',
           flexDirection: 'column',
           padding: 0,
@@ -245,51 +246,59 @@ export const FocusSessionModal = () => {
         }}
       >
         {/* =================================================================== */}
-        {/* TOP UNIFIED HEADER                                                  */}
+        {/* TOP UNIFIED RESPONSIVE HEADER                                      */}
         {/* =================================================================== */}
-        <div style={{
+        <div className="focus-study-header-root" style={{
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 20px',
+          flexDirection: 'column',
           backgroundColor: '#FAF8F5',
           borderBottom: '1px solid #E8E2D9',
-          gap: '12px',
+          paddingTop: 'max(10px, env(safe-area-inset-top, 10px))',
           flexShrink: 0
         }}>
-          {/* Left: Back Action + Mode Pill */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-            <button
-              type="button"
-              onClick={handleBackClick}
-              className="btn-secondary"
-              style={{
-                padding: '6px 12px',
-                fontSize: '12px',
-                fontWeight: 700,
-                gap: '5px',
-                borderRadius: 'var(--radius-pill)',
-                minHeight: '32px',
-                flexShrink: 0
-              }}
-              title="Leave or minimize session"
-            >
-              <ArrowLeft size={14} />
-              <span>Back</span>
-            </button>
+          {/* Main Controls Row: [Back] [Focus / In Session] [Timer] [Close] */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 16px',
+            gap: '8px',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
+            {/* Left: Back Action */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={handleBackClick}
+                className="btn-secondary"
+                style={{
+                  padding: '5px 10px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  gap: '4px',
+                  borderRadius: 'var(--radius-pill)',
+                  minHeight: '32px',
+                  flexShrink: 0
+                }}
+                title="Leave or minimize session"
+              >
+                <ArrowLeft size={14} />
+                <span className="focus-header-back-label">Back</span>
+              </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+              {/* Status Pill */}
               <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
-                padding: '3px 9px',
+                padding: '3px 8px',
                 borderRadius: 'var(--radius-pill)',
                 backgroundColor: 'rgba(200, 90, 50, 0.12)',
                 color: 'var(--accent-terracotta)',
-                fontSize: '11px',
+                fontSize: '10.5px',
                 fontWeight: 800,
-                letterSpacing: '0.04em',
+                letterSpacing: '0.03em',
                 textTransform: 'uppercase',
                 flexShrink: 0
               }}>
@@ -300,11 +309,19 @@ export const FocusSessionModal = () => {
                   backgroundColor: timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)',
                   boxShadow: timerMetrics.isPaused ? 'none' : '0 0 6px var(--accent-terracotta)'
                 }} />
-                <span>FOCUS + STUDY</span>
+                <span>{timerMetrics.isPaused ? 'Paused' : 'In Session'}</span>
               </div>
+            </div>
 
+            {/* Middle (Desktop/Tablet): Task Name */}
+            <div className="focus-header-task-desktop" style={{
+              flex: 1,
+              minWidth: 0,
+              padding: '0 8px',
+              textAlign: 'center'
+            }}>
               <h2 style={{
-                fontSize: '14px',
+                fontSize: '13.5px',
                 fontWeight: 800,
                 color: 'var(--text-charcoal)',
                 whiteSpace: 'nowrap',
@@ -315,58 +332,79 @@ export const FocusSessionModal = () => {
                 {activeFocusTask.name}
               </h2>
             </div>
-          </div>
 
-          {/* Right: Live Timer Status + Close Button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 12px',
-              borderRadius: 'var(--radius-pill)',
-              backgroundColor: timerMetrics.isPaused ? 'var(--accent-amber-light)' : '#FFFFFF',
-              border: `1px solid ${timerMetrics.isPaused ? 'var(--accent-amber)' : '#E8E2D9'}`,
-              boxShadow: '0 1px 3px rgba(35, 25, 15, 0.04)'
-            }}>
-              <Clock size={13} color={timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)'} />
-              <span style={{
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '13px',
-                fontWeight: 800,
-                color: timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--text-charcoal)'
-              }}>
-                {timeFormatted}
-              </span>
-              <span style={{
-                fontSize: '10.5px',
-                fontWeight: 700,
-                color: timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--text-secondary)',
-                paddingLeft: '4px',
-                borderLeft: '1px solid #E8E2D9'
-              }}>
-                {timerMetrics.isPaused ? 'Paused' : 'In Session'}
-              </span>
-            </div>
-
-            <button
-              onClick={handleBackClick}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
+            {/* Right: Timer Display + Close Action */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+              <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--text-muted)',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-              title="Exit Session"
-            >
-              <X size={18} />
-            </button>
+                gap: '5px',
+                padding: '4px 10px',
+                borderRadius: 'var(--radius-pill)',
+                backgroundColor: timerMetrics.isPaused ? 'var(--accent-amber-light)' : '#FFFFFF',
+                border: `1px solid ${timerMetrics.isPaused ? 'var(--accent-amber)' : '#E8E2D9'}`,
+                boxShadow: '0 1px 3px rgba(35, 25, 15, 0.04)'
+              }}>
+                <Clock size={12} color={timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)'} />
+                <span style={{
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: '12.5px',
+                  fontWeight: 800,
+                  color: timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--text-charcoal)'
+                }}>
+                  {timeFormatted}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleBackClick}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  minWidth: '32px',
+                  minHeight: '32px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-muted)',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+                title="Exit Session"
+                aria-label="Close session"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Secondary Row: Task Name & Category (visible on small screens) */}
+          <div className="focus-header-task-mobile" style={{
+            display: 'none',
+            padding: '0 16px 8px 16px',
+            alignItems: 'center',
+            gap: '6px',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <span className="pill-badge pill-terracotta" style={{ fontSize: '9.5px', padding: '1px 6px', flexShrink: 0 }}>
+              {activeFocusTask.category || 'DSA'}
+            </span>
+            <h2 style={{
+              fontSize: '12.5px',
+              fontWeight: 800,
+              color: 'var(--text-charcoal)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              margin: 0,
+              flex: 1
+            }}>
+              {activeFocusTask.name}
+            </h2>
           </div>
         </div>
 
@@ -419,20 +457,49 @@ export const FocusSessionModal = () => {
 
             {/* MAIN TIMER HERO CARD */}
             <div style={{
-              padding: '20px 16px',
+              padding: '18px 16px',
               borderRadius: 'var(--radius-lg)',
               backgroundColor: timerMetrics.isPaused ? '#FFFDF8' : '#FAF8F5',
               border: `1px solid ${timerMetrics.isPaused ? 'var(--accent-amber)' : '#E8E2D9'}`,
               textAlign: 'center',
               boxShadow: '0 2px 10px rgba(35, 25, 15, 0.03)'
             }}>
+              {/* Three Distinguishable Metric Tags: Target, Status, Studied */}
               <div style={{
-                fontSize: '11px',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '6px',
+                marginBottom: '12px',
+                padding: '6px 8px',
+                borderRadius: '8px',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #EAE4DA'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Target</div>
+                  <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-charcoal)' }}>{activeFocusSession?.plannedMinutes || 45}m</div>
+                </div>
+                <div style={{ textAlign: 'center', borderLeft: '1px solid #EAE4DA', borderRight: '1px solid #EAE4DA' }}>
+                  <div style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--text-muted)' }}>Status</div>
+                  <div style={{ fontSize: '11.5px', fontWeight: 800, color: timerMetrics.isExpired ? 'var(--accent-sage)' : timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)' }}>
+                    {timerMetrics.isExpired ? 'Goal Met' : timerMetrics.isPaused ? 'Paused' : 'Active'}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Studied</div>
+                  <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
+                    {Math.floor(timerMetrics.elapsedSeconds / 60)}m {timerMetrics.elapsedSeconds % 60}s
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                fontSize: '10.5px',
                 fontWeight: 800,
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 color: timerMetrics.isExpired ? 'var(--accent-sage)' : timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--text-muted)',
-                marginBottom: '4px'
+                marginBottom: '2px'
               }}>
                 {timerMetrics.isExpired ? '🎯 Time Goal Met' : timerMetrics.isPaused ? '⏸ Timer Paused' : 'Time Remaining'}
               </div>
@@ -440,12 +507,12 @@ export const FocusSessionModal = () => {
               {/* Countdown Display */}
               <div style={{
                 fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '46px',
+                fontSize: '44px',
                 fontWeight: 800,
                 color: timerMetrics.isExpired ? 'var(--accent-sage)' : timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--text-charcoal)',
                 letterSpacing: '-0.04em',
                 lineHeight: '1',
-                marginBottom: '14px'
+                marginBottom: '12px'
               }}>
                 {timeFormatted}
               </div>
@@ -453,7 +520,7 @@ export const FocusSessionModal = () => {
               {/* Progress Bar */}
               <div style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  <span>Elapsed: {Math.floor(timerMetrics.elapsedSeconds / 60)}m</span>
+                  <span>Actual Studied: {Math.floor(timerMetrics.elapsedSeconds / 60)}m</span>
                   <span>{progressPercent}%</span>
                 </div>
                 <div style={{

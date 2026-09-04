@@ -37,7 +37,7 @@ export const TopHeader = () => {
       {/* Brand & Role */}
       <div 
         onClick={() => setActiveTab('today')}
-        style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', minWidth: 0 }}
+        style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', minWidth: 0, flexShrink: 1 }}
       >
         <div style={{
           width: '34px',
@@ -49,7 +49,8 @@ export const TopHeader = () => {
           alignItems: 'center',
           justifyContent: 'center',
           color: '#FFFFFF',
-          boxShadow: '0 3px 10px var(--accent-terracotta-glow)'
+          boxShadow: '0 3px 10px var(--accent-terracotta-glow)',
+          flexShrink: 0
         }}>
           <Compass size={18} strokeWidth={2.2} />
         </div>
@@ -77,16 +78,21 @@ export const TopHeader = () => {
               AI
             </span>
           </div>
-          <span style={{
-            fontSize: '11px',
-            color: 'var(--text-secondary)',
-            fontWeight: 500,
-            whiteSpace: 'nowrap',
-            textOverflow: 'ellipsis',
-            overflow: 'hidden',
-            display: 'block'
-          }}>
-            {userProfile.targetRole.split('(')[0]}
+          <span 
+            className="top-header-role-text"
+            style={{
+              fontSize: '11px',
+              color: 'var(--text-secondary)',
+              fontWeight: 500,
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+              overflow: 'hidden',
+              display: 'block',
+              maxWidth: '160px'
+            }}
+            title={userProfile?.targetRole || 'Software Engineer'}
+          >
+            {(userProfile?.targetRole || 'Software Engineer').split('(')[0].trim()}
           </span>
         </div>
       </div>
@@ -157,6 +163,7 @@ export const TopHeader = () => {
         {/* Roadmap Progress Indicator */}
         <button
           onClick={() => setActiveTab('roadmap')}
+          className="top-header-roadmap-btn"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -169,12 +176,15 @@ export const TopHeader = () => {
             fontWeight: 700,
             color: 'var(--text-charcoal)',
             boxShadow: 'var(--shadow-sm)',
-            minHeight: '34px'
+            minHeight: '34px',
+            cursor: 'pointer',
+            flexShrink: 0
           }}
-          title="View full roadmap"
+          title={`View full roadmap (${roadmapProgress}% completed)`}
         >
-          <Map size={12} color="var(--accent-terracotta)" />
-          <span>Roadmap: <strong style={{ color: 'var(--accent-terracotta)' }}>{roadmapProgress}%</strong></span>
+          <Map size={13} color="var(--accent-terracotta)" />
+          <span className="roadmap-label-full">Roadmap: <strong style={{ color: 'var(--accent-terracotta)' }}>{roadmapProgress}%</strong></span>
+          <span className="roadmap-label-compact" style={{ display: 'none' }}><strong style={{ color: 'var(--accent-terracotta)' }}>{roadmapProgress}%</strong></span>
         </button>
 
         {/* Notifications Bell */}
