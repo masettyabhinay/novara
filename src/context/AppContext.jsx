@@ -1465,6 +1465,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const navigateToNotificationTarget = (notif) => {
+    if (!notif) return;
     markSingleNotificationRead(notif.id);
     setIsNotifDrawerOpen(false);
 
@@ -1477,8 +1478,32 @@ export const AppProvider = ({ children }) => {
       return;
     }
 
+    if (notif.actionRoute === 'applications' || notif.relatedAppId) {
+      setActiveTab('applications');
+      if (notif.relatedAppId) {
+        const app = applications.find((a) => a.id === notif.relatedAppId);
+        if (app) {
+          setSelectedApplication(app);
+          setIsAppDetailsModalOpen(true);
+        }
+      }
+      return;
+    }
+
+    if (notif.actionRoute === 'interview') {
+      setActiveTab('interview');
+      return;
+    }
+
     if (notif.actionRoute === 'revision' || notif.relatedRevisionId) {
       setActiveTab('revision');
+      if (notif.relatedRevisionId) {
+        const rev = revisionQueue.find((r) => r.id === notif.relatedRevisionId);
+        if (rev) {
+          setSelectedTopicDetail(rev);
+          setIsTopicDetailOpen(true);
+        }
+      }
       return;
     }
 
@@ -1489,6 +1514,11 @@ export const AppProvider = ({ children }) => {
 
     if (notif.actionRoute === 'coach') {
       setActiveTab('coach');
+      return;
+    }
+
+    if (notif.actionRoute === 'calendar') {
+      setActiveTab('calendar');
       return;
     }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   Bell, 
@@ -15,7 +15,10 @@ import {
   ArrowRight,
   ExternalLink,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Briefcase,
+  Target,
+  BarChart3
 } from 'lucide-react';
 
 export const NotificationDrawer = () => {
@@ -38,86 +41,126 @@ export const NotificationDrawer = () => {
 
   const [activeTab, setActiveTab] = useState('notifications'); // 'notifications' | 'settings'
 
+  const handleClose = useCallback(() => {
+    if (setIsNotifDrawerOpen) setIsNotifDrawerOpen(false);
+  }, [setIsNotifDrawerOpen]);
+
+  // Escape key close listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isNotifDrawerOpen) {
+        handleClose();
+      }
+    };
+    if (isNotifDrawerOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isNotifDrawerOpen, handleClose]);
+
   if (!isNotifDrawerOpen) return null;
 
   const getNotifIcon = (type) => {
     switch (type) {
       case 'DAILY_PLAN':
       case 'plan':
-        return <span style={{ fontSize: '18px' }}>🎯</span>;
+        return <Target size={18} color="var(--accent-terracotta)" />;
       case 'TASK_REMINDER':
       case 'reminder':
-        return <span style={{ fontSize: '18px' }}>⏰</span>;
+        return <Clock size={18} color="var(--accent-terracotta)" />;
       case 'STREAK_RISK':
       case 'streak':
-        return <span style={{ fontSize: '18px' }}>🔥</span>;
+        return <Flame size={18} color="var(--accent-terracotta)" />;
       case 'REVISION_DUE':
       case 'revision':
-        return <span style={{ fontSize: '18px' }}>🧠</span>;
+        return <RotateCcw size={18} color="var(--accent-amber)" />;
+      case 'APPLICATION_DEADLINE':
+      case 'INTERVIEW_SCHEDULED':
+      case 'interview':
+        return <Briefcase size={18} color="var(--accent-sage)" />;
       case 'WEEKLY_SUMMARY':
       case 'summary':
-        return <span style={{ fontSize: '18px' }}>📊</span>;
+        return <BarChart3 size={18} color="var(--accent-navy)" />;
       default:
         return <Bell size={18} color="var(--accent-terracotta)" />;
     }
   };
 
   // Group notifications into TODAY and EARLIER
-  const todayNotifications = notifications.filter(
+  const todayNotifications = (notifications || []).filter(
     (n) => n.time === 'Today' || n.time === 'Just now' || n.time?.includes('m ago') || n.time?.includes('h ago')
   );
-  const earlierNotifications = notifications.filter(
+  const earlierNotifications = (notifications || []).filter(
     (n) => !todayNotifications.includes(n)
   );
 
-  const unreadCount = notifications.filter((n) => n.unread).length;
+  const unreadCount = (notifications || []).filter((n) => n.unread).length;
 
   const handleTogglePref = (key) => {
     const updated = {
-      ...notifPreferences,
-      [key]: !notifPreferences[key]
+      ...(notifPreferences || {}),
+      [key]: !notifPreferences?.[key]
     };
-    setNotifPreferences(updated);
+    if (setNotifPreferences) setNotifPreferences(updated);
   };
 
   const handleTimeChange = (key, value) => {
     const updatedTimes = {
-      ...(notifPreferences.preferredReminderTimes || {}),
+      ...(notifPreferences?.preferredReminderTimes || {}),
       [key]: value
     };
-    setNotifPreferences({
-      ...notifPreferences,
-      preferredReminderTimes: updatedTimes
-    });
+    if (setNotifPreferences) {
+      setNotifPreferences({
+        ...(notifPreferences || {}),
+        preferredReminderTimes: updatedTimes
+      });
+    }
   };
 
   return (
-    <div className="modal-overlay" onClick={() => setIsNotifDrawerOpen(false)}>
+    <div 
+      className="modal-overlay" 
+      onClick={handleClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notif-drawer-title"
+      style={{ zIndex: 1060 }}
+    >
       <div 
         className="modal-content-sheet" 
         onClick={(e) => e.stopPropagation()}
-        style={{ padding: '24px 20px', maxWidth: '460px', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
+        style={{ 
+          padding: '24px 20px', 
+          maxWidth: '480px', 
+          maxHeight: '90vh', 
+          display: 'flex', 
+          flexDirection: 'column',
+          backgroundColor: '#FFFFFF',
+          borderRadius: 'var(--radius-xl)',
+          border: '1px solid var(--border-beige)'
+        }}
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '12px',
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
               backgroundColor: 'var(--accent-terracotta-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--accent-terracotta)'
+              color: 'var(--accent-terracotta)',
+              flexShrink: 0
             }}>
-              <Bell size={17} />
+              <Bell size={18} />
             </div>
             <div>
-              <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-charcoal)', lineHeight: '1.2' }}>
+              <h2 id="notif-drawer-title" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-charcoal)', lineHeight: '1.2', margin: 0 }}>
                 Notifications
-              </h3>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              </h2>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
                 {unreadCount > 0 ? `${unreadCount} unread update${unreadCount > 1 ? 's' : ''}` : 'All caught up'}
               </p>
             </div>
@@ -125,10 +168,11 @@ export const NotificationDrawer = () => {
 
           <button
             type="button"
-            onClick={() => setIsNotifDrawerOpen(false)}
+            onClick={handleClose}
+            aria-label="Close notification drawer"
             style={{
-              width: '32px',
-              height: '32px',
+              width: '36px',
+              height: '36px',
               borderRadius: '50%',
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-beige)',
@@ -136,7 +180,9 @@ export const NotificationDrawer = () => {
               alignItems: 'center',
               justifyContent: 'center',
               color: 'var(--text-secondary)',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              minHeight: '44px',
+              minWidth: '44px'
             }}
           >
             <X size={17} />
@@ -151,13 +197,15 @@ export const NotificationDrawer = () => {
           padding: '4px',
           marginBottom: '14px',
           flexShrink: 0
-        }}>
+        }} role="tablist">
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'notifications'}
             onClick={() => setActiveTab('notifications')}
             style={{
               flex: 1,
-              padding: '7px 0',
+              padding: '8px 0',
               borderRadius: 'var(--radius-pill)',
               fontSize: '12.5px',
               fontWeight: 700,
@@ -166,18 +214,21 @@ export const NotificationDrawer = () => {
               boxShadow: activeTab === 'notifications' ? 'var(--shadow-sm)' : 'none',
               cursor: 'pointer',
               border: 'none',
-              transition: 'all 150ms ease'
+              transition: 'all 150ms ease',
+              minHeight: '38px'
             }}
           >
-            Activity {unreadCount > 0 && <span style={{ color: 'var(--accent-terracotta)' }}>({unreadCount})</span>}
+            Activity {unreadCount > 0 && <span style={{ color: 'var(--accent-terracotta)', fontWeight: 800 }}>({unreadCount})</span>}
           </button>
 
           <button
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'settings'}
             onClick={() => setActiveTab('settings')}
             style={{
               flex: 1,
-              padding: '7px 0',
+              padding: '8px 0',
               borderRadius: 'var(--radius-pill)',
               fontSize: '12.5px',
               fontWeight: 700,
@@ -186,10 +237,11 @@ export const NotificationDrawer = () => {
               boxShadow: activeTab === 'settings' ? 'var(--shadow-sm)' : 'none',
               cursor: 'pointer',
               border: 'none',
-              transition: 'all 150ms ease'
+              transition: 'all 150ms ease',
+              minHeight: '38px'
             }}
           >
-            Settings
+            Preferences
           </button>
         </div>
 
@@ -199,17 +251,17 @@ export const NotificationDrawer = () => {
             <div>
               {/* Top Action Bar */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Smart Reminders
                 </span>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '12px' }}>
                   {unreadCount > 0 && (
                     <button
                       type="button"
                       onClick={markAllNotifsRead}
                       style={{
-                        fontSize: '11px',
+                        fontSize: '11.5px',
                         color: 'var(--accent-terracotta)',
                         fontWeight: 700,
                         display: 'flex',
@@ -217,20 +269,21 @@ export const NotificationDrawer = () => {
                         gap: '4px',
                         background: 'none',
                         border: 'none',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        padding: '4px 0'
                       }}
                     >
-                      <CheckCheck size={13} />
+                      <CheckCheck size={14} />
                       <span>Mark all read</span>
                     </button>
                   )}
 
-                  {notifications.length > 0 && (
+                  {(notifications || []).length > 0 && (
                     <button
                       type="button"
                       onClick={clearAllNotifications}
                       style={{
-                        fontSize: '11px',
+                        fontSize: '11.5px',
                         color: 'var(--text-muted)',
                         fontWeight: 600,
                         display: 'flex',
@@ -238,43 +291,44 @@ export const NotificationDrawer = () => {
                         gap: '4px',
                         background: 'none',
                         border: 'none',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        padding: '4px 0'
                       }}
                     >
-                      <Trash2 size={12} />
-                      <span>Clear</span>
+                      <Trash2 size={13} />
+                      <span>Clear all</span>
                     </button>
                   )}
                 </div>
               </div>
 
               {/* Empty State */}
-              {notifications.length === 0 ? (
+              {(!notifications || notifications.length === 0) ? (
                 <div style={{ textAlign: 'center', padding: '36px 16px' }}>
                   <div style={{
-                    width: '44px',
-                    height: '44px',
+                    width: '48px',
+                    height: '48px',
                     borderRadius: '50%',
                     backgroundColor: 'var(--bg-warm-cream-alt)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: 'var(--text-muted)',
-                    margin: '0 auto 10px auto'
+                    margin: '0 auto 12px auto'
                   }}>
-                    <Bell size={20} />
+                    <Bell size={22} />
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-charcoal)', marginBottom: '4px' }}>
-                    No notifications yet
-                  </div>
-                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                    NOVARA will proactively remind you when study sessions or revisions are due.
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-charcoal)', margin: '0 0 4px 0' }}>
+                    You're all caught up! ✨
+                  </h3>
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '0 0 16px 0', lineHeight: '1.4' }}>
+                    NOVARA will proactively notify you when study tasks, revisions, or application deadlines require attention.
                   </p>
                   <button
                     type="button"
-                    onClick={() => sendTestNotification('streak')}
+                    onClick={() => sendTestNotification && sendTestNotification('streak')}
                     className="btn-secondary"
-                    style={{ fontSize: '11.5px', padding: '6px 14px' }}
+                    style={{ fontSize: '12px', padding: '8px 16px', borderRadius: 'var(--radius-pill)', minHeight: '40px' }}
                   >
                     Send Test Reminder
                   </button>
@@ -298,18 +352,30 @@ export const NotificationDrawer = () => {
                               backgroundColor: notif.unread ? 'var(--accent-terracotta-light)' : '#FFFFFF',
                               borderColor: notif.unread ? 'rgba(200, 90, 50, 0.35)' : 'var(--border-beige)',
                               position: 'relative',
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              borderLeft: notif.unread ? '4px solid var(--accent-terracotta)' : '1px solid var(--border-beige)'
                             }}
-                            onClick={() => navigateToNotificationTarget(notif)}
+                            onClick={() => navigateToNotificationTarget && navigateToNotificationTarget(notif)}
                           >
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                              <div style={{ marginTop: '2px', flexShrink: 0 }}>
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                backgroundColor: '#FFFFFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                border: '1px solid var(--border-beige-light)',
+                                marginTop: '1px'
+                              }}>
                                 {getNotifIcon(notif.type)}
                               </div>
 
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
-                                  <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)', lineHeight: '1.3' }}>
+                                  <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)', lineHeight: '1.3', margin: 0 }}>
                                     {notif.title}
                                   </h4>
 
@@ -319,27 +385,31 @@ export const NotificationDrawer = () => {
                                     </span>
                                     <button
                                       type="button"
+                                      aria-label="Dismiss notification"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        dismissNotification(notif.id);
+                                        if (dismissNotification) dismissNotification(notif.id);
                                       }}
                                       style={{
                                         border: 'none',
                                         background: 'none',
                                         color: 'var(--text-muted)',
                                         cursor: 'pointer',
-                                        padding: '2px',
+                                        padding: '4px',
                                         display: 'flex',
-                                        alignItems: 'center'
+                                        alignItems: 'center',
+                                        minHeight: '32px',
+                                        minWidth: '32px',
+                                        justifyContent: 'center'
                                       }}
                                       title="Dismiss"
                                     >
-                                      <X size={13} />
+                                      <X size={14} />
                                     </button>
                                   </div>
                                 </div>
 
-                                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: '1.4' }}>
+                                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '3px 0 0 0', lineHeight: '1.4' }}>
                                   {notif.message}
                                 </p>
 
@@ -348,13 +418,13 @@ export const NotificationDrawer = () => {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: '4px',
-                                    fontSize: '11px',
+                                    fontSize: '11.5px',
                                     fontWeight: 700,
                                     color: 'var(--accent-terracotta)',
                                     marginTop: '6px'
                                   }}>
                                     <span>{notif.actionLabel}</span>
-                                    <ArrowRight size={12} />
+                                    <ArrowRight size={13} />
                                   </div>
                                 )}
                               </div>
@@ -381,37 +451,60 @@ export const NotificationDrawer = () => {
                               padding: '12px 14px',
                               backgroundColor: notif.unread ? 'var(--accent-terracotta-light)' : '#FFFFFF',
                               borderColor: notif.unread ? 'rgba(200, 90, 50, 0.35)' : 'var(--border-beige)',
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              borderLeft: notif.unread ? '4px solid var(--accent-terracotta)' : '1px solid var(--border-beige)'
                             }}
-                            onClick={() => navigateToNotificationTarget(notif)}
+                            onClick={() => navigateToNotificationTarget && navigateToNotificationTarget(notif)}
                           >
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                              <div style={{ marginTop: '2px', flexShrink: 0 }}>
+                              <div style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '8px',
+                                backgroundColor: '#FFFFFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                border: '1px solid var(--border-beige-light)',
+                                marginTop: '1px'
+                              }}>
                                 {getNotifIcon(notif.type)}
                               </div>
 
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                  <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
+                                  <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)', margin: 0 }}>
                                     {notif.title}
                                   </h4>
                                   <button
                                     type="button"
+                                    aria-label="Dismiss notification"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      dismissNotification(notif.id);
+                                      if (dismissNotification) dismissNotification(notif.id);
                                     }}
-                                    style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                                    style={{ 
+                                      border: 'none', 
+                                      background: 'none', 
+                                      color: 'var(--text-muted)', 
+                                      cursor: 'pointer',
+                                      minHeight: '32px',
+                                      minWidth: '32px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
                                   >
-                                    <X size={13} />
+                                    <X size={14} />
                                   </button>
                                 </div>
 
-                                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '3px 0 0 0' }}>
                                   {notif.message}
                                 </p>
 
-                                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
                                   {notif.time}
                                 </div>
                               </div>
@@ -426,7 +519,7 @@ export const NotificationDrawer = () => {
             </div>
           ) : (
             /* ===============================================================
-               SETTINGS TAB: REAL REMINDER TIMES & BROWSER PERMISSIONS
+               SETTINGS / PREFERENCES TAB
                =============================================================== */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {/* Web Push Permission Banner */}
@@ -444,10 +537,10 @@ export const NotificationDrawer = () => {
                     <BellRing size={18} color="var(--accent-terracotta)" style={{ flexShrink: 0, marginTop: '2px' }} />
                     <div>
                       <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
-                        Stay on track with NOVARA
+                        Stay on track with Placement Alerts
                       </div>
-                      <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                        Get reminders for preparation sessions, revisions, and streak protection.
+                      <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+                        Receive browser reminders for daily missions, revisions, and application deadlines.
                       </p>
                     </div>
                   </div>
@@ -457,49 +550,52 @@ export const NotificationDrawer = () => {
                       type="button"
                       onClick={requestBrowserPermission}
                       className="btn-primary"
-                      style={{ padding: '6px 14px', fontSize: '11.5px' }}
+                      style={{ padding: '8px 14px', fontSize: '12px', minHeight: '38px' }}
                     >
-                      Enable Notifications
+                      Enable Push Notifications
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Notification Categories & Custom Native Reminder Times */}
+              {/* Notification Categories & Custom Reminder Times */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {/* 1. Daily Plan Reminder */}
                 <div className="card-white" style={{ padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
+                      <label htmlFor="pref-daily-plan" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', cursor: 'pointer' }}>
                         Daily Plan Reminder
-                      </div>
+                      </label>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                         Sent when your daily mission is ready
                       </div>
                     </div>
                     <input
+                      id="pref-daily-plan"
                       type="checkbox"
-                      checked={notifPreferences.dailyPlanReminder !== false}
+                      checked={notifPreferences?.dailyPlanReminder !== false}
                       onChange={() => handleTogglePref('dailyPlanReminder')}
-                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.15)', cursor: 'pointer' }}
+                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.2)', cursor: 'pointer', minWidth: '20px', minHeight: '20px' }}
                     />
                   </div>
-                  {notifPreferences.dailyPlanReminder !== false && (
+                  {notifPreferences?.dailyPlanReminder !== false && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-beige-light)' }}>
                       <Clock size={13} color="var(--text-muted)" />
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Reminder Time:</span>
+                      <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Reminder Time:</span>
                       <input
                         type="time"
-                        value={notifPreferences.preferredReminderTimes?.dailyPlan || '08:00'}
+                        aria-label="Daily plan reminder time"
+                        value={notifPreferences?.preferredReminderTimes?.dailyPlan || '08:00'}
                         onChange={(e) => handleTimeChange('dailyPlan', e.target.value)}
                         style={{
                           border: '1px solid var(--border-beige)',
                           borderRadius: 'var(--radius-sm)',
-                          padding: '2px 6px',
-                          fontSize: '11.5px',
+                          padding: '4px 8px',
+                          fontSize: '12px',
                           fontWeight: 600,
-                          backgroundColor: 'var(--bg-warm-cream)'
+                          backgroundColor: 'var(--bg-warm-cream)',
+                          minHeight: '32px'
                         }}
                       />
                     </div>
@@ -510,34 +606,37 @@ export const NotificationDrawer = () => {
                 <div className="card-white" style={{ padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
+                      <label htmlFor="pref-study-session" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', cursor: 'pointer' }}>
                         Study Session Reminder
-                      </div>
+                      </label>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                         Warning before scheduled practice sessions
                       </div>
                     </div>
                     <input
+                      id="pref-study-session"
                       type="checkbox"
-                      checked={notifPreferences.studySessionReminder !== false}
+                      checked={notifPreferences?.studySessionReminder !== false}
                       onChange={() => handleTogglePref('studySessionReminder')}
-                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.15)', cursor: 'pointer' }}
+                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.2)', cursor: 'pointer', minWidth: '20px', minHeight: '20px' }}
                     />
                   </div>
-                  {notifPreferences.studySessionReminder !== false && (
+                  {notifPreferences?.studySessionReminder !== false && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-beige-light)' }}>
                       <Clock size={13} color="var(--text-muted)" />
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Notify before:</span>
+                      <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Notify before:</span>
                       <select
-                        value={notifPreferences.preferredReminderTimes?.studySessionMinutesBefore || 15}
-                        onChange={(e) => handleTimeChange('studySessionMinutesBefore', parseInt(e.target.value))}
+                        aria-label="Study session notice interval"
+                        value={notifPreferences?.preferredReminderTimes?.studySessionMinutesBefore || 15}
+                        onChange={(e) => handleTimeChange('studySessionMinutesBefore', parseInt(e.target.value, 10))}
                         style={{
                           border: '1px solid var(--border-beige)',
                           borderRadius: 'var(--radius-sm)',
-                          padding: '2px 6px',
-                          fontSize: '11.5px',
+                          padding: '4px 8px',
+                          fontSize: '12px',
                           fontWeight: 600,
-                          backgroundColor: 'var(--bg-warm-cream)'
+                          backgroundColor: 'var(--bg-warm-cream)',
+                          minHeight: '32px'
                         }}
                       >
                         <option value={10}>10 minutes before</option>
@@ -548,139 +647,107 @@ export const NotificationDrawer = () => {
                   )}
                 </div>
 
-                {/* 3. Unfinished Task Reminder */}
+                {/* 3. Streak Risk Reminder */}
                 <div className="card-white" style={{ padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
-                        Unfinished Task Reminder
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                        Alerts when daily placement tasks remain pending
-                      </div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={notifPreferences.unfinishedTaskReminder !== false}
-                      onChange={() => handleTogglePref('unfinishedTaskReminder')}
-                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.15)', cursor: 'pointer' }}
-                    />
-                  </div>
-                  {notifPreferences.unfinishedTaskReminder !== false && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-beige-light)' }}>
-                      <Clock size={13} color="var(--text-muted)" />
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Reminder Time:</span>
-                      <input
-                        type="time"
-                        value={notifPreferences.preferredReminderTimes?.unfinishedTask || '20:30'}
-                        onChange={(e) => handleTimeChange('unfinishedTask', e.target.value)}
-                        style={{
-                          border: '1px solid var(--border-beige)',
-                          borderRadius: 'var(--radius-sm)',
-                          padding: '2px 6px',
-                          fontSize: '11.5px',
-                          fontWeight: 600,
-                          backgroundColor: 'var(--bg-warm-cream)'
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* 4. Streak Risk Reminder */}
-                <div className="card-white" style={{ padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
+                      <label htmlFor="pref-streak-risk" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', cursor: 'pointer' }}>
                         Streak Risk Reminder
-                      </div>
+                      </label>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                         Alerts before midnight if streak target is unmet
                       </div>
                     </div>
                     <input
+                      id="pref-streak-risk"
                       type="checkbox"
-                      checked={notifPreferences.streakRiskReminder !== false}
+                      checked={notifPreferences?.streakRiskReminder !== false}
                       onChange={() => handleTogglePref('streakRiskReminder')}
-                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.15)', cursor: 'pointer' }}
+                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.2)', cursor: 'pointer', minWidth: '20px', minHeight: '20px' }}
                     />
                   </div>
-                  {notifPreferences.streakRiskReminder !== false && (
+                  {notifPreferences?.streakRiskReminder !== false && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-beige-light)' }}>
                       <Clock size={13} color="var(--text-muted)" />
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Reminder Time:</span>
+                      <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Reminder Time:</span>
                       <input
                         type="time"
-                        value={notifPreferences.preferredReminderTimes?.streakRisk || '21:30'}
+                        aria-label="Streak risk reminder time"
+                        value={notifPreferences?.preferredReminderTimes?.streakRisk || '21:30'}
                         onChange={(e) => handleTimeChange('streakRisk', e.target.value)}
                         style={{
                           border: '1px solid var(--border-beige)',
                           borderRadius: 'var(--radius-sm)',
-                          padding: '2px 6px',
-                          fontSize: '11.5px',
+                          padding: '4px 8px',
+                          fontSize: '12px',
                           fontWeight: 600,
-                          backgroundColor: 'var(--bg-warm-cream)'
+                          backgroundColor: 'var(--bg-warm-cream)',
+                          minHeight: '32px'
                         }}
                       />
                     </div>
                   )}
                 </div>
 
-                {/* 5. Revision Reminder */}
+                {/* 4. Revision Reminder */}
                 <div className="card-white" style={{ padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
+                      <label htmlFor="pref-revision" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', cursor: 'pointer' }}>
                         Revision Reminder
-                      </div>
+                      </label>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                         Notifies when topics are due in Spaced Queue
                       </div>
                     </div>
                     <input
+                      id="pref-revision"
                       type="checkbox"
-                      checked={notifPreferences.revisionReminder !== false}
+                      checked={notifPreferences?.revisionReminder !== false}
                       onChange={() => handleTogglePref('revisionReminder')}
-                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.15)', cursor: 'pointer' }}
+                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.2)', cursor: 'pointer', minWidth: '20px', minHeight: '20px' }}
                     />
                   </div>
-                  {notifPreferences.revisionReminder !== false && (
+                  {notifPreferences?.revisionReminder !== false && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-beige-light)' }}>
                       <Clock size={13} color="var(--text-muted)" />
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Reminder Time:</span>
+                      <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Reminder Time:</span>
                       <input
                         type="time"
-                        value={notifPreferences.preferredReminderTimes?.revision || '09:00'}
+                        aria-label="Revision reminder time"
+                        value={notifPreferences?.preferredReminderTimes?.revision || '09:00'}
                         onChange={(e) => handleTimeChange('revision', e.target.value)}
                         style={{
                           border: '1px solid var(--border-beige)',
                           borderRadius: 'var(--radius-sm)',
-                          padding: '2px 6px',
-                          fontSize: '11.5px',
+                          padding: '4px 8px',
+                          fontSize: '12px',
                           fontWeight: 600,
-                          backgroundColor: 'var(--bg-warm-cream)'
+                          backgroundColor: 'var(--bg-warm-cream)',
+                          minHeight: '32px'
                         }}
                       />
                     </div>
                   )}
                 </div>
 
-                {/* 6. Weekly Progress Summary */}
+                {/* 5. Weekly Progress Summary */}
                 <div className="card-white" style={{ padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
+                      <label htmlFor="pref-weekly-summary" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', cursor: 'pointer' }}>
                         Weekly Progress Summary
-                      </div>
+                      </label>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
                         Sunday digest of completed hours & growth
                       </div>
                     </div>
                     <input
+                      id="pref-weekly-summary"
                       type="checkbox"
-                      checked={notifPreferences.weeklySummary !== false}
+                      checked={notifPreferences?.weeklySummary !== false}
                       onChange={() => handleTogglePref('weeklySummary')}
-                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.15)', cursor: 'pointer' }}
+                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.2)', cursor: 'pointer', minWidth: '20px', minHeight: '20px' }}
                     />
                   </div>
                 </div>
@@ -688,33 +755,33 @@ export const NotificationDrawer = () => {
 
               {/* Trigger Test Notification Buttons */}
               <div style={{ marginTop: '10px' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px' }}>
-                  Test Local & Push Delivery
+                <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+                  Test Delivery
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                   <button
                     type="button"
-                    onClick={() => sendTestNotification('plan')}
+                    onClick={() => sendTestNotification && sendTestNotification('plan')}
                     className="btn-secondary"
-                    style={{ fontSize: '11px', padding: '8px 4px' }}
+                    style={{ fontSize: '11.5px', padding: '8px 4px', minHeight: '38px' }}
                   >
                     🎯 Daily Plan
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => sendTestNotification('task')}
+                    onClick={() => sendTestNotification && sendTestNotification('task')}
                     className="btn-secondary"
-                    style={{ fontSize: '11px', padding: '8px 4px' }}
+                    style={{ fontSize: '11.5px', padding: '8px 4px', minHeight: '38px' }}
                   >
                     ⏰ Task Alert
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => sendTestNotification('streak')}
+                    onClick={() => sendTestNotification && sendTestNotification('streak')}
                     className="btn-secondary"
-                    style={{ fontSize: '11px', padding: '8px 4px' }}
+                    style={{ fontSize: '11.5px', padding: '8px 4px', minHeight: '38px' }}
                   >
                     🔥 Streak Risk
                   </button>
