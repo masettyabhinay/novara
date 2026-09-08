@@ -557,6 +557,17 @@ export async function apiMiddlewareHandler(req, res, next) {
             }
           }
 
+          // PUT /api/user/notifications/preferences
+          if (req.method === 'PUT' && pathname === '/api/user/notifications/preferences') {
+            try {
+              const { preferences } = await readBodyJson(req);
+              const updatedPrefs = updateNotificationPreferencesOnServer(authUser.id, preferences || {});
+              return sendJson(res, 200, { success: true, preferences: updatedPrefs }, req);
+            } catch (err) {
+              return sendJson(res, 400, { success: false, error: err.message }, req);
+            }
+          }
+
           // -----------------------------------------------------------------
           // 2.1 AI PLACEMENT COACH ENDPOINTS
           // -----------------------------------------------------------------

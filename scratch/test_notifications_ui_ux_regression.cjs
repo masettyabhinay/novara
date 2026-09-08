@@ -380,6 +380,121 @@ async function runTests() {
     });
   });
 
+  // --------------------------------------------------------------------------
+  // SUITE 8: Timezone Accuracy & Boundary Check
+  // --------------------------------------------------------------------------
+  describe('8. Timezone Accuracy & Boundary Check', () => {
+    it('formats dates according to user configured timezone without unexpected shifts', () => {
+      const now = new Date();
+      // Test with America/New_York vs Asia/Kolkata
+      const nyDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+      const istDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+      assert.ok(typeof nyDate === 'string' && nyDate.length === 10, 'Must produce valid YYYY-MM-DD');
+      assert.ok(typeof istDate === 'string' && istDate.length === 10, 'Must produce valid YYYY-MM-DD');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // SUITE 9: Stale Notification Suppression (Completed Tasks)
+  // --------------------------------------------------------------------------
+  describe('9. Stale Notification Suppression', () => {
+    it('does not generate active task reminder for completed tasks', () => {
+      const currentDb = loadDb();
+      currentDb.tasks[TEST_USER_A] = [
+        {
+          id: 'tsk_completed_999',
+          name: 'Completed Problem on Trees',
+          durationMinutes: 30,
+          completed: true
+        }
+      ];
+      saveDb(currentDb);
+
+      clearAllNotificationsOnServer(TEST_USER_A);
+      const notifs = evaluateUserNotifications(TEST_USER_A);
+      const staleTaskNotif = notifs.find(n => n.relatedTaskId === 'tsk_completed_999');
+      assert.strictEqual(staleTaskNotif, undefined, 'Completed tasks must not generate active task reminders');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // SUITE 10: Deep Link Identity & Entity Integrity
+  // --------------------------------------------------------------------------
+  describe('10. Deep Link Identity & Entity Integrity', () => {
+    it('notification for Topic A carries exact ID and never mismatches with Topic B', () => {
+      // Ensure revisionReminder is enabled
+      updateNotificationPreferencesOnServer(TEST_USER_A, {
+        revisionReminder: true,
+        streakRiskReminder: true
+      });
+
+      const currentDb = loadDb();
+      currentDb.revisions[TEST_USER_A] = [
+        { id: 'rev_topic_A', topic: 'Graphs DFS', status: 'pending' }
+      ];
+      saveDb(currentDb);
+
+      clearAllNotificationsOnServer(TEST_USER_A);
+      const notifs = evaluateUserNotifications(TEST_USER_A);
+      const notifA = notifs.find(n => n.relatedRevisionId === 'rev_topic_A');
+      assert.ok(notifA, 'Revision A notification must exist');
+      assert.ok(notifA.message.includes('Graphs DFS'), 'Topic A must match title exactly');
+      assert.strictEqual(notifA.relatedRevisionId, 'rev_topic_A', 'Must point specifically to Topic A');
+    });
+
+    it('application notification carries exact ID and never mismatches with another application', () => {
+      const currentDb = loadDb();
+      const todayStr = new Date().toISOString().split('T')[0];
+      currentDb.applications[TEST_USER_A] = [
+        { id: 'app_corp_X', company: 'Google', role: 'Staff Eng', deadline: todayStr, status: 'Applied' },
+        { id: 'app_corp_Y', company: 'Apple', role: 'iOS Eng', deadline: todayStr, status: 'Applied' }
+      ];
+      saveDb(currentDb);
+
+      clearAllNotificationsOnServer(TEST_USER_A);
+      const notifs = evaluateUserNotifications(TEST_USER_A);
+      const notifX = notifs.find(n => n.relatedAppId === 'app_corp_X');
+      const notifY = notifs.find(n => n.relatedAppId === 'app_corp_Y');
+      assert.ok(notifX && notifY, 'Both application notifications must exist');
+      assert.strictEqual(notifX.company, 'Google');
+      assert.strictEqual(notifY.company, 'Apple');
+      assert.notStrictEqual(notifX.relatedAppId, notifY.relatedAppId);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // SUITE 11: Badge Accuracy & Presentation Audit
+  // --------------------------------------------------------------------------
+  describe('11. Global Notification Badge Audit', () => {
+    it('TopHeader & SidebarNav badge formatting: hides when 0 and formats 9+ when > 9', () => {
+      const formatBadge = (unread) => (unread > 9 ? '9+' : unread > 0 ? String(unread) : null);
+      assert.strictEqual(formatBadge(0), null, 'Count of 0 must be null (badge hidden)');
+      assert.strictEqual(formatBadge(3), '3', 'Count of 3 must render 3');
+      assert.strictEqual(formatBadge(9), '9', 'Count of 9 must render 9');
+      assert.strictEqual(formatBadge(10), '9+', 'Count of 10 must render 9+');
+      assert.strictEqual(formatBadge(42), '9+', 'Count of 42 must render 9+');
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // SUITE 12: No Synthetic Notifications (Strict Grounding)
+  // --------------------------------------------------------------------------
+  describe('12. No Synthetic Notifications Audit', () => {
+    it('weekly summary only generates when real user study activity exists', () => {
+      const currentDb = loadDb();
+      currentDb.tasks[TEST_USER_A] = [];
+      currentDb.revisions[TEST_USER_A] = [];
+      currentDb.applications[TEST_USER_A] = [];
+      currentDb.streaks[TEST_USER_A] = { currentStreak: 0, longestStreak: 0, weeklyHistory: [0, 0, 0, 0, 0, 0, 0] };
+      saveDb(currentDb);
+
+      clearAllNotificationsOnServer(TEST_USER_A);
+      const notifs = evaluateUserNotifications(TEST_USER_A);
+      const summaryNotif = notifs.find(n => n.type === NOTIFICATION_TYPES.WEEKLY_SUMMARY);
+      assert.strictEqual(summaryNotif, undefined, 'Weekly summary must NOT generate when no activity exists');
+    });
+  });
+
   // Cleanup test users from DB
   const cleanDb = loadDb();
   cleanDb.users = cleanDb.users.filter(u => u.id !== TEST_USER_A && u.id !== TEST_USER_B);

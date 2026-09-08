@@ -54,9 +54,24 @@ export function evaluateUserNotifications(userId, options = {}) {
   const newNotifications = [];
 
   const now = new Date();
-  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-  const curHours = String(now.getHours()).padStart(2, '0');
-  const curMins = String(now.getMinutes()).padStart(2, '0');
+  const timezone = user.timezone || 'UTC';
+  
+  // Format user date string in configured timezone
+  let dateStr;
+  let curHours;
+  let curMins;
+  try {
+    const tzFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' });
+    dateStr = tzFormatter.format(now); // YYYY-MM-DD in user's timezone
+    const timeFormatter = new Intl.DateTimeFormat('en-GB', { timeZone: timezone, hour: '2-digit', minute: '2-digit', hour12: false });
+    const parts = timeFormatter.format(now).split(':');
+    curHours = parts[0] || String(now.getHours()).padStart(2, '0');
+    curMins = parts[1] || String(now.getMinutes()).padStart(2, '0');
+  } catch (e) {
+    dateStr = now.toISOString().split('T')[0];
+    curHours = String(now.getHours()).padStart(2, '0');
+    curMins = String(now.getMinutes()).padStart(2, '0');
+  }
   const curTimeStr = `${curHours}:${curMins}`;
 
   // 1. DAILY PLAN NOTIFICATION
@@ -165,60 +180,30 @@ export function evaluateUserNotifications(userId, options = {}) {
   }
 
   // 5. APPLICATION DEADLINE & INTERVIEW NOTIFICATIONS
-  const userApps = getUserApplicationsFromDb(userId);
-  if (userApps && userApps.length > 0) {
-    userApps.forEach((app) => {
-      // 5.1 Application Deadline Tomorrow
-      if (app.deadline && !['Offer', 'Rejected', 'Withdrawn'].includes(app.status)) {
-        const deadDate = new Date(app.deadline);
-        const diffDays = Math.ceil((deadDate - now) / (1000 * 60 * 60 * 24));
-        if (diffDays >= 0 && diffDays <= 1) {
-          const dedupKey = `app-deadline-${app.id}-${app.deadline}`;
-          if (!existingIds.has(dedupKey)) {
-            newNotifications.push({
-              id: `notif-${Date.now()}-dead-${app.id}`,
-              dedupKey,
-              userId,
-              type: NOTIFICATION_TYPES.APPLICATION_DEADLINE,
-              icon: '💼',
-              title: diffDays === 0 ? 'Application deadline today 💼' : 'Application deadline tomorrow 💼',
-              message: `${app.company} (${app.role}) deadline is ${diffDays === 0 ? 'today' : 'tomorrow'}. Complete your application.`,
-              actionLabel: 'View Application',
-              actionRoute: 'applications',
-              relatedAppId: app.id,
-              company: app.company,
-              role: app.role,
-              time: diffDays === 0 ? 'Today' : 'Tomorrow',
-              createdAt: new Date().toISOString(),
-              unread: true
-            });
-            existingIds.add(dedupKey);
-          }
-        }
-      }
-
-      // 5.2 Scheduled Interview Reminder (Tomorrow or Today)
-      (app.interviews || []).forEach((intItem) => {
-        if (intItem.status === 'scheduled' && intItem.scheduledAt) {
-          const intDate = new Date(intItem.scheduledAt);
-          const diffDays = Math.ceil((intDate - now) / (1000 * 60 * 60 * 24));
+  if (prefs.applicationAlerts !== false) {
+    const userApps = getUserApplicationsFromDb(userId);
+    if (userApps && userApps.length > 0) {
+      userApps.forEach((app) => {
+        // 5.1 Application Deadline Tomorrow
+        if (app.deadline && !['Offer', 'Rejected', 'Withdrawn'].includes(app.status)) {
+          const deadDate = new Date(app.deadline);
+          const diffDays = Math.ceil((deadDate - now) / (1000 * 60 * 60 * 24));
           if (diffDays >= 0 && diffDays <= 1) {
-            const timeStr = intDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const dedupKey = `int-reminder-${intItem.id}-${diffDays}`;
+            const dedupKey = `app-deadline-${app.id}-${app.deadline}`;
             if (!existingIds.has(dedupKey)) {
               newNotifications.push({
-                id: `notif-${Date.now()}-int-${intItem.id}`,
+                id: `notif-${Date.now()}-dead-${app.id}`,
                 dedupKey,
                 userId,
-                type: NOTIFICATION_TYPES.INTERVIEW_SCHEDULED,
-                icon: '🎯',
-                title: `${intItem.type || 'Technical'} Interview ${diffDays === 0 ? 'today' : 'tomorrow'} 🎯`,
-                message: `${app.company} ${intItem.title || intItem.type} scheduled at ${timeStr}. Prepare for your upcoming round.`,
+                type: NOTIFICATION_TYPES.APPLICATION_DEADLINE,
+                icon: '💼',
+                title: diffDays === 0 ? 'Application deadline today 💼' : 'Application deadline tomorrow 💼',
+                message: `${app.company} (${app.role}) deadline is ${diffDays === 0 ? 'today' : 'tomorrow'}. Complete your application.`,
                 actionLabel: 'View Application',
                 actionRoute: 'applications',
                 relatedAppId: app.id,
-                relatedInterviewId: intItem.id,
                 company: app.company,
+                role: app.role,
                 time: diffDays === 0 ? 'Today' : 'Tomorrow',
                 createdAt: new Date().toISOString(),
                 unread: true
@@ -227,34 +212,75 @@ export function evaluateUserNotifications(userId, options = {}) {
             }
           }
         }
+
+        // 5.2 Scheduled Interview Reminder (Tomorrow or Today)
+        (app.interviews || []).forEach((intItem) => {
+          if (intItem.status === 'scheduled' && intItem.scheduledAt) {
+            const intDate = new Date(intItem.scheduledAt);
+            const diffDays = Math.ceil((intDate - now) / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 1) {
+              const timeStr = intDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const dedupKey = `int-reminder-${intItem.id}-${diffDays}`;
+              if (!existingIds.has(dedupKey)) {
+                newNotifications.push({
+                  id: `notif-${Date.now()}-int-${intItem.id}`,
+                  dedupKey,
+                  userId,
+                  type: NOTIFICATION_TYPES.INTERVIEW_SCHEDULED,
+                  icon: '🎯',
+                  title: `${intItem.type || 'Technical'} Interview ${diffDays === 0 ? 'today' : 'tomorrow'} 🎯`,
+                  message: `${app.company} ${intItem.title || intItem.type} scheduled at ${timeStr}. Prepare for your upcoming round.`,
+                  actionLabel: 'View Application',
+                  actionRoute: 'applications',
+                  relatedAppId: app.id,
+                  relatedInterviewId: intItem.id,
+                  company: app.company,
+                  time: diffDays === 0 ? 'Today' : 'Tomorrow',
+                  createdAt: new Date().toISOString(),
+                  unread: true
+                });
+                existingIds.add(dedupKey);
+              }
+            }
+          }
+        });
       });
-    });
+    }
   }
 
-  // 6. WEEKLY SUMMARY NOTIFICATION
+  // 6. WEEKLY SUMMARY NOTIFICATION (Only when real activity exists)
   if (prefs.weeklySummary !== false) {
     const weekNumber = Math.ceil(now.getDate() / 7);
     const dedupKey = `weekly-summary-${now.getFullYear()}-W${weekNumber}`;
     if (!existingIds.has(dedupKey)) {
-      const completedTopics = roadmap?.phases?.reduce((acc, p) => acc + (p.topics?.filter(t => t.status === 'completed').length || 0), 0) || 8;
-      const totalTopics = roadmap?.phases?.reduce((acc, p) => acc + (p.topics?.length || 0), 0) || 17;
-      const progressPct = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 47;
+      const realCompletedTasks = tasks.filter((t) => t.completed).length;
+      const historyTotalMinutes = (streak.weeklyHistory || []).reduce((acc, d) => acc + (d.minutesStudied || 0), 0);
+      const tasksMinutes = tasks.filter((t) => t.completed).reduce((acc, t) => acc + (t.durationMinutes || 30), 0);
+      const totalMinutes = Math.max(historyTotalMinutes, tasksMinutes);
+      const totalHoursStudied = (totalMinutes / 60).toFixed(1);
 
-      newNotifications.push({
-        id: `notif-${Date.now()}-weekly`,
-        dedupKey,
-        userId,
-        type: NOTIFICATION_TYPES.WEEKLY_SUMMARY,
-        icon: '📊',
-        title: 'Your week with NOVARA 📊',
-        message: `18 tasks completed • 8.5 hours studied • Roadmap: ${progressPct}%`,
-        actionLabel: 'View Progress',
-        actionRoute: 'progress',
-        time: 'Yesterday',
-        createdAt: new Date(Date.now() - 86400000).toISOString(),
-        unread: false
-      });
-      existingIds.add(dedupKey);
+      const completedTopics = roadmap?.phases?.reduce((acc, p) => acc + (p.topics?.filter(t => t.status === 'completed').length || 0), 0) || 0;
+      const totalTopics = roadmap?.phases?.reduce((acc, p) => acc + (p.topics?.length || 0), 0) || 0;
+      const progressPct = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+
+      // Only generate if user actually has tasks or studied activity
+      if (realCompletedTasks > 0 || totalMinutes > 0 || completedTopics > 0) {
+        newNotifications.push({
+          id: `notif-${Date.now()}-weekly`,
+          dedupKey,
+          userId,
+          type: NOTIFICATION_TYPES.WEEKLY_SUMMARY,
+          icon: '📊',
+          title: 'Your week with NOVARA 📊',
+          message: `${realCompletedTasks} task${realCompletedTasks === 1 ? '' : 's'} completed • ${totalHoursStudied} hours studied • Roadmap: ${progressPct}%`,
+          actionLabel: 'View Progress',
+          actionRoute: 'progress',
+          time: 'Yesterday',
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          unread: false
+        });
+        existingIds.add(dedupKey);
+      }
     }
   }
 

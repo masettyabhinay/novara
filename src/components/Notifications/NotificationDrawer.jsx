@@ -141,7 +141,7 @@ export const NotificationDrawer = () => {
         }}
       >
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
               width: '36px',
@@ -160,9 +160,40 @@ export const NotificationDrawer = () => {
               <h2 id="notif-drawer-title" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-charcoal)', lineHeight: '1.2', margin: 0 }}>
                 Notifications
               </h2>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                {unreadCount > 0 ? `${unreadCount} unread update${unreadCount > 1 ? 's' : ''}` : 'All caught up'}
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                <span style={{ 
+                  fontSize: '11.5px', 
+                  fontWeight: unreadCount > 0 ? 700 : 500,
+                  color: unreadCount > 0 ? 'var(--accent-terracotta)' : 'var(--text-muted)' 
+                }}>
+                  {unreadCount > 0 ? `${unreadCount} unread` : "You're all caught up"}
+                </span>
+                {unreadCount > 0 && activeTab === 'notifications' && (
+                  <>
+                    <span style={{ color: 'var(--border-beige-dark)', fontSize: '10px' }}>•</span>
+                    <button
+                      type="button"
+                      onClick={markAllNotifsRead}
+                      style={{
+                        fontSize: '11.5px',
+                        color: 'var(--accent-terracotta)',
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '0',
+                        minHeight: '28px'
+                      }}
+                    >
+                      <CheckCheck size={13} />
+                      <span>Mark all as read</span>
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -171,8 +202,8 @@ export const NotificationDrawer = () => {
             onClick={handleClose}
             aria-label="Close notification drawer"
             style={{
-              width: '36px',
-              height: '36px',
+              width: '44px',
+              height: '44px',
               borderRadius: '50%',
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-beige)',
@@ -182,67 +213,108 @@ export const NotificationDrawer = () => {
               color: 'var(--text-secondary)',
               cursor: 'pointer',
               minHeight: '44px',
-              minWidth: '44px'
+              minWidth: '44px',
+              flexShrink: 0
             }}
           >
-            <X size={17} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Tab Switcher: Activity & Settings */}
+        {/* Navigation & Controls Bar: Tabs & Clear */}
         <div style={{
           display: 'flex',
-          backgroundColor: 'var(--bg-warm-cream-alt)',
-          borderRadius: 'var(--radius-pill)',
-          padding: '4px',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
           marginBottom: '14px',
           flexShrink: 0
-        }} role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'notifications'}
-            onClick={() => setActiveTab('notifications')}
-            style={{
-              flex: 1,
-              padding: '8px 0',
-              borderRadius: 'var(--radius-pill)',
-              fontSize: '12.5px',
-              fontWeight: 700,
-              backgroundColor: activeTab === 'notifications' ? '#FFFFFF' : 'transparent',
-              color: activeTab === 'notifications' ? 'var(--text-charcoal)' : 'var(--text-secondary)',
-              boxShadow: activeTab === 'notifications' ? 'var(--shadow-sm)' : 'none',
-              cursor: 'pointer',
-              border: 'none',
-              transition: 'all 150ms ease',
-              minHeight: '38px'
-            }}
-          >
-            Activity {unreadCount > 0 && <span style={{ color: 'var(--accent-terracotta)', fontWeight: 800 }}>({unreadCount})</span>}
-          </button>
+        }}>
+          <div style={{
+            display: 'flex',
+            backgroundColor: 'var(--bg-warm-cream-alt)',
+            borderRadius: 'var(--radius-pill)',
+            padding: '3px',
+            flex: 1
+          }} role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'notifications'}
+              onClick={() => setActiveTab('notifications')}
+              style={{
+                flex: 1,
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-pill)',
+                fontSize: '12px',
+                fontWeight: 700,
+                backgroundColor: activeTab === 'notifications' ? '#FFFFFF' : 'transparent',
+                color: activeTab === 'notifications' ? 'var(--text-charcoal)' : 'var(--text-secondary)',
+                boxShadow: activeTab === 'notifications' ? 'var(--shadow-sm)' : 'none',
+                cursor: 'pointer',
+                border: 'none',
+                transition: 'all 150ms ease',
+                minHeight: '36px'
+              }}
+            >
+              Activity {unreadCount > 0 && <span style={{ color: 'var(--accent-terracotta)', fontWeight: 800 }}>({unreadCount})</span>}
+            </button>
 
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'settings'}
-            onClick={() => setActiveTab('settings')}
-            style={{
-              flex: 1,
-              padding: '8px 0',
-              borderRadius: 'var(--radius-pill)',
-              fontSize: '12.5px',
-              fontWeight: 700,
-              backgroundColor: activeTab === 'settings' ? '#FFFFFF' : 'transparent',
-              color: activeTab === 'settings' ? 'var(--text-charcoal)' : 'var(--text-secondary)',
-              boxShadow: activeTab === 'settings' ? 'var(--shadow-sm)' : 'none',
-              cursor: 'pointer',
-              border: 'none',
-              transition: 'all 150ms ease',
-              minHeight: '38px'
-            }}
-          >
-            Preferences
-          </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'settings'}
+              onClick={() => setActiveTab('settings')}
+              style={{
+                flex: 1,
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-pill)',
+                fontSize: '12px',
+                fontWeight: 700,
+                backgroundColor: activeTab === 'settings' ? '#FFFFFF' : 'transparent',
+                color: activeTab === 'settings' ? 'var(--text-charcoal)' : 'var(--text-secondary)',
+                boxShadow: activeTab === 'settings' ? 'var(--shadow-sm)' : 'none',
+                cursor: 'pointer',
+                border: 'none',
+                transition: 'all 150ms ease',
+                minHeight: '36px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '5px'
+              }}
+            >
+              <Sliders size={13} />
+              <span>Preferences</span>
+            </button>
+          </div>
+
+          {activeTab === 'notifications' && (notifications || []).length > 0 && (
+            <button
+              type="button"
+              onClick={clearAllNotifications}
+              title="Clear all notifications"
+              aria-label="Clear all notifications"
+              style={{
+                fontSize: '11px',
+                color: 'var(--text-muted)',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                backgroundColor: '#FFFFFF',
+                border: '1px solid var(--border-beige)',
+                borderRadius: 'var(--radius-pill)',
+                cursor: 'pointer',
+                padding: '6px 10px',
+                minHeight: '36px',
+                flexShrink: 0
+              }}
+            >
+              <Trash2 size={12} />
+              <span>Clear all</span>
+            </button>
+          )}
         </div>
 
         {/* Scrollable Body */}
@@ -395,12 +467,14 @@ export const NotificationDrawer = () => {
                                         background: 'none',
                                         color: 'var(--text-muted)',
                                         cursor: 'pointer',
-                                        padding: '4px',
+                                        padding: '10px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        minHeight: '32px',
-                                        minWidth: '32px',
-                                        justifyContent: 'center'
+                                        minHeight: '44px',
+                                        minWidth: '44px',
+                                        justifyContent: 'center',
+                                        borderRadius: 'var(--radius-pill)',
+                                        margin: '-6px -8px -6px 0'
                                       }}
                                       title="Dismiss"
                                     >
@@ -489,11 +563,14 @@ export const NotificationDrawer = () => {
                                       background: 'none', 
                                       color: 'var(--text-muted)', 
                                       cursor: 'pointer',
-                                      minHeight: '32px',
-                                      minWidth: '32px',
+                                      padding: '10px',
+                                      minHeight: '44px',
+                                      minWidth: '44px',
                                       display: 'flex',
                                       alignItems: 'center',
-                                      justifyContent: 'center'
+                                      justifyContent: 'center',
+                                      borderRadius: 'var(--radius-pill)',
+                                      margin: '-6px -8px -6px 0'
                                     }}
                                   >
                                     <X size={14} />
@@ -731,7 +808,28 @@ export const NotificationDrawer = () => {
                   )}
                 </div>
 
-                {/* 5. Weekly Progress Summary */}
+                {/* 5. Application & Interview Alerts */}
+                <div className="card-white" style={{ padding: '12px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div>
+                      <label htmlFor="pref-application-alerts" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', cursor: 'pointer' }}>
+                        Application & Interview Alerts
+                      </label>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                        Reminders for upcoming application deadlines & interviews
+                      </div>
+                    </div>
+                    <input
+                      id="pref-application-alerts"
+                      type="checkbox"
+                      checked={notifPreferences?.applicationAlerts !== false}
+                      onChange={() => handleTogglePref('applicationAlerts')}
+                      style={{ accentColor: 'var(--accent-terracotta)', transform: 'scale(1.2)', cursor: 'pointer', minWidth: '20px', minHeight: '20px' }}
+                    />
+                  </div>
+                </div>
+
+                {/* 6. Weekly Progress Summary */}
                 <div className="card-white" style={{ padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>

@@ -210,16 +210,29 @@ export const TopHeader = () => {
         >
           <Bell size={16} />
           {unreadCount > 0 && (
-            <span style={{
-              position: 'absolute',
-              top: '4px',
-              right: '4px',
-              width: '7px',
-              height: '7px',
-              borderRadius: '50%',
-              backgroundColor: 'var(--accent-terracotta)',
-              boxShadow: '0 0 0 2px #FFFFFF'
-            }} />
+            <span 
+              aria-label={`${unreadCount} unread notifications`}
+              style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-2px',
+                minWidth: '16px',
+                height: '16px',
+                padding: '0 4px',
+                borderRadius: '9999px',
+                backgroundColor: 'var(--accent-terracotta)',
+                color: '#FFFFFF',
+                fontSize: '9.5px',
+                fontWeight: 800,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 0 0 2px #FFFFFF',
+                lineHeight: 1
+              }}
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
           )}
         </button>
 

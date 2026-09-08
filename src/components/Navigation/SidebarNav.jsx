@@ -252,15 +252,29 @@ export const SidebarNav = () => {
           >
             <Bell size={15} />
             {unreadCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '2px',
-                right: '2px',
-                width: '7px',
-                height: '7px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--accent-terracotta)'
-              }} />
+              <span 
+                aria-label={`${unreadCount} unread notifications`}
+                style={{
+                  position: 'absolute',
+                  top: '-3px',
+                  right: '-3px',
+                  minWidth: '15px',
+                  height: '15px',
+                  padding: '0 3px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--accent-terracotta)',
+                  color: '#FFFFFF',
+                  fontSize: '9px',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 0 0 1.5px #FFFFFF',
+                  lineHeight: 1
+                }}
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             )}
           </button>
         </div>

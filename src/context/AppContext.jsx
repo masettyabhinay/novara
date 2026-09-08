@@ -1490,7 +1490,7 @@ export const AppProvider = ({ children }) => {
       return;
     }
 
-    if (notif.actionRoute === 'interview') {
+    if (notif.actionRoute === 'interview' || notif.actionRoute === 'mock-interview' || notif.type === 'MOCK_INTERVIEW') {
       setActiveTab('interview');
       return;
     }
