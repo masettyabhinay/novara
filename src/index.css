@@ -581,3 +581,37 @@ button {
   }
 }
 
+/* Floating Active Task Bar responsive placement & interactions */
+.floating-active-task-bar-root {
+  transition: transform 200ms ease, opacity 200ms ease;
+  pointer-events: auto;
+}
+
+.floating-active-task-bar-card {
+  transition: transform 140ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.floating-active-task-bar-card:hover {
+  transform: translateY(-2px);
+}
+
+.floating-bar-toggle-btn:hover {
+  transform: scale(1.06);
+}
+
+.floating-bar-toggle-btn:active {
+  transform: scale(0.94);
+}
+
+/* On Desktop (min-width: 900px), dock floating task bar neatly in bottom right */
+@media (min-width: 900px) {
+  .floating-active-task-bar-root {
+    left: auto !important;
+    right: 28px !important;
+    bottom: 24px !important;
+    width: 360px !important;
+    max-width: 360px !important;
+    margin: 0 !important;
+  }
+}
+

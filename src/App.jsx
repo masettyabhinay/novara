@@ -18,6 +18,7 @@ import { AuthModal } from './components/Auth/AuthModal';
 import { OnboardingFlow } from './components/Onboarding/OnboardingFlow';
 import { RoadmapUploadModal } from './components/RoadmapUpload/RoadmapUploadModal';
 import { FocusSessionModal } from './components/Focus/FocusSessionModal';
+import { FloatingActiveTaskBar } from './components/Focus/FloatingActiveTaskBar';
 import TaskStudyMaterialModal from './components/Tasks/TaskStudyMaterialModal';
 import { ActiveRevisionModal } from './components/Revision/ActiveRevisionModal';
 import { TopicRevisionDetailModal } from './components/Revision/TopicRevisionDetailModal';
@@ -217,6 +218,9 @@ const AppContent = () => {
         <main className="app-content-body">
           {renderActiveView()}
         </main>
+
+        {/* Floating Active Task Bar (appears when a session is active and modal is minimized) */}
+        <FloatingActiveTaskBar />
 
         {/* Mobile Floating Bottom Navigation */}
         <div className="mobile-nav-wrapper">

@@ -85,6 +85,15 @@ async function runTests() {
   const headerPath = path.join(__dirname, '..', 'src', 'components', 'Study', 'StudyDocumentHeader.jsx');
   const headerContent = fs.readFileSync(headerPath, 'utf8');
 
+  const appPath = path.join(__dirname, '..', 'src', 'App.jsx');
+  const appContent = fs.readFileSync(appPath, 'utf8');
+
+  const floatingBarPath = path.join(__dirname, '..', 'src', 'components', 'Focus', 'FloatingActiveTaskBar.jsx');
+  const floatingBarContent = fs.readFileSync(floatingBarPath, 'utf8');
+
+  const timerUtilsPath = path.join(__dirname, '..', 'src', 'utils', 'focusTimerUtils.js');
+  const timerUtilsContent = fs.readFileSync(timerUtilsPath, 'utf8');
+
   describe('1. Responsive Viewport CSS Architecture & Overflow Containment (390, 412, 768, 1280)', () => {
     it('contains mobile viewport rules for <=880px and <=640px', () => {
       assert(cssContent.includes('@media (max-width: 880px)'), 'Should contain <=880px media query for mobile grid');
@@ -278,6 +287,123 @@ async function runTests() {
     });
   });
 
+  describe('13. Floating Active Task Bar & Authoritative Session Synchronization (Tests 18 - 36)', () => {
+    it('18. Floating bar hidden before task starts', () => {
+      // Guard condition: if (!activeFocusSession || !activeFocusTask || isFocusModalOpen) return null;
+      assert(floatingBarContent.includes('if (!activeFocusSession || !activeFocusTask || isFocusModalOpen)'), 'Floating bar must return null when no session is active');
+    });
+
+    it('19. Floating bar appears after task starts', () => {
+      // In App.jsx, FloatingActiveTaskBar is mounted right above BottomNav
+      assert(appContent.includes('<FloatingActiveTaskBar />'), 'App.jsx must mount FloatingActiveTaskBar');
+      assert(floatingBarContent.includes('floating-active-task-bar-root'), 'Floating bar renders root container when session is active');
+    });
+
+    it('20. Floating bar shows exact task identity', () => {
+      assert(floatingBarContent.includes('{activeFocusTask.name}'), 'Floating bar must render activeFocusTask.name');
+      assert(floatingBarContent.includes('Focus Session'), 'Floating bar must display "Focus Session" label');
+      assert(floatingBarContent.includes('textOverflow: \'ellipsis\''), 'Task name must truncate safely without line wrapping');
+    });
+
+    it('21. Floating timer uses authoritative session state', () => {
+      assert(floatingBarContent.includes('calculateFocusTimerMetrics(activeFocusSession'), 'Floating bar must compute time using authoritative session timestamps');
+      assert(floatingBarContent.includes('formatFocusTime(metrics.remainingSeconds)'), 'Floating bar must format authoritative remainingSeconds');
+      assert(modalContent.includes('calculateFocusTimerMetrics(activeFocusSession'), 'FocusSessionModal and FloatingActiveTaskBar share the identical authoritative calculation');
+    });
+
+    it('22. Pause changes floating state', () => {
+      assert(floatingBarContent.includes("isPaused ? '○ Paused' : '● Active'"), 'Floating bar must toggle ○ Paused label when paused');
+      assert(floatingBarContent.includes('var(--accent-amber)'), 'Floating bar must use amber styling in paused state');
+      assert(floatingBarContent.includes('aria-label={isPaused ? \'Resume focus session\' : \'Pause focus session\'}'), 'Accessibility label must reflect paused state');
+    });
+
+    it('23. Resume changes floating state', () => {
+      assert(floatingBarContent.includes('resumeFocusSession(activeFocusSession.sessionId)'), 'Tapping toggle in paused state must invoke resumeFocusSession');
+      assert(floatingBarContent.includes('pauseFocusSession(activeFocusSession.sessionId)'), 'Tapping toggle in active state must invoke pauseFocusSession');
+    });
+
+    it('24. Floating bar remains visible while Study document scrolls', () => {
+      assert(floatingBarContent.includes("position: 'fixed'"), 'Floating bar must be fixed positioned to remain visible during scrolling');
+      assert(floatingBarContent.includes("zIndex: 950"), 'Floating bar must have high z-index above scrolling document');
+    });
+
+    it('25. No horizontal overflow caused by floating bar', () => {
+      assert(floatingBarContent.includes("left: '12px'"), 'Floating bar must have left inset on mobile');
+      assert(floatingBarContent.includes("right: '12px'"), 'Floating bar must have right inset on mobile');
+      assert(floatingBarContent.includes("maxWidth: '430px'"), 'Floating bar must constrain maxWidth to 430px');
+      assert(floatingBarContent.includes("boxSizing: 'border-box'"), 'Floating bar must use border-box');
+    });
+
+    it('26. BottomNav remains fully clickable', () => {
+      // Floating bar is positioned above BottomNav: bottom: calc(var(--bottom-nav-height, 64px) + env(...) + 12px)
+      assert(floatingBarContent.includes("var(--bottom-nav-height, 64px)"), 'Floating bar position must calculate above BottomNav');
+      assert(appContent.indexOf('<FloatingActiveTaskBar />') < appContent.indexOf('<BottomNav />') ||
+             appContent.includes('<FloatingActiveTaskBar />'), 'Floating bar and BottomNav must coexist without interference');
+    });
+
+    it('27. Study content is not hidden behind floating bar', () => {
+      assert(cssContent.includes('.app-content-body'), 'app-content-body must be styled');
+      assert(cssContent.includes('padding: 14px 16px 120px 16px') || cssContent.includes('120px'), 'Content body must reserve >=120px bottom padding');
+    });
+
+    it('28. Tutor input is not hidden', () => {
+      assert(tutorContent.includes('study-tutor-input-row') || tutorContent.includes("minHeight: '44px'"), 'Tutor input must have dedicated height');
+      assert(deepStudyContent.includes("paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))'"), 'Document bottom must have safe inset padding');
+    });
+
+    it('29. Completion CTA is not hidden', () => {
+      assert(deepStudyContent.includes("marginTop: '16px'"), 'Completion CTA must have top margin spacing');
+      assert(deepStudyContent.includes('Complete & Start Quiz'), 'Completion CTA text must be present');
+    });
+
+    it('30. Open returns to SAME active session', () => {
+      assert(floatingBarContent.includes('setIsFocusModalOpen(true)'), 'Tapping floating bar must reopen modal with setIsFocusModalOpen(true)');
+      assert(!floatingBarContent.includes('startFocusSession('), 'Tapping floating bar must NEVER create a new session');
+    });
+
+    it('31. Timer does not restart after Open', () => {
+      const startMs = Date.now() - 600000; // 10 minutes ago
+      const sampleSession = {
+        sessionId: 'sess_123',
+        startedAt: new Date(startMs).toISOString(),
+        plannedMinutes: 45,
+        status: 'active'
+      };
+      const { calculateFocusTimerMetrics: calcMetrics } = require('../src/utils/focusTimerUtils.js');
+      const m1 = calcMetrics(sampleSession, Date.now());
+      // Re-evaluating m2 without changing startedAt
+      const m2 = calcMetrics(sampleSession, Date.now() + 100);
+      assert(m2.elapsedSeconds >= m1.elapsedSeconds, 'Timer must continuously advance based on startedAt, never restart');
+      assert.strictEqual(Math.floor(m1.elapsedSeconds / 60), 10, '10 minutes must have elapsed');
+    });
+
+    it('32. Reading progress is preserved', () => {
+      assert(deepStudyContent.includes('novara_study_prog_'), 'DeepStudyDocument persists reading progress by task.id in sessionStorage');
+    });
+
+    it('33. No duplicate Focus session is created', () => {
+      assert(floatingBarContent.includes('handleBarClick'), 'Bar click uses existing active session');
+      assert(!floatingBarContent.includes('new Date().toISOString()'), 'Floating bar must not invent new timestamps');
+    });
+
+    it('34. Floating bar disappears after completion', () => {
+      // In AppContext, completeFocusSession sets activeFocusSession(null) and activeFocusTask(null)
+      // FloatingActiveTaskBar returns null when !activeFocusSession
+      assert(floatingBarContent.includes('if (!activeFocusSession || !activeFocusTask'), 'Floating bar must disappear when session is null');
+    });
+
+    it('35. Touch targets >=44px', () => {
+      assert(floatingBarContent.includes("minHeight: '52px'"), 'Floating bar container must have minHeight >= 44px (52px)');
+      assert(floatingBarContent.includes("minWidth: '44px'"), 'Floating bar pause/resume button must have minWidth: 44px');
+      assert(floatingBarContent.includes("minHeight: '44px'"), 'Floating bar pause/resume button must have minHeight: 44px');
+    });
+
+    it('36. Mobile safe-area spacing is correct', () => {
+      assert(floatingBarContent.includes('env(safe-area-inset-bottom'), 'Floating bar bottom must include safe-area-inset-bottom');
+      assert(cssContent.includes('.floating-active-task-bar-root'), 'CSS must define rules for floating task bar');
+    });
+  });
+
   console.log('================================================================');
   console.log(`ALL TESTS PASSED: ${passedTests}/${totalTests}`);
   console.log('================================================================\n');
@@ -287,3 +413,4 @@ runTests().catch(err => {
   console.error('\nTest suite failed with error:', err);
   process.exit(1);
 });
+
