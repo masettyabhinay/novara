@@ -160,40 +160,6 @@ export const NotificationDrawer = () => {
               <h2 id="notif-drawer-title" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-charcoal)', lineHeight: '1.2', margin: 0 }}>
                 Notifications
               </h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                <span style={{ 
-                  fontSize: '11.5px', 
-                  fontWeight: unreadCount > 0 ? 700 : 500,
-                  color: unreadCount > 0 ? 'var(--accent-terracotta)' : 'var(--text-muted)' 
-                }}>
-                  {unreadCount > 0 ? `${unreadCount} unread` : "You're all caught up"}
-                </span>
-                {unreadCount > 0 && activeTab === 'notifications' && (
-                  <>
-                    <span style={{ color: 'var(--border-beige-dark)', fontSize: '10px' }}>•</span>
-                    <button
-                      type="button"
-                      onClick={markAllNotifsRead}
-                      style={{
-                        fontSize: '11.5px',
-                        color: 'var(--accent-terracotta)',
-                        fontWeight: 700,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '0',
-                        minHeight: '28px'
-                      }}
-                    >
-                      <CheckCheck size={13} />
-                      <span>Mark all as read</span>
-                    </button>
-                  </>
-                )}
-              </div>
             </div>
           </div>
 
@@ -218,6 +184,76 @@ export const NotificationDrawer = () => {
             }}
           >
             <X size={18} />
+          </button>
+        </div>
+
+        {/* Subheader: unread count • Mark all as read • Notification preferences */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '8px',
+          padding: '8px 12px',
+          backgroundColor: 'var(--bg-warm-cream)',
+          borderRadius: 'var(--radius-md)',
+          marginBottom: '14px',
+          flexShrink: 0
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ 
+              fontSize: '12px', 
+              fontWeight: unreadCount > 0 ? 800 : 600,
+              color: unreadCount > 0 ? 'var(--accent-terracotta)' : 'var(--text-muted)' 
+            }}>
+              {unreadCount > 0 ? `${unreadCount} unread` : "0 unread (Caught up ✨)"}
+            </span>
+
+            {unreadCount > 0 && (
+              <>
+                <span style={{ color: 'var(--border-beige-dark)', fontSize: '10px' }}>•</span>
+                <button
+                  type="button"
+                  onClick={markAllNotifsRead}
+                  style={{
+                    fontSize: '12px',
+                    color: 'var(--accent-terracotta)',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '2px 4px',
+                    minHeight: '28px'
+                  }}
+                >
+                  <CheckCheck size={13} />
+                  <span>Mark all as read</span>
+                </button>
+              </>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab(activeTab === 'settings' ? 'notifications' : 'settings')}
+            style={{
+              fontSize: '11.5px',
+              fontWeight: 700,
+              color: activeTab === 'settings' ? 'var(--accent-terracotta)' : 'var(--text-secondary)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px 4px'
+            }}
+          >
+            <Sliders size={13} />
+            <span>{activeTab === 'settings' ? 'View activity' : 'Preferences'}</span>
           </button>
         </div>
 
