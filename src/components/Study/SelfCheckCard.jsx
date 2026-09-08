@@ -9,7 +9,7 @@ export default function SelfCheckCard({ questions = [] }) {
   if (!Array.isArray(questions) || questions.length === 0) return null;
 
   return (
-    <div style={{ margin: '18px 0' }}>
+    <div style={{ margin: '18px 0', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -19,13 +19,14 @@ export default function SelfCheckCard({ questions = [] }) {
         textTransform: 'uppercase',
         letterSpacing: '0.04em',
         color: 'var(--text-charcoal)',
-        marginBottom: '10px'
+        marginBottom: '10px',
+        flexWrap: 'wrap'
       }}>
-        <HelpCircle size={15} color="#C85A32" />
+        <HelpCircle size={15} color="#C85A32" style={{ flexShrink: 0 }} />
         <span>Self-Check & Concept Verification</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
         {questions.map((q, idx) => (
           <SelfCheckItem key={idx} item={q} index={idx} />
         ))}
@@ -47,7 +48,11 @@ function SelfCheckItem({ item, index }) {
       border: '1px solid #E8E2D9',
       display: 'flex',
       flexDirection: 'column',
-      gap: '6px'
+      gap: '6px',
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box'
     }}>
       <div style={{
         display: 'flex',

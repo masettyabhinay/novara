@@ -8,7 +8,7 @@ export default function PracticeProblemCard({ problems = [] }) {
   if (!Array.isArray(problems) || problems.length === 0) return null;
 
   return (
-    <div style={{ margin: '18px 0' }}>
+    <div style={{ margin: '18px 0', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -18,13 +18,14 @@ export default function PracticeProblemCard({ problems = [] }) {
         textTransform: 'uppercase',
         letterSpacing: '0.04em',
         color: 'var(--text-charcoal)',
-        marginBottom: '10px'
+        marginBottom: '10px',
+        flexWrap: 'wrap'
       }}>
-        <Target size={15} color="#C85A32" />
+        <Target size={15} color="#C85A32" style={{ flexShrink: 0 }} />
         <span>Grounded Practice Challenges</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
         {problems.map((prob, idx) => (
           <ProblemItem key={idx} problem={prob} index={idx} />
         ))}
@@ -48,7 +49,11 @@ function ProblemItem({ problem, index }) {
       boxShadow: '0 1px 3px rgba(35, 25, 15, 0.03)',
       display: 'flex',
       flexDirection: 'column',
-      gap: '8px'
+      gap: '8px',
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box'
     }}>
       {/* Title & Difficulty */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>

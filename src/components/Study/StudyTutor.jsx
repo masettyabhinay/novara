@@ -350,23 +350,31 @@ export default function StudyTutor({
       )}
 
       {/* 3. QUICK ACTION PILLS */}
-      <div style={{
-        padding: '12px 16px',
-        backgroundColor: '#FAF8F5',
-        borderBottom: messages.length > 0 ? '1px solid #E8E2D9' : 'none',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        flexWrap: 'wrap'
-      }}>
+      <div
+        className="study-tutor-quick-actions"
+        style={{
+          padding: '10px 16px',
+          backgroundColor: '#FAF8F5',
+          borderBottom: messages.length > 0 ? '1px solid #E8E2D9' : 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          minWidth: 0,
+          width: '100%',
+          boxSizing: 'border-box'
+        }}
+      >
         <button
           type="button"
           disabled={isLoading}
           onClick={() => handleSendQuery({ actionType: 'explain_simpler', displayPrompt: '✨ Explain simpler' })}
           className="btn-secondary"
-          style={{ padding: '4px 10px', fontSize: '11.5px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '28px', backgroundColor: '#FFFFFF' }}
+          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: '#FFFFFF', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
         >
-          <Sparkles size={12} color="var(--accent-terracotta)" />
+          <Sparkles size={13} color="var(--accent-terracotta)" />
           <span>✨ Explain simpler</span>
         </button>
 
@@ -375,9 +383,9 @@ export default function StudyTutor({
           disabled={isLoading}
           onClick={() => handleSendQuery({ actionType: 'another_example', displayPrompt: '💡 Give another example' })}
           className="btn-secondary"
-          style={{ padding: '4px 10px', fontSize: '11.5px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '28px', backgroundColor: '#FFFFFF' }}
+          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: '#FFFFFF', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
         >
-          <Lightbulb size={12} color="#D97706" />
+          <Lightbulb size={13} color="#D97706" />
           <span>💡 Give another example</span>
         </button>
 
@@ -386,10 +394,10 @@ export default function StudyTutor({
           disabled={isLoading}
           onClick={() => handleSendQuery({ actionType: 'practice_problem', displayPrompt: '🧩 Give me a practice problem' })}
           className="btn-secondary"
-          style={{ padding: '4px 10px', fontSize: '11.5px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '28px', backgroundColor: '#FFFFFF' }}
+          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: '#FFFFFF', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
         >
-          <Puzzle size={12} color="#4F46E5" />
-          <span>🧩 Give me a practice problem</span>
+          <Puzzle size={13} color="#4F46E5" />
+          <span>🧩 Practice problem</span>
         </button>
 
         <button
@@ -397,10 +405,10 @@ export default function StudyTutor({
           disabled={isLoading}
           onClick={() => handleSendQuery({ actionType: 'step_by_step', displayPrompt: '🔍 Explain step-by-step' })}
           className="btn-secondary"
-          style={{ padding: '4px 10px', fontSize: '11.5px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '28px', backgroundColor: '#FFFFFF' }}
+          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: '#FFFFFF', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
         >
-          <ListOrdered size={12} color="#059669" />
-          <span>🔍 Explain step-by-step</span>
+          <ListOrdered size={13} color="#059669" />
+          <span>🔍 Step-by-step</span>
         </button>
 
         {onStartQuiz && (
@@ -409,18 +417,22 @@ export default function StudyTutor({
             onClick={onStartQuiz}
             className="btn-secondary"
             style={{
-              padding: '4px 10px',
-              fontSize: '11.5px',
+              padding: '8px 14px',
+              fontSize: '12px',
               gap: '5px',
               borderRadius: 'var(--radius-pill, 20px)',
-              minHeight: '28px',
+              minHeight: '44px',
               backgroundColor: '#F0FDF4',
               borderColor: '#BBF7D0',
               color: '#166534',
-              fontWeight: 700
+              fontWeight: 700,
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              display: 'inline-flex',
+              alignItems: 'center'
             }}
           >
-            <Target size={12} color="#166534" />
+            <Target size={13} color="#166534" />
             <span>🎯 Test me</span>
           </button>
         )}
@@ -446,7 +458,9 @@ export default function StudyTutor({
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: isUser ? 'flex-end' : 'flex-start',
-                  gap: '4px'
+                  gap: '4px',
+                  width: '100%',
+                  boxSizing: 'border-box'
                 }}
               >
                 {/* Message Header */}
@@ -466,7 +480,9 @@ export default function StudyTutor({
                     fontSize: isUser ? '13px' : '13.5px',
                     lineHeight: '1.5',
                     boxShadow: '0 1px 3px rgba(35, 25, 15, 0.03)',
-                    position: 'relative'
+                    position: 'relative',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word'
                   }}
                 >
                   {isUser ? (
@@ -481,9 +497,9 @@ export default function StudyTutor({
                           type="button"
                           onClick={() => handleCopyMessage(msg.text, idx)}
                           className="btn-secondary"
-                          style={{ padding: '2px 6px', fontSize: '10.5px', gap: '4px', borderRadius: '4px', minHeight: '22px' }}
+                          style={{ padding: '4px 8px', fontSize: '11px', gap: '4px', borderRadius: '4px', minHeight: '28px' }}
                         >
-                          {copiedMsgIdx === idx ? <Check size={11} color="var(--accent-sage)" /> : <Copy size={11} />}
+                          {copiedMsgIdx === idx ? <Check size={12} color="var(--accent-sage)" /> : <Copy size={12} />}
                           <span>{copiedMsgIdx === idx ? 'Copied' : 'Copy'}</span>
                         </button>
                       </div>
@@ -526,9 +542,9 @@ export default function StudyTutor({
                 type="button"
                 onClick={() => handleSendQuery(lastError.retryParams)}
                 className="btn-secondary"
-                style={{ padding: '3px 8px', fontSize: '11px', gap: '4px', borderRadius: '4px', backgroundColor: '#FFFFFF', color: '#991B1B', borderColor: '#FECACA' }}
+                style={{ padding: '6px 10px', fontSize: '11px', gap: '4px', borderRadius: '4px', backgroundColor: '#FFFFFF', color: '#991B1B', borderColor: '#FECACA', minHeight: '32px' }}
               >
-                <RefreshCw size={11} />
+                <RefreshCw size={12} />
                 <span>Retry</span>
               </button>
             </div>
@@ -539,15 +555,20 @@ export default function StudyTutor({
       )}
 
       {/* 5. INPUT BAR */}
-      <div style={{
-        padding: '12px 16px',
-        backgroundColor: '#FFFFFF',
-        borderTop: '1px solid #E8E2D9',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        <div style={{ flex: 1, position: 'relative' }}>
+      <div
+        className="study-tutor-input-row"
+        style={{
+          padding: '12px 16px',
+          backgroundColor: '#FFFFFF',
+          borderTop: '1px solid #E8E2D9',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          boxSizing: 'border-box',
+          width: '100%'
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0, position: 'relative' }}>
           <input
             ref={inputRef}
             type="text"
@@ -558,7 +579,9 @@ export default function StudyTutor({
             placeholder={`Ask anything about ${taskTopic}...`}
             style={{
               width: '100%',
-              padding: '10px 14px',
+              padding: '11px 14px',
+              minHeight: '44px',
+              boxSizing: 'border-box',
               borderRadius: 'var(--radius-pill, 24px)',
               border: '1px solid #D5CDBD',
               backgroundColor: '#FAF8F5',
@@ -584,17 +607,19 @@ export default function StudyTutor({
           onClick={() => handleSendQuery({ actionType: 'custom_query' })}
           className="btn-primary"
           style={{
-            padding: '9px 16px',
-            fontSize: '12.5px',
+            padding: '10px 18px',
+            minHeight: '44px',
+            fontSize: '13px',
             fontWeight: 700,
             gap: '6px',
             borderRadius: 'var(--radius-pill, 24px)',
             opacity: (isLoading || !inputValue.trim()) ? 0.6 : 1,
-            cursor: (isLoading || !inputValue.trim()) ? 'not-allowed' : 'pointer'
+            cursor: (isLoading || !inputValue.trim()) ? 'not-allowed' : 'pointer',
+            flexShrink: 0
           }}
         >
           <span>Ask NOVARA</span>
-          <Send size={13} />
+          <Send size={14} />
         </button>
       </div>
     </div>

@@ -23,7 +23,11 @@ export default function StudyDocumentHeader({
       backgroundColor: '#FAF8F5',
       border: '1px solid #E8E2D9',
       marginBottom: '16px',
-      boxShadow: '0 1px 3px rgba(35, 25, 15, 0.03)'
+      boxShadow: '0 1px 3px rgba(35, 25, 15, 0.03)',
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box'
     }}>
       {/* Top Meta Row */}
       <div style={{
@@ -101,7 +105,9 @@ export default function StudyDocumentHeader({
         color: '#1E293B',
         letterSpacing: '-0.02em',
         margin: '0 0 4px 0',
-        lineHeight: '1.3'
+        lineHeight: '1.3',
+        wordBreak: 'break-word',
+        overflowWrap: 'break-word'
       }}>
         {title}
       </h1>

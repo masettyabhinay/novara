@@ -156,9 +156,14 @@ export const FocusSessionModal = () => {
 
   if (!isFocusModalOpen || !activeFocusTask) return null;
 
+  const formatTime = (totalSec) => {
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
   const minutes = Math.floor(timerMetrics.remainingSeconds / 60);
   const seconds = timerMetrics.remainingSeconds % 60;
-  const timeFormatted = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const timeFormatted = formatTime(timerMetrics.remainingSeconds);
   const progressPercent = Math.min(
     100,
     Math.round((timerMetrics.elapsedSeconds / Math.max(1, timerMetrics.totalPlannedSeconds)) * 100)
@@ -208,6 +213,8 @@ export const FocusSessionModal = () => {
       pauseFocusSession(activeFocusSession.sessionId);
     }
   };
+  const handleToggleTimer = togglePauseResume;
+  const handleExtendSession = handleAddTenMinutes;
 
   const handleCopyCode = (codeText, idx) => {
     if (!codeText) return;
@@ -253,12 +260,11 @@ export const FocusSessionModal = () => {
           flexDirection: 'column',
           backgroundColor: '#FAF8F5',
           borderBottom: '1px solid #E8E2D9',
-          paddingTop: 'max(10px, env(safe-area-inset-top, 10px))',
+          paddingTop: 'max(8px, env(safe-area-inset-top, 8px))',
           flexShrink: 0
         }}>
-          {/* Main Controls Row: [Back] [Focus / In Session] [Timer] [Close] */}
-          <div style={{
-            display: 'flex',
+          {/* Desktop Single-Row Header (>=641px) */}
+          <div className="focus-header-desktop-row" style={{
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '8px 16px',
@@ -266,25 +272,30 @@ export const FocusSessionModal = () => {
             width: '100%',
             boxSizing: 'border-box'
           }}>
-            {/* Left: Back Action */}
+            {/* Left: Back Action + Status */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexShrink: 0 }}>
               <button
                 type="button"
                 onClick={handleBackClick}
                 className="btn-secondary"
                 style={{
-                  padding: '5px 10px',
-                  fontSize: '12px',
+                  padding: '8px 12px',
+                  fontSize: '12.5px',
                   fontWeight: 700,
                   gap: '4px',
                   borderRadius: 'var(--radius-pill)',
-                  minHeight: '32px',
+                  minHeight: '44px',
+                  minWidth: '44px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   flexShrink: 0
                 }}
                 title="Leave or minimize session"
+                aria-label="Back"
               >
-                <ArrowLeft size={14} />
-                <span className="focus-header-back-label">Back</span>
+                <ArrowLeft size={16} />
+                <span>Back</span>
               </button>
 
               {/* Status Pill */}
@@ -292,11 +303,11 @@ export const FocusSessionModal = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
-                padding: '3px 8px',
+                padding: '4px 10px',
                 borderRadius: 'var(--radius-pill)',
                 backgroundColor: 'rgba(200, 90, 50, 0.12)',
                 color: 'var(--accent-terracotta)',
-                fontSize: '10.5px',
+                fontSize: '11px',
                 fontWeight: 800,
                 letterSpacing: '0.03em',
                 textTransform: 'uppercase',
@@ -313,15 +324,15 @@ export const FocusSessionModal = () => {
               </div>
             </div>
 
-            {/* Middle (Desktop/Tablet): Task Name */}
-            <div className="focus-header-task-desktop" style={{
+            {/* Middle: Task Name */}
+            <div style={{
               flex: 1,
               minWidth: 0,
-              padding: '0 8px',
+              padding: '0 12px',
               textAlign: 'center'
             }}>
               <h2 style={{
-                fontSize: '13.5px',
+                fontSize: '14px',
                 fontWeight: 800,
                 color: 'var(--text-charcoal)',
                 whiteSpace: 'nowrap',
@@ -334,7 +345,137 @@ export const FocusSessionModal = () => {
             </div>
 
             {/* Right: Timer Display + Close Action */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-pill)',
+                backgroundColor: timerMetrics.isPaused ? 'var(--accent-amber-light)' : '#FFFFFF',
+                border: `1px solid ${timerMetrics.isPaused ? 'var(--accent-amber)' : '#E8E2D9'}`,
+                boxShadow: '0 1px 3px rgba(35, 25, 15, 0.04)'
+              }}>
+                <Clock size={13} color={timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)'} />
+                <span style={{
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: '13px',
+                  fontWeight: 800,
+                  color: timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--text-charcoal)'
+                }}>
+                  {timeFormatted}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleBackClick}
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  minWidth: '44px',
+                  minHeight: '44px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-muted)',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #E8E2D9',
+                  cursor: 'pointer'
+                }}
+                title="Exit Session"
+                aria-label="Close session"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Clean Multi-Row Header (<=640px) */}
+          <div className="focus-header-mobile-wrapper" style={{
+            display: 'none',
+            boxSizing: 'border-box'
+          }}>
+            {/* Top row: [← Back] (left) ... [× Close] (right) */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <button
+                type="button"
+                onClick={handleBackClick}
+                className="btn-secondary"
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  gap: '4px',
+                  borderRadius: 'var(--radius-pill)',
+                  minHeight: '44px',
+                  minWidth: '44px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                aria-label="Back"
+              >
+                <ArrowLeft size={16} />
+                <span>Back</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBackClick}
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  minWidth: '44px',
+                  minHeight: '44px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-muted)',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #E8E2D9',
+                  cursor: 'pointer'
+                }}
+                aria-label="Close session"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Second row: [● Status] [Category] (left) ... [⏱ Timer] (right) */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginTop: '2px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-pill)',
+                  backgroundColor: 'rgba(200, 90, 50, 0.12)',
+                  color: 'var(--accent-terracotta)',
+                  fontSize: '10.5px',
+                  fontWeight: 800,
+                  letterSpacing: '0.03em',
+                  textTransform: 'uppercase'
+                }}>
+                  <span style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    backgroundColor: timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)',
+                    boxShadow: timerMetrics.isPaused ? 'none' : '0 0 6px var(--accent-terracotta)'
+                  }} />
+                  <span>{timerMetrics.isPaused ? 'Paused' : 'In Session'}</span>
+                </div>
+
+                <span className="pill-badge pill-terracotta" style={{ fontSize: '10px', padding: '2px 7px' }}>
+                  {activeFocusTask.category || 'DSA'}
+                </span>
+              </div>
+
+              {/* Timer Badge */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -355,56 +496,22 @@ export const FocusSessionModal = () => {
                   {timeFormatted}
                 </span>
               </div>
-
-              <button
-                type="button"
-                onClick={handleBackClick}
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  minWidth: '32px',
-                  minHeight: '32px',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--text-muted)',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-                title="Exit Session"
-                aria-label="Close session"
-              >
-                <X size={18} />
-              </button>
             </div>
-          </div>
 
-          {/* Mobile Secondary Row: Task Name & Category (visible on small screens) */}
-          <div className="focus-header-task-mobile" style={{
-            display: 'none',
-            padding: '0 16px 8px 16px',
-            alignItems: 'center',
-            gap: '6px',
-            width: '100%',
-            boxSizing: 'border-box'
-          }}>
-            <span className="pill-badge pill-terracotta" style={{ fontSize: '9.5px', padding: '1px 6px', flexShrink: 0 }}>
-              {activeFocusTask.category || 'DSA'}
-            </span>
-            <h2 style={{
-              fontSize: '12.5px',
-              fontWeight: 800,
-              color: 'var(--text-charcoal)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              margin: 0,
-              flex: 1
-            }}>
-              {activeFocusTask.name}
-            </h2>
+            {/* Third row: Task Name */}
+            <div style={{ width: '100%', marginTop: '2px' }}>
+              <h2 style={{
+                fontSize: '13.5px',
+                fontWeight: 800,
+                color: 'var(--text-charcoal)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                margin: 0
+              }}>
+                {activeFocusTask.name}
+              </h2>
+            </div>
           </div>
         </div>
 
@@ -422,7 +529,7 @@ export const FocusSessionModal = () => {
           {/* --------------------------------------------------------------- */}
           {/* LEFT COLUMN: TIMER, CONTROLS & SESSION OBJECTIVES              */}
           {/* --------------------------------------------------------------- */}
-          <div style={{
+          <div className="focus-study-left-col" style={{
             backgroundColor: '#FFFFFF',
             borderRight: '1px solid #E8E2D9',
             padding: '20px 18px',
@@ -553,7 +660,11 @@ export const FocusSessionModal = () => {
                       fontSize: '12.5px',
                       fontWeight: 700,
                       borderRadius: 'var(--radius-pill)',
-                      gap: '5px'
+                      gap: '5px',
+                      minHeight: '44px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
                   >
                     {timerMetrics.isPaused ? (
@@ -578,7 +689,12 @@ export const FocusSessionModal = () => {
                       fontSize: '12px',
                       fontWeight: 700,
                       borderRadius: 'var(--radius-pill)',
-                      gap: '4px'
+                      gap: '4px',
+                      minHeight: '44px',
+                      minWidth: '44px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
                     title="Add 10 minutes to session"
                   >
@@ -598,6 +714,10 @@ export const FocusSessionModal = () => {
                     fontWeight: 700,
                     borderRadius: 'var(--radius-pill)',
                     gap: '6px',
+                    minHeight: '44px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     boxShadow: '0 4px 14px rgba(200, 90, 50, 0.25)'
                   }}
                 >
@@ -695,7 +815,7 @@ export const FocusSessionModal = () => {
           {/* --------------------------------------------------------------- */}
           {/* RIGHT COLUMN: AI STUDY GUIDE PANEL (SCROLLABLE)                */}
           {/* --------------------------------------------------------------- */}
-          <div style={{
+          <div className="focus-study-right-col" style={{
             padding: '24px 28px',
             overflowY: 'auto',
             backgroundColor: '#FAF8F5',

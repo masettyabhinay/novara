@@ -21,7 +21,11 @@ export default function AnalogyCard({ analogy }) {
       border: '1px solid #F6E05E',
       borderLeft: '4px solid #D69E2E',
       boxShadow: '0 1px 3px rgba(35, 25, 15, 0.02)',
-      margin: '12px 0'
+      margin: '12px 0',
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box'
     }}>
       <div style={{
         display: 'flex',

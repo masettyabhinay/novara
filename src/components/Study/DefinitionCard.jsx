@@ -8,7 +8,7 @@ export default function DefinitionCard({ definitions = [] }) {
   if (!Array.isArray(definitions) || definitions.length === 0) return null;
 
   return (
-    <div style={{ margin: '14px 0' }}>
+    <div style={{ margin: '14px 0', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -18,16 +18,20 @@ export default function DefinitionCard({ definitions = [] }) {
         textTransform: 'uppercase',
         letterSpacing: '0.04em',
         color: 'var(--text-charcoal)',
-        marginBottom: '8px'
+        marginBottom: '8px',
+        flexWrap: 'wrap'
       }}>
-        <BookOpen size={14} color="#C85A32" />
+        <BookOpen size={14} color="#C85A32" style={{ flexShrink: 0 }} />
         <span>Essential Terminology & Definitions</span>
       </div>
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-        gap: '10px'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))',
+        gap: '10px',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box'
       }}>
         {definitions.map((item, idx) => (
           <div
@@ -37,7 +41,10 @@ export default function DefinitionCard({ definitions = [] }) {
               borderRadius: '10px',
               backgroundColor: '#FFFFFF',
               border: '1px solid #E8E2D9',
-              boxShadow: '0 1px 3px rgba(35, 25, 15, 0.02)'
+              boxShadow: '0 1px 3px rgba(35, 25, 15, 0.02)',
+              minWidth: 0,
+              maxWidth: '100%',
+              boxSizing: 'border-box'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>

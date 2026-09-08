@@ -2,8 +2,8 @@ import React from 'react';
 import { BookOpen } from 'lucide-react';
 
 /**
- * StudyProgress - Sticky reading progress bar & touch-friendly horizontal section jump navigation.
- * Note: Reading progress is purely for study orientation and does not mark the task complete.
+ * StudyProgress - Responsive reading progress bar & touch-friendly horizontal section jump navigation.
+ * Note: Reading progress is for study orientation and does not alter task completion state.
  */
 export default function StudyProgress({
   sections = [],
@@ -11,74 +11,78 @@ export default function StudyProgress({
   readingProgress = 0,
   onJumpToSection
 }) {
-  const roundedProgress = Math.min(100, Math.max(0, Math.round(readingProgress)));
+  const progress = readingProgress;
+  const roundedProgress = Math.min(100, Math.max(0, Math.round(progress)));
 
   return (
     <div 
       className="study-progress-sticky-nav"
       style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 20,
         backgroundColor: '#FFFFFF',
         border: '1px solid #E8E2D9',
-        borderRadius: '10px',
-        padding: '8px 12px',
-        marginBottom: '14px',
+        borderRadius: '12px',
+        padding: '12px 14px',
+        marginBottom: '16px',
         boxShadow: '0 2px 8px rgba(35, 25, 15, 0.04)',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: 0
       }}
     >
-      {/* Progress Track */}
+      {/* Row 1: Study Progress Header & Real Percentage */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: '6px',
-        fontSize: '11px',
+        marginBottom: '8px',
+        fontSize: '12px',
         fontWeight: 700,
         color: '#64748B'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <BookOpen size={12} color="#C85A32" />
-          <span style={{ color: 'var(--text-charcoal)', fontWeight: 800 }}>Reading Progress</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+          <BookOpen size={14} color="#C85A32" />
+          <span style={{ color: 'var(--text-charcoal)', fontWeight: 800, fontSize: '12.5px' }}>Study Progress</span>
         </div>
-        <span style={{ color: roundedProgress >= 100 ? 'var(--accent-sage)' : '#C85A32', fontWeight: 800 }}>
+        <span style={{ color: roundedProgress >= 100 ? 'var(--accent-sage)' : '#C85A32', fontWeight: 800, fontSize: '12.5px' }}>
           {roundedProgress}%
         </span>
       </div>
 
+      {/* Progress Track */}
       <div style={{
         width: '100%',
-        height: '5px',
+        height: '6px',
         backgroundColor: '#F1EFEA',
         borderRadius: '9999px',
         overflow: 'hidden',
-        marginBottom: '8px'
+        marginBottom: '10px'
       }}>
         <div style={{
           width: `${roundedProgress}%`,
           height: '100%',
           backgroundColor: roundedProgress >= 100 ? 'var(--accent-sage)' : '#C85A32',
           borderRadius: '9999px',
-          transition: 'width 200ms ease'
+          transition: 'width 250ms ease'
         }} />
       </div>
 
-      {/* Quick Jump Section Pills (Horizontally scrollable with touch momentum) */}
+      {/* Row 2: Quick Jump Topic Navigation Pills (Horizontally scrollable on one row) */}
       {sections.length > 0 && (
         <div 
           className="study-tabs-scroll-row"
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '8px',
             overflowX: 'auto',
             padding: '2px 0',
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
             WebkitOverflowScrolling: 'touch',
-            overscrollBehaviorX: 'contain'
+            overscrollBehaviorX: 'contain',
+            flexWrap: 'nowrap',
+            width: '100%'
           }}
         >
           {sections.map((sec) => {
@@ -90,13 +94,17 @@ export default function StudyProgress({
                 onClick={() => onJumpToSection && onJumpToSection(sec.id)}
                 className={`study-tab-pill ${isActive ? 'active' : ''}`}
                 style={{
-                  padding: '4px 11px',
+                  padding: '7px 14px',
                   borderRadius: '9999px',
-                  fontSize: '11px',
+                  fontSize: '11.5px',
                   fontWeight: 700,
                   whiteSpace: 'nowrap',
                   cursor: 'pointer',
                   flexShrink: 0,
+                  minHeight: '44px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   border: `1px solid ${isActive ? '#C85A32' : '#E2D8CC'}`,
                   backgroundColor: isActive ? '#C85A32' : '#FAF8F5',
                   color: isActive ? '#FFFFFF' : '#475569',

@@ -8,7 +8,7 @@ export default function FormulaCard({ formulas = [] }) {
   if (!Array.isArray(formulas) || formulas.length === 0) return null;
 
   return (
-    <div style={{ margin: '14px 0' }}>
+    <div style={{ margin: '14px 0', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -18,13 +18,14 @@ export default function FormulaCard({ formulas = [] }) {
         textTransform: 'uppercase',
         letterSpacing: '0.04em',
         color: 'var(--text-charcoal)',
-        marginBottom: '8px'
+        marginBottom: '8px',
+        flexWrap: 'wrap'
       }}>
-        <Sigma size={14} color="#C85A32" />
+        <Sigma size={14} color="#C85A32" style={{ flexShrink: 0 }} />
         <span>Core Formulas & Recurrences</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
         {formulas.map((item, idx) => (
           <div
             key={idx}
@@ -35,10 +36,14 @@ export default function FormulaCard({ formulas = [] }) {
               border: '1px solid #E8E2D9',
               display: 'flex',
               flexDirection: 'column',
-              gap: '4px'
+              gap: '4px',
+              width: '100%',
+              maxWidth: '100%',
+              minWidth: 0,
+              boxSizing: 'border-box'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
               <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1E293B' }}>
                 {item.name || item.title}
               </span>
@@ -53,7 +58,11 @@ export default function FormulaCard({ formulas = [] }) {
               padding: '8px 12px',
               borderRadius: '6px',
               border: '1px solid #E2D8CC',
-              margin: '4px 0'
+              margin: '4px 0',
+              overflowX: 'auto',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              wordBreak: 'break-word'
             }}>
               {item.formula || item.equation}
             </div>

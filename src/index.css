@@ -453,16 +453,42 @@ button {
     display: flex !important;
     flex-direction: column !important;
     overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    height: 100% !important;
+  }
+  .focus-study-left-col {
+    overflow-y: visible !important;
+    border-right: none !important;
+    border-bottom: 1px solid #E8E2D9 !important;
+    padding: 16px !important;
+    flex-shrink: 0 !important;
+  }
+  .focus-study-right-col {
+    overflow-y: visible !important;
+    padding: 16px !important;
+    flex: 1 0 auto !important;
   }
 }
 
 /* Mobile Focus/Study Header Responsive Hierarchy */
-@media (max-width: 768px) {
-  .focus-header-task-desktop {
+@media (max-width: 640px) {
+  .focus-header-desktop-row {
     display: none !important;
   }
-  .focus-header-task-mobile {
+  .focus-header-mobile-wrapper {
     display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    padding: 10px 14px 10px 14px !important;
+  }
+}
+
+@media (min-width: 641px) {
+  .focus-header-desktop-row {
+    display: flex !important;
+  }
+  .focus-header-mobile-wrapper {
+    display: none !important;
   }
 }
 
@@ -488,6 +514,21 @@ button {
   max-width: 100% !important;
   overflow-x: auto !important;
   -webkit-overflow-scrolling: touch !important;
+  box-sizing: border-box !important;
+}
+
+/* Code card header responsive stacking on mobile */
+@media (max-width: 640px) {
+  .study-code-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .study-code-actions {
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
 }
 
 /* Mobile Sheet Viewport Fill & Safe Area Inset */
@@ -506,6 +547,37 @@ button {
   .bottom-nav-tab-btn {
     min-height: 42px !important;
     padding: 4px 1px !important;
+  }
+}
+
+/* Deep Study Document width constraints & zero page overflow */
+.deep-study-document {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.deep-study-document > * {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Tutor quick actions scrollbar hiding */
+.study-tutor-quick-actions::-webkit-scrollbar {
+  display: none !important;
+}
+
+@media (max-width: 480px) {
+  .study-tutor-input-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .study-tutor-input-row button {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }
 

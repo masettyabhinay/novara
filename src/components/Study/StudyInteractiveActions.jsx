@@ -33,7 +33,11 @@ export default function StudyInteractiveActions({
       margin: '18px 0',
       display: 'flex',
       flexDirection: 'column',
-      gap: '10px'
+      gap: '10px',
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box'
     }}>
       <div style={{
         display: 'flex',
@@ -43,7 +47,7 @@ export default function StudyInteractiveActions({
         gap: '6px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748B' }}>
-          <Sparkles size={13} color="#C85A32" />
+          <Sparkles size={13} color="#C85A32" style={{ flexShrink: 0 }} />
           <span>Interactive AI Study Tools</span>
         </div>
       </div>
@@ -59,7 +63,7 @@ export default function StudyInteractiveActions({
           type="button"
           onClick={handleSimplerClick}
           style={{
-            padding: '6px 12px',
+            padding: '8px 14px',
             borderRadius: '9999px',
             fontSize: '11.5px',
             fontWeight: 700,
@@ -70,10 +74,11 @@ export default function StudyInteractiveActions({
             display: 'inline-flex',
             alignItems: 'center',
             gap: '5px',
+            minHeight: '44px',
             boxShadow: '0 1px 2px rgba(35, 25, 15, 0.03)'
           }}
         >
-          <Zap size={12} color="#D97706" />
+          <Zap size={13} color="#D97706" />
           <span>Explain simpler</span>
         </button>
 
@@ -83,7 +88,7 @@ export default function StudyInteractiveActions({
             type="button"
             onClick={onStartQuiz}
             style={{
-              padding: '6px 14px',
+              padding: '8px 16px',
               borderRadius: '9999px',
               fontSize: '11.5px',
               fontWeight: 800,
@@ -93,11 +98,12 @@ export default function StudyInteractiveActions({
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '5px',
+              gap: '6px',
+              minHeight: '44px',
               boxShadow: '0 2px 6px rgba(200, 90, 50, 0.25)'
             }}
           >
-            <CheckCircle2 size={13} />
+            <CheckCircle2 size={14} />
             <span>Test me (5-Question Quiz) →</span>
           </button>
         )}
