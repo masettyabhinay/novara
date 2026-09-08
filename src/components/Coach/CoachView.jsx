@@ -15,7 +15,13 @@ import {
   Target,
   BarChart3,
   Flame,
-  Award
+  Award,
+  HelpCircle,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Briefcase,
+  Play
 } from 'lucide-react';
 import { CoachAdjustmentModal } from './CoachAdjustmentModal';
 
@@ -24,16 +30,51 @@ export const CoachView = () => {
     coachAnalysis, 
     refreshCoachAnalysis, 
     applyCoachRecommendation, 
+    navigateToCoachTarget,
     isCoachLoading, 
-    userProfile, 
-    streakData, 
-    roadmapProgress,
     setActiveTab,
     showToast 
   } = useApp();
 
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
+  const [openWhyThisMap, setOpenWhyThisMap] = useState({});
+  const [isApplyingAdjustment, setIsApplyingAdjustment] = useState(false);
 
+  const toggleWhyThis = (key) => {
+    setOpenWhyThisMap((prev) => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  // 13. LOADING STATE
+  if (isCoachLoading && !coachAnalysis) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px 20px', animation: 'fadeIn 200ms ease' }}>
+        <div style={{
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--bg-warm-cream-alt)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 16px auto',
+          color: 'var(--accent-terracotta)'
+        }}>
+          <RotateCw size={26} style={{ animation: 'spin 1s linear infinite' }} />
+        </div>
+        <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '4px' }}>
+          Evaluating Placement Readiness...
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+          Analyzing authentic roadmap topics, revision health, and interview schedule.
+        </p>
+      </div>
+    );
+  }
+
+  // 13. EMPTY / INSUFFICIENT DATA STATE
   if (!coachAnalysis || !coachAnalysis.hasData) {
     return (
       <div style={{ animation: 'fadeIn 200ms ease', textAlign: 'center', padding: '40px 16px' }}>
@@ -54,14 +95,14 @@ export const CoachView = () => {
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '6px' }}>
           Not enough preparation data yet
         </h2>
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '360px', margin: '0 auto 20px auto', lineHeight: '1.45' }}>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '380px', margin: '0 auto 20px auto', lineHeight: '1.45' }}>
           Upload and confirm your placement roadmap to unlock personalized AI Placement Coach insights and readiness tracking.
         </p>
         <button
           type="button"
           onClick={() => setActiveTab('roadmap')}
           className="btn-primary"
-          style={{ padding: '10px 20px', fontSize: '13px' }}
+          style={{ padding: '10px 20px', fontSize: '13px', minHeight: '44px' }}
         >
           <span>Go to Roadmap</span>
           <ArrowRight size={15} />
@@ -99,10 +140,20 @@ export const CoachView = () => {
   const statusInfo = getStatusDisplay(coachAnalysis.status);
   const paceInfo = getPaceDisplay(coachAnalysis.pacingStatus);
   const StatusIcon = statusInfo.icon;
+  const nextAction = coachAnalysis.nextBestAction;
+
+  const handleApplyAdjustment = async (recommendation) => {
+    setIsApplyingAdjustment(true);
+    try {
+      await applyCoachRecommendation(recommendation);
+    } finally {
+      setIsApplyingAdjustment(false);
+    }
+  };
 
   return (
     <div style={{ animation: 'fadeIn 200ms ease', width: '100%' }}>
-      {/* 1. Header with Refresh Trigger */}
+      {/* Header with Title & Refresh Action */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '18px' }}>
         <div>
           <span className="pill-badge pill-terracotta" style={{ marginBottom: '4px' }}>
@@ -119,36 +170,40 @@ export const CoachView = () => {
             Your Placement Coach
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Understand where you stand and what to focus on next.
+            Understand where you stand, what is holding you back, and what to do next.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={refreshCoachAnalysis}
+          onClick={() => refreshCoachAnalysis(true)}
           disabled={isCoachLoading}
           style={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            gap: '4px',
+            gap: '6px',
             fontSize: '11.5px',
             fontWeight: 700,
             color: 'var(--accent-terracotta)',
             backgroundColor: '#FFFFFF',
             border: '1px solid var(--border-beige)',
-            padding: '6px 10px',
+            padding: '8px 12px',
             borderRadius: 'var(--radius-pill)',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-sm)'
+            cursor: isCoachLoading ? 'not-allowed' : 'pointer',
+            boxShadow: 'var(--shadow-sm)',
+            minHeight: '44px'
           }}
           title="Refresh Analysis with latest data"
+          aria-label="Refresh analysis with latest data"
         >
-          <RotateCw size={12} style={{ animation: isCoachLoading ? 'spin 1s linear infinite' : 'none' }} />
+          <RotateCw size={14} style={{ animation: isCoachLoading ? 'spin 1s linear infinite' : 'none' }} />
           <span>Refresh</span>
         </button>
       </div>
 
-      {/* 2. PLACEMENT READINESS HERO CARD */}
+      {/* =========================================================================
+          SECTION 1: READINESS CARD
+          ========================================================================= */}
       <div 
         className="card-white"
         style={{
@@ -158,6 +213,8 @@ export const CoachView = () => {
           border: '1.5px solid var(--border-beige)',
           boxShadow: 'var(--shadow-sm)'
         }}
+        role="region"
+        aria-label="Placement readiness summary"
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
           <div>
@@ -186,15 +243,22 @@ export const CoachView = () => {
           </div>
         </div>
 
-        {/* Dynamic Progress Bar */}
-        <div style={{
-          width: '100%',
-          height: '8px',
-          borderRadius: '9999px',
-          backgroundColor: 'var(--border-beige-light)',
-          overflow: 'hidden',
-          marginBottom: '14px'
-        }}>
+        {/* Dynamic Accessible Progress Bar */}
+        <div 
+          role="progressbar"
+          aria-valuenow={coachAnalysis.readinessPercent}
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-label="Placement readiness score percentage"
+          style={{
+            width: '100%',
+            height: '8px',
+            borderRadius: '9999px',
+            backgroundColor: 'var(--border-beige-light)',
+            overflow: 'hidden',
+            marginBottom: '14px'
+          }}
+        >
           <div style={{
             width: `${coachAnalysis.readinessPercent}%`,
             height: '100%',
@@ -232,162 +296,177 @@ export const CoachView = () => {
         </div>
       </div>
 
-      {/* 3. COACH'S ACTIONABLE RECOMMENDATION */}
-      {coachAnalysis.recommendation && (
-        <div 
-          className="card-white"
-          style={{
-            padding: '18px 20px',
-            marginBottom: '16px',
-            borderLeft: '4px solid var(--accent-terracotta)',
-            backgroundColor: '#FFFFFF',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-            <Sparkles size={15} color="var(--accent-terracotta)" />
-            <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-terracotta)' }}>
-              Coach's Recommendation
-            </span>
+      {/* =========================================================================
+          SECTION 2: STRENGTHS (WHAT'S GOING WELL)
+          ========================================================================= */}
+      <div 
+        className="card-white"
+        style={{
+          padding: '18px 20px',
+          marginBottom: '16px',
+          borderLeft: '4px solid var(--accent-sage)',
+          backgroundColor: '#FFFFFF',
+          boxShadow: 'var(--shadow-sm)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Award size={16} color="var(--accent-sage)" />
+            <h2 style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-sage)', margin: 0 }}>
+              Evidence-Based Strengths
+            </h2>
           </div>
-
-          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '4px' }}>
-            {coachAnalysis.recommendation.title}
-          </h3>
-
-          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.45', marginBottom: '8px' }}>
-            {coachAnalysis.recommendation.summary}
-          </p>
-
-          <div style={{
-            fontSize: '11.5px',
-            color: 'var(--text-muted)',
-            backgroundColor: 'var(--bg-warm-cream-alt)',
-            padding: '6px 10px',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '14px'
-          }}>
-            💡 <strong>Reasoning:</strong> {coachAnalysis.recommendation.reasoning}
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={() => setIsAdjustmentModalOpen(true)}
-              className="btn-primary"
-              style={{ flex: 2, padding: '9px 14px', fontSize: '12px' }}
-            >
-              <Check size={14} />
-              <span>Apply Recommendation</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => showToast('Recommendation Deferred', 'You can apply this adjustment anytime.', 'neutral')}
-              className="btn-secondary"
-              style={{ flex: 1, padding: '9px 10px', fontSize: '12px' }}
-            >
-              Not Now
-            </button>
-          </div>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+            {coachAnalysis.strengths.length} verified
+          </span>
         </div>
-      )}
 
-      {/* 4. PREPARATION BREAKDOWN BY REAL CATEGORY */}
-      <div className="card-white" style={{ padding: '18px 20px', marginBottom: '16px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '12px' }}>
-          Preparation Breakdown
-        </h3>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {coachAnalysis.categories.map((cat, idx) => (
-            <div key={idx}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontSize: '12.5px' }}>
-                <span style={{ fontWeight: 700, color: 'var(--text-charcoal)' }}>{cat.name}</span>
-                <span style={{ fontWeight: 800, color: cat.percentage < 50 ? 'var(--accent-terracotta)' : 'var(--text-charcoal)' }}>
-                  {cat.percentage}% ({cat.completed}/{cat.total} topics)
-                </span>
-              </div>
-
-              <div style={{
-                width: '100%',
-                height: '6px',
-                borderRadius: '9999px',
-                backgroundColor: 'var(--border-beige-light)',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  width: `${cat.percentage}%`,
-                  height: '100%',
-                  backgroundColor: cat.percentage < 50 ? 'var(--accent-terracotta)' : 'var(--accent-sage)',
-                  borderRadius: '9999px'
-                }} />
-              </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {coachAnalysis.strengths.map((item, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12.5px', color: 'var(--text-charcoal)' }}>
+              <span style={{ color: 'var(--accent-sage)', fontWeight: 800, marginTop: '1px' }}>✓</span>
+              <span style={{ lineHeight: '1.4' }}>{item}</span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* 5. STRENGTHS & AREAS TO IMPROVE */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '12px',
-        marginBottom: '16px'
-      }}>
-        {/* Strengths */}
-        <div 
-          className="card-white"
-          style={{
-            padding: '16px 18px',
-            borderLeft: '4px solid var(--accent-sage)'
-          }}
-        >
-          <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--accent-sage)', marginBottom: '10px' }}>
-            What's Going Well
+      {/* =========================================================================
+          SECTION 3: NEEDS ATTENTION (PRIORITY WEAKNESSES)
+          ========================================================================= */}
+      <div 
+        className="card-white"
+        style={{
+          padding: '18px 20px',
+          marginBottom: '16px',
+          borderLeft: '4px solid var(--accent-terracotta)',
+          backgroundColor: '#FFFFFF',
+          boxShadow: 'var(--shadow-sm)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <AlertTriangle size={16} color="var(--accent-terracotta)" />
+            <h2 style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-terracotta)', margin: 0 }}>
+              Needs Attention
+            </h2>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {coachAnalysis.strengths.map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: 'var(--text-charcoal)' }}>
-                <span style={{ color: 'var(--accent-sage)', fontWeight: 800 }}>✓</span>
-                <span style={{ lineHeight: '1.4' }}>{item}</span>
-              </div>
-            ))}
-          </div>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+            {coachAnalysis.weakAreas.length} priority area{coachAnalysis.weakAreas.length > 1 ? 's' : ''}
+          </span>
         </div>
 
-        {/* Needs Attention */}
-        <div 
-          className="card-white"
-          style={{
-            padding: '16px 18px',
-            borderLeft: '4px solid var(--accent-terracotta)'
-          }}
-        >
-          <div style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.03em', color: 'var(--accent-terracotta)', marginBottom: '10px' }}>
-            Needs Attention
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {coachAnalysis.weakAreas.map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12px', color: 'var(--text-charcoal)' }}>
-                <span style={{ color: 'var(--accent-terracotta)', fontWeight: 800 }}>⚠</span>
-                <span style={{ lineHeight: '1.4' }}>{item}</span>
-              </div>
-            ))}
-          </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {coachAnalysis.weakAreas.map((item, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '12.5px', color: 'var(--text-charcoal)' }}>
+              <span style={{ color: 'var(--accent-terracotta)', fontWeight: 800, marginTop: '1px' }}>⚠</span>
+              <span style={{ lineHeight: '1.4' }}>{item}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* 6. WEEKLY COACH REPORT */}
+      {/* =========================================================================
+          SECTION 4: NEXT BEST ACTION (PROMINENT CARD + EXACT DEEP LINK)
+          ========================================================================= */}
+      {nextAction && (
+        <div 
+          className="card-white"
+          style={{
+            padding: '20px',
+            marginBottom: '16px',
+            background: 'linear-gradient(135deg, #FFFDFB 0%, #FAF6F0 100%)',
+            border: '2px solid var(--accent-terracotta)',
+            boxShadow: 'var(--shadow-md)'
+          }}
+          role="region"
+          aria-label="Next best action recommended by placement coach"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Target size={16} color="var(--accent-terracotta)" />
+              <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-terracotta)' }}>
+                Next Best Action
+              </span>
+            </div>
+            {nextAction.badge && (
+              <span className="pill-badge pill-terracotta" style={{ fontSize: '10px', padding: '2px 8px' }}>
+                {nextAction.badge}
+              </span>
+            )}
+          </div>
+
+          <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '4px' }}>
+            {nextAction.title}
+          </h3>
+
+          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.45', marginBottom: '12px' }}>
+            {nextAction.description}
+          </p>
+
+          {/* "Why This?" Compact Interaction */}
+          <div style={{ marginBottom: '14px' }}>
+            <button
+              type="button"
+              onClick={() => toggleWhyThis('next_action')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px 0'
+              }}
+              aria-expanded={Boolean(openWhyThisMap.next_action)}
+            >
+              <HelpCircle size={13} />
+              <span>Why this action?</span>
+              {openWhyThisMap.next_action ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            </button>
+
+            {openWhyThisMap.next_action && (
+              <div style={{
+                marginTop: '6px',
+                padding: '10px 12px',
+                backgroundColor: 'var(--bg-warm-cream)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '11.5px',
+                color: 'var(--text-secondary)',
+                lineHeight: '1.4',
+                border: '1px solid var(--border-beige-light)'
+              }}>
+                💡 {nextAction.whyThis}
+              </div>
+            )}
+          </div>
+
+          {/* Action CTA with Exact Deep Link */}
+          <button
+            type="button"
+            onClick={() => navigateToCoachTarget && navigateToCoachTarget(nextAction)}
+            className="btn-primary"
+            style={{ width: '100%', padding: '12px 18px', fontSize: '13px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+          >
+            <span>{nextAction.ctaLabel || 'Take Action'}</span>
+            <ArrowRight size={15} />
+          </button>
+        </div>
+      )}
+
+      {/* =========================================================================
+          SECTION 5: WEEKLY PROGRESS (REAL PERSISTED DATA ONLY)
+          ========================================================================= */}
       {coachAnalysis.weeklyReport && (
-        <div className="card-white" style={{ padding: '18px 20px', marginBottom: '20px' }}>
+        <div className="card-white" style={{ padding: '18px 20px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <BarChart3 size={16} color="var(--accent-terracotta)" />
-            <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-terracotta)' }}>
-              Weekly Coach Report
-            </span>
+            <h2 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-terracotta)', margin: 0 }}>
+              Weekly Progress Summary
+            </h2>
           </div>
 
           <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '12px' }}>
@@ -434,13 +513,121 @@ export const CoachView = () => {
         </div>
       )}
 
-      {/* Plan Adjustment Modal */}
+      {/* =========================================================================
+          SECTION 6: DOMAIN BREAKDOWN
+          ========================================================================= */}
+      <div className="card-white" style={{ padding: '18px 20px', marginBottom: '16px' }}>
+        <h2 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '12px' }}>
+          Domain Readiness Breakdown
+        </h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {coachAnalysis.categories.map((cat, idx) => (
+            <div key={idx}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontSize: '12.5px' }}>
+                <span style={{ fontWeight: 700, color: 'var(--text-charcoal)' }}>{cat.name}</span>
+                <span style={{ fontWeight: 800, color: cat.percentage < 50 ? 'var(--accent-terracotta)' : 'var(--text-charcoal)' }}>
+                  {cat.percentage}% ({cat.completed}/{cat.total} topics)
+                </span>
+              </div>
+
+              <div 
+                role="progressbar"
+                aria-valuenow={cat.percentage}
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-label={`${cat.name} completion percentage`}
+                style={{
+                  width: '100%',
+                  height: '6px',
+                  borderRadius: '9999px',
+                  backgroundColor: 'var(--border-beige-light)',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{
+                  width: `${cat.percentage}%`,
+                  height: '100%',
+                  backgroundColor: cat.percentage < 50 ? 'var(--accent-terracotta)' : 'var(--accent-sage)',
+                  borderRadius: '9999px'
+                }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* =========================================================================
+          SECTION 7: ACTIONABLE REDISTRIBUTION RECOMMENDATION (ADJUST PLAN)
+          ========================================================================= */}
+      {coachAnalysis.recommendation && (
+        <div 
+          className="card-white"
+          style={{
+            padding: '18px 20px',
+            marginBottom: '16px',
+            borderLeft: '4px solid var(--accent-terracotta)',
+            backgroundColor: '#FFFFFF',
+            boxShadow: 'var(--shadow-sm)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+            <Sparkles size={15} color="var(--accent-terracotta)" />
+            <h2 style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-terracotta)', margin: 0 }}>
+              Capacity Redistribution Recommendation
+            </h2>
+          </div>
+
+          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '4px' }}>
+            {coachAnalysis.recommendation.title}
+          </h3>
+
+          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.45', marginBottom: '8px' }}>
+            {coachAnalysis.recommendation.summary}
+          </p>
+
+          <div style={{
+            fontSize: '11.5px',
+            color: 'var(--text-muted)',
+            backgroundColor: 'var(--bg-warm-cream-alt)',
+            padding: '6px 10px',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: '14px'
+          }}>
+            💡 <strong>Reasoning:</strong> {coachAnalysis.recommendation.reasoning}
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => setIsAdjustmentModalOpen(true)}
+              className="btn-primary"
+              style={{ flex: 2, padding: '10px 14px', fontSize: '12px', minHeight: '44px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              <Check size={15} />
+              <span>Review & Apply Plan</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => showToast('Recommendation Deferred', 'You can apply this adjustment anytime.', 'neutral')}
+              className="btn-secondary"
+              style={{ flex: 1, padding: '10px 12px', fontSize: '12px', minHeight: '44px' }}
+            >
+              Not Now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Plan Adjustment Confirmation Modal */}
       {isAdjustmentModalOpen && (
         <CoachAdjustmentModal
           isOpen={isAdjustmentModalOpen}
           onClose={() => setIsAdjustmentModalOpen(false)}
           recommendation={coachAnalysis.recommendation}
-          onConfirm={applyCoachRecommendation}
+          onConfirm={handleApplyAdjustment}
+          isSubmitting={isApplyingAdjustment}
         />
       )}
 

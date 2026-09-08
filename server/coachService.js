@@ -218,14 +218,21 @@ export function analyzeUserPreparation(userId) {
     ]
   };
 
-  // 11. Weekly Coach Report Summary
+  // 11. Weekly Coach Report Summary (Strictly grounded in real database activity)
+  const streakHistory = Array.isArray(streak.weeklyHistory) ? streak.weeklyHistory : [];
+  const weeklyTasksFromHistory = streakHistory.reduce((sum, d) => sum + (typeof d === 'object' && d.tasksDone ? d.tasksDone : (typeof d === 'number' ? d : 0)), 0);
+  const realWeeklyTasks = Math.max(completedTasksCount, weeklyTasksFromHistory);
+  const realWeeklyHours = Number((realWeeklyTasks * 0.75).toFixed(1)); // 45 min average per task
+  const realCompletedRevisions = revisions.filter((r) => r.status === 'completed').length;
+  const missedTasksEstimate = tasks.filter((t) => !t.completed && t.date && t.date < new Date().toISOString().split('T')[0]).length;
+
   const weeklyReport = {
     weekRange: 'Current Week',
-    tasksCompleted: completedTasksCount + 12,
-    tasksMissed: 2,
-    hoursStudied: (dailyCapacityHours * 4.2).toFixed(1),
+    tasksCompleted: realWeeklyTasks,
+    tasksMissed: missedTasksEstimate,
+    hoursStudied: realWeeklyHours,
     topicsCompleted: completedTopics,
-    revisionsCompleted: revisions.filter((r) => r.status === 'completed').length + 4,
+    revisionsCompleted: realCompletedRevisions,
     currentStreak: streak.currentStreak || 0,
     roadmapProgress: roadmapProgress,
     takeaways: [
@@ -233,6 +240,64 @@ export function analyzeUserPreparation(userId) {
       `Focus upcoming sprint sessions on ${weakestCategory.name} to balance your overall placement readiness.`
     ]
   };
+
+  // 12. Concrete Next Best Action (Exact entity deep linking)
+  let nextBestAction = null;
+  const pendingTasks = tasks.filter((t) => !t.completed);
+
+  if (pendingTasks.length > 0) {
+    const nextTask = pendingTasks[0];
+    nextBestAction = {
+      type: 'TASK',
+      title: nextTask.name || nextTask.title || 'Continue Daily Mission',
+      description: `Complete your ${nextTask.estimatedDuration || '45 min'} session to advance daily progress.`,
+      actionRoute: 'today',
+      entityId: nextTask.id,
+      entityType: 'task',
+      badge: 'Immediate Priority',
+      ctaLabel: 'Start Task',
+      whyThis: `You have ${pendingTasks.length} unfinished mission${pendingTasks.length > 1 ? 's' : ''} today. Completing this task ensures your daily streak remains protected.`
+    };
+  } else if (overdueRevisions.length > 0) {
+    const nextRev = overdueRevisions[0];
+    nextBestAction = {
+      type: 'REVISION',
+      title: `Spaced Recall: ${nextRev.topic}`,
+      description: `Active recall retention is estimated at ${nextRev.retentionScore || '70%'}. Review before memory decay sets in.`,
+      actionRoute: 'revision',
+      entityId: nextRev.id,
+      entityType: 'revision',
+      badge: 'Retention Critical',
+      ctaLabel: 'Review Topic',
+      whyThis: `The spaced repetition algorithm flagged ${nextRev.topic} as due for review to maintain retention above the 80% benchmark.`
+    };
+  } else if (applications && applications.some(a => a.interviews?.some(i => i.status === 'scheduled'))) {
+    const targetApp = applications.find(a => a.interviews?.some(i => i.status === 'scheduled'));
+    const nextInterview = targetApp.interviews.find(i => i.status === 'scheduled');
+    nextBestAction = {
+      type: 'INTERVIEW',
+      title: `Practice for ${targetApp.company} Interview`,
+      description: `${nextInterview.title || 'Technical Round'} is scheduled. Practice role-specific questions.`,
+      actionRoute: 'interview',
+      entityId: targetApp.id,
+      entityType: 'interview',
+      badge: 'Upcoming Round',
+      ctaLabel: 'Practice Interview',
+      whyThis: `You have an active interview pipeline with ${targetApp.company}. High-repetition practice improves round success rates.`
+    };
+  } else {
+    nextBestAction = {
+      type: 'ROADMAP',
+      title: `Progress on ${weakestCategory.name}`,
+      description: `${weakestCategory.name} is at ${weakestCategory.percentage}%. Unlock next topic in your placement roadmap.`,
+      actionRoute: 'roadmap',
+      entityId: roadmap.phases?.[0]?.topics?.[0]?.id || 'roadmap',
+      entityType: 'topic',
+      badge: 'Skill Growth',
+      ctaLabel: 'View Roadmap',
+      whyThis: `${weakestCategory.name} is currently your lowest progress domain (${weakestCategory.percentage}%). Advancing topics here yields the largest readiness gain.`
+    };
+  }
 
   const coachAnalysis = {
     hasData: true,
@@ -249,6 +314,7 @@ export function analyzeUserPreparation(userId) {
     weakAreas,
     compactInsight: `${weakestCategory.name} is currently your lowest progress area (${weakestCategory.percentage}%). Consider shifting 30 minutes of study capacity toward ${weakestCategory.name} this week.`,
     recommendation,
+    nextBestAction,
     weeklyReport
   };
 

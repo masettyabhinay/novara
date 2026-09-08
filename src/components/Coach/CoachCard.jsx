@@ -72,21 +72,24 @@ export const CoachCard = ({ onOpenFullAnalysis }) => {
         <button
           type="button"
           onClick={onOpenFullAnalysis}
+          aria-label="View full placement coach analysis"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '4px',
-            fontSize: '11.5px',
+            gap: '6px',
+            fontSize: '12px',
             fontWeight: 700,
             color: 'var(--accent-terracotta)',
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            padding: '2px 0'
+            padding: '8px 12px',
+            minHeight: '44px',
+            borderRadius: 'var(--radius-pill)'
           }}
         >
           <span>View Analysis</span>
-          <ArrowRight size={13} />
+          <ArrowRight size={14} />
         </button>
       </div>
     </div>

@@ -1525,6 +1525,57 @@ export const AppProvider = ({ children }) => {
     setActiveTab('today');
   };
 
+  const navigateToCoachTarget = (action) => {
+    if (!action) return;
+
+    if (action.actionRoute === 'today' || action.type === 'TASK') {
+      setActiveTab('today');
+      if (action.entityId) {
+        const task = todayTasks.find((t) => t.id === action.entityId);
+        if (task) {
+          startFocusSession(task);
+        }
+      }
+      return;
+    }
+
+    if (action.actionRoute === 'revision' || action.type === 'REVISION') {
+      setActiveTab('revision');
+      if (action.entityId) {
+        const rev = revisionQueue.find((r) => r.id === action.entityId);
+        if (rev) {
+          setSelectedTopicDetail(rev);
+          setIsTopicDetailOpen(true);
+        }
+      }
+      return;
+    }
+
+    if (action.actionRoute === 'applications' || action.entityType === 'application') {
+      setActiveTab('applications');
+      if (action.entityId) {
+        const app = applications.find((a) => a.id === action.entityId);
+        if (app) {
+          setSelectedApplication(app);
+          setIsAppDetailsModalOpen(true);
+        }
+      }
+      return;
+    }
+
+    if (action.actionRoute === 'interview' || action.type === 'INTERVIEW') {
+      setActiveTab('interview');
+      return;
+    }
+
+    if (action.actionRoute === 'roadmap' || action.type === 'ROADMAP') {
+      setActiveTab('roadmap');
+      return;
+    }
+
+    setActiveTab('today');
+  };
+
   const refreshFocusAnalytics = async () => {
     try {
       const analytics = await getFocusAnalyticsApi();
@@ -1688,6 +1739,7 @@ export const AppProvider = ({ children }) => {
         isCoachLoading,
         refreshCoachAnalysis,
         applyCoachRecommendation,
+        navigateToCoachTarget,
         coachPreferences,
         setCoachPreferences: updateCoachPreferences,
         isUploadModalOpen,

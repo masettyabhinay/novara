@@ -1,37 +1,56 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { X, Sparkles, Check, ArrowRight, Clock, ShieldCheck } from 'lucide-react';
+import { X, Sparkles, Check, ArrowRight, Clock, ShieldCheck, Loader2 } from 'lucide-react';
 
-export const CoachAdjustmentModal = ({ isOpen, onClose, recommendation, onConfirm }) => {
+export const CoachAdjustmentModal = ({ isOpen, onClose, recommendation, onConfirm, isSubmitting = false }) => {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen && !isSubmitting) {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, isSubmitting]);
+
   if (!isOpen || !recommendation) return null;
 
   const beforeTotal = (recommendation.beforeAllocation || []).reduce((sum, item) => sum + item.minutes, 0);
   const afterTotal = (recommendation.afterAllocation || []).reduce((sum, item) => sum + item.minutes, 0);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div 
+      className="modal-overlay" 
+      onClick={isSubmitting ? undefined : onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="coach-adjustment-modal-title"
+    >
       <div 
         className="modal-content-sheet" 
         onClick={(e) => e.stopPropagation()}
-        style={{ padding: '24px 20px', maxWidth: '460px' }}
+        style={{ padding: '24px 20px', maxWidth: '460px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div style={{
-              width: '32px',
-              height: '32px',
+              width: '36px',
+              height: '36px',
               borderRadius: '10px',
               backgroundColor: 'var(--accent-terracotta-light)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: 'var(--accent-terracotta)'
+              color: 'var(--accent-terracotta)',
+              flexShrink: 0
             }}>
-              <Sparkles size={16} />
+              <Sparkles size={18} />
             </div>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
+              <h3 id="coach-adjustment-modal-title" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-charcoal)', margin: 0 }}>
                 Adjust your preparation plan?
               </h3>
             </div>
@@ -40,9 +59,11 @@ export const CoachAdjustmentModal = ({ isOpen, onClose, recommendation, onConfir
           <button
             type="button"
             onClick={onClose}
+            disabled={isSubmitting}
+            aria-label="Close adjustment modal"
             style={{
-              width: '30px',
-              height: '30px',
+              width: '44px',
+              height: '44px',
               borderRadius: '50%',
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-beige)',
@@ -50,10 +71,13 @@ export const CoachAdjustmentModal = ({ isOpen, onClose, recommendation, onConfir
               alignItems: 'center',
               justifyContent: 'center',
               color: 'var(--text-secondary)',
-              cursor: 'pointer'
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              minWidth: '44px',
+              minHeight: '44px',
+              flexShrink: 0
             }}
           >
-            <X size={15} />
+            <X size={16} />
           </button>
         </div>
 
@@ -136,23 +160,35 @@ export const CoachAdjustmentModal = ({ isOpen, onClose, recommendation, onConfir
           <button
             type="button"
             onClick={onClose}
+            disabled={isSubmitting}
             className="btn-secondary"
-            style={{ flex: 1, padding: '11px', fontSize: '12.5px' }}
+            style={{ flex: 1, padding: '11px', fontSize: '12.5px', minHeight: '44px' }}
           >
             Cancel
           </button>
 
           <button
             type="button"
-            onClick={() => {
-              onConfirm(recommendation);
+            disabled={isSubmitting}
+            onClick={async () => {
+              if (isSubmitting) return;
+              await onConfirm(recommendation);
               onClose();
             }}
             className="btn-primary"
-            style={{ flex: 2, padding: '11px 16px', fontSize: '12.5px' }}
+            style={{ flex: 2, padding: '11px 16px', fontSize: '12.5px', minHeight: '44px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
           >
-            <Check size={15} />
-            <span>Apply Changes</span>
+            {isSubmitting ? (
+              <>
+                <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Applying Changes...</span>
+              </>
+            ) : (
+              <>
+                <Check size={16} />
+                <span>Apply Changes</span>
+              </>
+            )}
           </button>
         </div>
       </div>
