@@ -14,7 +14,8 @@ import {
   Layers,
   Sparkles,
   RefreshCw,
-  Sigma
+  Sigma,
+  CheckCircle2
 } from 'lucide-react';
 import StudyDocumentHeader from './StudyDocumentHeader';
 import StudyProgress from './StudyProgress';
