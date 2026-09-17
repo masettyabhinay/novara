@@ -79,6 +79,13 @@ import {
   onSyncStateChange
 } from '../services/syncManager';
 import { SAMPLE_ROADMAPS, INITIAL_TODAY_TASKS, INITIAL_REVISION_QUEUE, INITIAL_NOTIFICATIONS, INITIAL_READINESS_METRICS } from '../data/mockData';
+import {
+  THEME_STORAGE_KEY,
+  getSavedThemePreference,
+  resolveEffectiveTheme,
+  applyThemeToDom,
+  subscribeToSystemThemeChange
+} from '../utils/themeUtils';
 
 const AppContext = createContext();
 
@@ -100,6 +107,42 @@ export const AppProvider = ({ children }) => {
   });
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [swRegistration, setSwRegistration] = useState(null);
+
+  // Authoritative Theme State (Light / Dark / System)
+  const [themePreference, setThemePreferenceState] = useState(() => getSavedThemePreference());
+  const [effectiveTheme, setEffectiveTheme] = useState(() => resolveEffectiveTheme(getSavedThemePreference()));
+
+  // Synchronize DOM attributes and live prefers-color-scheme listener
+  useEffect(() => {
+    const resolved = applyThemeToDom(themePreference);
+    setEffectiveTheme(resolved);
+
+    if (themePreference === 'system') {
+      const unsubscribe = subscribeToSystemThemeChange((newSystemTheme) => {
+        applyThemeToDom('system');
+        setEffectiveTheme(newSystemTheme);
+      });
+      return unsubscribe;
+    }
+  }, [themePreference]);
+
+  const setThemePreference = useCallback(async (newPref) => {
+    if (newPref !== 'light' && newPref !== 'dark' && newPref !== 'system') return;
+    setThemePreferenceState(newPref);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, newPref);
+    } catch (e) {}
+    const resolved = applyThemeToDom(newPref);
+    setEffectiveTheme(resolved);
+
+    if (currentUser?.id) {
+      try {
+        await syncUserProfile({ themePreference: newPref });
+      } catch (e) {
+        // Non-blocking sync
+      }
+    }
+  }, [currentUser?.id]);
 
   // Active User Data State
   const [activeTab, setActiveTab] = useState('today'); // 'today' | 'roadmap' | 'coach' | 'revision' | 'progress' | 'profile'
@@ -307,6 +350,13 @@ export const AppProvider = ({ children }) => {
         setNotifications(cloudData.notifications || []);
         setNotifPreferences(cloudData.notifPreferences || {});
         if (cloudData.readiness) setReadinessMetrics(cloudData.readiness);
+        if (cloudData.profile?.themePreference) {
+          setThemePreferenceState(cloudData.profile.themePreference);
+          try {
+            localStorage.setItem(THEME_STORAGE_KEY, cloudData.profile.themePreference);
+          } catch (e) {}
+          applyThemeToDom(cloudData.profile.themePreference);
+        }
 
         // Fetch Applications, Calendar & Initial Coach Analysis
         let fetchedApps = cloudData.applications || [];
@@ -1885,7 +1935,10 @@ export const AppProvider = ({ children }) => {
         isStandaloneApp,
         handleInstallApp,
         isUpdateAvailable,
-        applyAppUpdate
+        applyAppUpdate,
+        themePreference,
+        effectiveTheme,
+        setThemePreference
       }}
     >
       {children}

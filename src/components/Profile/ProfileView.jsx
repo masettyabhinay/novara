@@ -26,7 +26,11 @@ import {
   Layers,
   Database,
   Lock,
-  ArrowRight
+  ArrowRight,
+  Palette,
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react';
 
 const APP_VERSION = '1.0.0';
@@ -69,7 +73,10 @@ export const ProfileView = () => {
     pendingSyncCount,
     lastSyncedAt,
     triggerManualSync,
-    isOffline
+    isOffline,
+    themePreference,
+    effectiveTheme,
+    setThemePreference
   } = useApp();
 
   // Navigation: 7 Logical Sections
@@ -375,6 +382,7 @@ export const ProfileView = () => {
   const navSections = [
     { id: 'profile', label: 'Profile', icon: User, desc: 'Personal details' },
     { id: 'plan', label: 'Placement Plan', icon: Target, desc: 'Target role, daily hours & date' },
+    { id: 'appearance', label: 'Appearance', icon: Palette, desc: 'Theme & color scheme' },
     { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Smart alerts & reminders' },
     { id: 'timezone', label: 'Timezone', icon: Globe, desc: 'Regional schedule alignment' },
     { id: 'roadmap', label: 'Roadmap', icon: UploadCloud, desc: 'Syllabus & curriculum' },
@@ -960,6 +968,229 @@ export const ProfileView = () => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* =============================================================== */}
+          {/* THEME & APPEARANCE SECTION                                      */}
+          {/* =============================================================== */}
+          {activeSection === 'appearance' && (
+            <div className="settings-card">
+              <div style={{ marginBottom: '18px' }}>
+                <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-charcoal)', margin: 0 }}>
+                  Theme & Appearance
+                </h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  Customize how NOVARA looks on your device. Choose Light, Dark, or automatically synchronize with your device system preferences.
+                </p>
+              </div>
+
+              {/* Theme Selector Radio Group */}
+              <div 
+                role="radiogroup" 
+                aria-label="Theme selection"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))',
+                  gap: '14px',
+                  marginBottom: '20px'
+                }}
+              >
+                {/* 1. LIGHT OPTION */}
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={themePreference === 'light'}
+                  onClick={() => {
+                    setThemePreference('light');
+                    showToast('Theme Updated ☀️', 'Light theme applied.', 'neutral');
+                  }}
+                  className={`theme-option-card ${themePreference === 'light' ? 'selected' : ''}`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    padding: '16px',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: themePreference === 'light' ? 'var(--accent-terracotta-light)' : 'var(--bg-warm-cream-alt)',
+                    border: `2px solid ${themePreference === 'light' ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
+                    cursor: 'pointer',
+                    minHeight: '110px',
+                    textAlign: 'left',
+                    transition: 'all var(--transition-fast)',
+                    position: 'relative',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '10px' }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      backgroundColor: '#FAF7F2',
+                      color: '#C85A32',
+                      border: '1px solid #EAE3D8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Sun size={18} />
+                    </div>
+                    {themePreference === 'light' && (
+                      <span className="pill-badge pill-terracotta" style={{ fontSize: '10px', padding: '2px 8px' }}>
+                        <Check size={11} style={{ marginRight: '2px' }} /> Selected
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '4px' }}>
+                    Light
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    Crisp warm cream and terracotta minimalist aesthetic.
+                  </div>
+                </button>
+
+                {/* 2. DARK OPTION */}
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={themePreference === 'dark'}
+                  onClick={() => {
+                    setThemePreference('dark');
+                    showToast('Theme Updated 🌙', 'Dark theme applied.', 'neutral');
+                  }}
+                  className={`theme-option-card ${themePreference === 'dark' ? 'selected' : ''}`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    padding: '16px',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: themePreference === 'dark' ? 'var(--accent-terracotta-light)' : 'var(--bg-warm-cream-alt)',
+                    border: `2px solid ${themePreference === 'dark' ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
+                    cursor: 'pointer',
+                    minHeight: '110px',
+                    textAlign: 'left',
+                    transition: 'all var(--transition-fast)',
+                    position: 'relative',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '10px' }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      backgroundColor: '#1E2421',
+                      color: '#E06D44',
+                      border: '1px solid #2E3532',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Moon size={18} />
+                    </div>
+                    {themePreference === 'dark' && (
+                      <span className="pill-badge pill-terracotta" style={{ fontSize: '10px', padding: '2px 8px' }}>
+                        <Check size={11} style={{ marginRight: '2px' }} /> Selected
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '4px' }}>
+                    Dark
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    Deep warm obsidian and charcoal surfaces for eye comfort.
+                  </div>
+                </button>
+
+                {/* 3. SYSTEM OPTION */}
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={themePreference === 'system'}
+                  onClick={() => {
+                    setThemePreference('system');
+                    showToast('Theme Updated 💻', 'Following device system theme.', 'neutral');
+                  }}
+                  className={`theme-option-card ${themePreference === 'system' ? 'selected' : ''}`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    padding: '16px',
+                    borderRadius: 'var(--radius-lg)',
+                    backgroundColor: themePreference === 'system' ? 'var(--accent-terracotta-light)' : 'var(--bg-warm-cream-alt)',
+                    border: `2px solid ${themePreference === 'system' ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
+                    cursor: 'pointer',
+                    minHeight: '110px',
+                    textAlign: 'left',
+                    transition: 'all var(--transition-fast)',
+                    position: 'relative',
+                    width: '100%',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '10px' }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '10px',
+                      backgroundColor: 'var(--bg-card)',
+                      color: 'var(--accent-navy)',
+                      border: '1px solid var(--border-beige)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Monitor size={18} />
+                    </div>
+                    {themePreference === 'system' && (
+                      <span className="pill-badge pill-terracotta" style={{ fontSize: '10px', padding: '2px 8px' }}>
+                        <Check size={11} style={{ marginRight: '2px' }} /> Selected
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '4px' }}>
+                    System (Automatic)
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                    Automatically switches based on your OS or browser light/dark setting.
+                  </div>
+                </button>
+              </div>
+
+              {/* Live Status Banner */}
+              <div style={{
+                padding: '12px 16px',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--bg-warm-cream-alt)',
+                border: '1px solid var(--border-beige)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Sparkles size={16} color="var(--accent-terracotta)" />
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-charcoal)' }}>
+                    Active Visual Mode:
+                  </span>
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <span className={`pill-badge ${effectiveTheme === 'dark' ? 'pill-navy' : 'pill-amber'}`} style={{ fontSize: '11px', textTransform: 'uppercase' }}>
+                    {effectiveTheme === 'dark' ? '🌙 Dark Mode Active' : '☀️ Light Mode Active'}
+                  </span>
+                  {themePreference === 'system' && (
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                      (Synchronized with OS)
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

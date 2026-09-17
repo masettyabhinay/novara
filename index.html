@@ -6,6 +6,24 @@
     <title>NOVARA — Placement Preparation</title>
     <meta name="description" content="NOVARA is an AI-powered placement preparation platform. Turn your placement roadmap into a structured daily preparation journey." />
     
+    <!-- Synchronous Zero-Flash Theme Initialization -->
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('novara_theme_preference');
+          var theme = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'system';
+          var resolved = theme;
+          if (theme === 'system') {
+            resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+          }
+          document.documentElement.setAttribute('data-theme', resolved);
+          document.documentElement.setAttribute('data-theme-preference', theme);
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', resolved === 'dark' ? '#141716' : '#C85A32');
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- PWA & Mobile Web Capabilities -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#C85A32" />
