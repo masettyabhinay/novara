@@ -229,7 +229,8 @@ export async function extractTextFromBuffer(buffer, fileName = '') {
 export function sanitizeExtractedText(rawText) {
   if (!rawText || typeof rawText !== 'string') return '';
 
-  const rawLines = rawText.split(/[\r\n]+/);
+  const normalizedRaw = rawText.replace(/([^\n\r])\s*(Phase\s+[0-9]+|Module\s+[0-9]+|Part\s+[0-9]+)/gi, '$1\n$2');
+  const rawLines = normalizedRaw.split(/[\r\n]+/);
   const cleanLines = [];
 
   // Patterns for PDF internal metadata, drawing commands, and coordinates
