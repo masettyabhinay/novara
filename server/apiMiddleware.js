@@ -47,7 +47,9 @@ import {
   startInterviewSession, 
   evaluateInterviewAnswerOnServer, 
   completeInterviewSessionOnServer, 
-  getInterviewHistoryOnServer 
+  getInterviewHistoryOnServer,
+  getActiveInterviewSession,
+  cancelInterviewSessionOnServer
 } from './interviewService.js';
 
 import { 
@@ -740,6 +742,26 @@ export async function apiMiddlewareHandler(req, res, next) {
               return sendJson(res, 200, { success: true, ...historyData }, req);
             } catch (err) {
               return sendJson(res, 500, { success: false, error: 'Failed to load interview history.' }, req);
+            }
+          }
+
+          // GET /api/interview/active
+          if (req.method === 'GET' && (pathname === '/api/interview/active' || pathname === '/api/interview/session')) {
+            try {
+              const activeSession = getActiveInterviewSession(authUser.id);
+              return sendJson(res, 200, { success: true, active: !!activeSession, session: activeSession }, req);
+            } catch (err) {
+              return sendJson(res, 500, { success: false, error: 'Failed to check active interview.' }, req);
+            }
+          }
+
+          // POST /api/interview/cancel
+          if (req.method === 'POST' && pathname === '/api/interview/cancel') {
+            try {
+              cancelInterviewSessionOnServer(authUser.id);
+              return sendJson(res, 200, { success: true, message: 'Interview session cancelled.' }, req);
+            } catch (err) {
+              return sendJson(res, 500, { success: false, error: 'Failed to cancel interview.' }, req);
             }
           }
         }

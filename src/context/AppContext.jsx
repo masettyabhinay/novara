@@ -151,6 +151,7 @@ export const AppProvider = ({ children }) => {
     coachInsights: true,
     weeklyCoachReport: true
   });
+  const [pendingInterviewTarget, setPendingInterviewTarget] = useState(null);
 
   // Focus Mode State & Analytics
   const [activeFocusTask, setActiveFocusTask] = useState(null);
@@ -1376,6 +1377,12 @@ export const AppProvider = ({ children }) => {
       }
     } else if (event.type === 'MOCK_INTERVIEW') {
       setActiveTab('interview');
+      setPendingInterviewTarget({
+        entityId: event.id,
+        domain: event.domain || 'Technical',
+        title: event.title,
+        company: event.company
+      });
     } else if (event.type === 'PLACEMENT_TARGET') {
       setActiveTab('profile');
     } else if (event.isPersonal) {
@@ -1502,6 +1509,11 @@ export const AppProvider = ({ children }) => {
 
     if (notif.actionRoute === 'interview' || notif.actionRoute === 'mock-interview' || notif.type === 'MOCK_INTERVIEW') {
       setActiveTab('interview');
+      setPendingInterviewTarget({
+        entityId: notif.interviewId || notif.id,
+        domain: notif.domain || 'Technical',
+        title: notif.title
+      });
       return;
     }
 
@@ -1575,6 +1587,13 @@ export const AppProvider = ({ children }) => {
 
     if (action.actionRoute === 'interview' || action.type === 'INTERVIEW') {
       setActiveTab('interview');
+      setPendingInterviewTarget({
+        entityId: action.entityId,
+        domain: action.domain || (action.targetCategory === 'HR' ? 'HR & Behavioral' : action.targetCategory) || 'Technical',
+        difficulty: action.difficulty || 'Medium',
+        title: action.title,
+        company: action.company || (action.title?.includes('for ') ? action.title.split('for ')[1].split(' ')[0] : null)
+      });
       return;
     }
 
@@ -1821,6 +1840,8 @@ export const AppProvider = ({ children }) => {
         addInterviewStage: handleAddInterviewStage,
         updateInterviewStage: handleUpdateInterviewStage,
         deleteInterviewStage: handleDeleteInterviewStage,
+        pendingInterviewTarget,
+        setPendingInterviewTarget,
         calendarEvents,
         setCalendarEvents,
         calendarConflicts,

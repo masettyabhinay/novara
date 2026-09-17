@@ -79,6 +79,7 @@ export const ApplicationsView = () => {
     setIsAppDetailsModalOpen, 
     setIsAddAppModalOpen,
     setActiveTab,
+    setPendingInterviewTarget,
     showToast
   } = useApp();
 
@@ -160,7 +161,15 @@ export const ApplicationsView = () => {
     setIsAppDetailsModalOpen(true);
   };
 
-  const handleStartMockInterview = (company, role) => {
+  const handleStartMockInterview = (company, role, applicationId = null) => {
+    if (setPendingInterviewTarget) {
+      setPendingInterviewTarget({
+        applicationId,
+        company,
+        role,
+        domain: 'Technical'
+      });
+    }
     setActiveTab('interview');
     showToast('Mock Interview Setup 🎙️', `Configuring mock round for ${company} ${role}...`, 'sage');
   };

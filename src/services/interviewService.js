@@ -87,3 +87,32 @@ export const fetchInterviewHistoryApi = async () => {
   const data = await response.json();
   return data;
 };
+
+/**
+ * Fetch current active in-progress mock interview session if any exists
+ */
+export const fetchActiveInterviewApi = async () => {
+  const response = await fetch('/api/interview/active', {
+    method: 'GET',
+    headers: getAuthHeaders()
+  });
+
+  if (!response.ok) return null;
+  const data = await response.json();
+  return data.session || null;
+};
+
+/**
+ * Cancel the active mock interview session
+ */
+export const cancelInterviewApi = async (interviewId) => {
+  const response = await fetch('/api/interview/cancel', {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ interviewId })
+  });
+
+  if (!response.ok) return false;
+  return true;
+};
+

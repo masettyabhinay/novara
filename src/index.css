@@ -842,4 +842,127 @@ button {
   transition: all 150ms ease;
 }
 
+/* ==========================================================================
+   AI MOCK INTERVIEW ARCHITECTURE & RESPONSIVE WORKSPACE
+   ========================================================================== */
+.interview-landing-wrapper {
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.interview-domain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 480px) {
+  .interview-domain-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+.interview-domain-card {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-beige-light);
+  background-color: var(--bg-warm-cream-alt);
+  cursor: pointer;
+  transition: all 150ms ease;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.interview-domain-card:hover {
+  border-color: rgba(200, 90, 50, 0.4);
+}
+
+.interview-domain-card.selected {
+  background-color: var(--accent-terracotta-light);
+  border: 1.5px solid var(--accent-terracotta);
+  box-shadow: 0 4px 12px var(--accent-terracotta-glow);
+}
+
+.interview-config-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-beige-light);
+  margin-bottom: 18px;
+}
+
+@media (max-width: 480px) {
+  .interview-config-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+.interview-workspace-wrapper {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  animation: fadeIn 200ms ease;
+}
+
+.interview-question-textarea {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-beige);
+  background-color: var(--bg-warm-cream);
+  color: var(--text-charcoal);
+  font-size: 14px;
+  line-height: 1.55;
+  resize: vertical;
+  box-sizing: border-box;
+  min-height: 140px;
+  font-family: inherit;
+  transition: border-color 150ms ease;
+}
+
+.interview-question-textarea:focus {
+  outline: none;
+  border-color: var(--accent-terracotta);
+  box-shadow: 0 0 0 3px rgba(200, 90, 50, 0.12);
+}
+
+.interview-trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 80px;
+  padding: 8px 4px 0 4px;
+  margin-top: 10px;
+  border-bottom: 1px solid var(--border-beige-light);
+}
+
+.interview-trend-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.interview-trend-bar {
+  width: 100%;
+  max-width: 36px;
+  border-radius: 4px 4px 0 0;
+  transition: height 300ms ease;
+}
+
+
 

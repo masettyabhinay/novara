@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   Clock, 
@@ -10,7 +10,10 @@ import {
   HelpCircle,
   XCircle,
   Code2,
-  Check
+  Check,
+  BookOpen,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
 export const ActiveInterview = ({ 
@@ -28,26 +31,56 @@ export const ActiveInterview = ({
   const [evaluationResult, setEvaluationResult] = useState(null);
   const [isLastQuestion, setIsLastQuestion] = useState(false);
   const [nextQuestionData, setNextQuestionData] = useState(null);
+  const [isEndConfirmOpen, setIsEndConfirmOpen] = useState(false);
 
-  // Countdown timer in seconds
-  const [secondsRemaining, setSecondsRemaining] = useState(
-    (session.timeLimitMinutes || 15) * 60
-  );
+  // Authoritative Wall-Clock Timer Calculation
+  const timeLimitSeconds = session.timeLimitSeconds || (session.timeLimitMinutes || 15) * 60;
+  const startTimeMs = useRef(new Date(session.startTime || Date.now()).getTime());
 
+  const getRemainingSeconds = useCallback(() => {
+    const elapsed = Math.floor((Date.now() - startTimeMs.current) / 1000);
+    return Math.max(0, timeLimitSeconds - elapsed);
+  }, [timeLimitSeconds]);
+
+  const [secondsRemaining, setSecondsRemaining] = useState(() => getRemainingSeconds());
+
+  // Authoritative 1000ms countdown timer
   useEffect(() => {
     const timer = setInterval(() => {
-      setSecondsRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          showToast('Time Expired ⏰', 'Wrapping up your mock interview.', 'terracotta');
-          return 0;
-        }
-        return prev - 1;
-      });
+      const remaining = getRemainingSeconds();
+      setSecondsRemaining(remaining);
+
+      if (remaining <= 0) {
+        clearInterval(timer);
+        showToast('Time Expired ⏰', 'Your interview time limit has concluded.', 'terracotta');
+      }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [showToast]);
+  }, [getRemainingSeconds, showToast]);
+
+  // Window beforeunload safety guard while active
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = 'You have an active mock interview in progress. Are you sure you want to leave?';
+      return e.returnValue;
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
+  // Keyboard Escape listener for End dialog
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isEndConfirmOpen) {
+        setIsEndConfirmOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isEndConfirmOpen]);
 
   const formatTimer = (totalSeconds) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -60,22 +93,24 @@ export const ActiveInterview = ({
     setIsSubmitting(true);
 
     try {
-      const textToSubmit = isSkip ? '' : answerText;
+      const textToSubmit = isSkip ? '' : answerText.trim();
       const result = await onAnswerEvaluated(
         session.interviewId,
         questionIndex,
         textToSubmit
       );
 
-      setEvaluationResult(result.evaluation);
-      setIsLastQuestion(result.isLastQuestion);
-      setNextQuestionData(result.nextQuestion);
+      if (result && result.evaluation) {
+        setEvaluationResult(result.evaluation);
+        setIsLastQuestion(result.isLastQuestion);
+        setNextQuestionData(result.nextQuestion);
 
-      if (!isSkip && result.evaluation?.score >= 70) {
-        triggerConfetti();
+        if (!isSkip && result.evaluation?.score >= 75) {
+          triggerConfetti();
+        }
       }
     } catch (err) {
-      showToast('Evaluation Error', err.message || 'Could not submit answer.', 'terracotta');
+      showToast('Evaluation Error', err.message || 'Could not submit answer. Please try again.', 'terracotta');
     } finally {
       setIsSubmitting(false);
     }
@@ -96,19 +131,24 @@ export const ActiveInterview = ({
     }
   };
 
+  const wordCount = answerText.trim() ? answerText.trim().split(/\s+/).length : 0;
+  const progressPercent = Math.round(((questionIndex + 1) / session.totalQuestions) * 100);
+
   return (
-    <div style={{ animation: 'fadeIn 200ms ease', maxWidth: '680px', margin: '0 auto', width: '100%' }}>
-      {/* Top Session Progress Bar & Live Timer */}
+    <div className="interview-workspace-wrapper">
+      {/* Top Session Bar with Authoritative Timer & Progress */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         marginBottom: '14px',
-        padding: '10px 16px',
+        padding: '12px 18px',
         backgroundColor: '#FFFFFF',
         borderRadius: 'var(--radius-pill)',
         border: '1px solid var(--border-beige)',
-        boxShadow: 'var(--shadow-sm)'
+        boxShadow: 'var(--shadow-sm)',
+        flexWrap: 'wrap',
+        gap: '8px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{
@@ -121,35 +161,52 @@ export const ActiveInterview = ({
           }}>
             {session.type}
           </span>
+          <span style={{
+            fontSize: '11px',
+            fontWeight: 700,
+            padding: '2px 7px',
+            borderRadius: 'var(--radius-pill)',
+            backgroundColor: 'var(--bg-warm-cream-alt)',
+            color: 'var(--text-secondary)'
+          }}>
+            {session.difficulty}
+          </span>
           <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
             Question {questionIndex + 1} of {session.totalQuestions}
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            fontSize: '12.5px',
-            fontWeight: 800,
-            color: secondsRemaining < 120 ? 'var(--accent-terracotta)' : 'var(--text-charcoal)',
-            fontVariantNumeric: 'tabular-nums'
-          }}>
-            <Clock size={14} color={secondsRemaining < 120 ? 'var(--accent-terracotta)' : 'var(--text-muted)'} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div 
+            aria-label={`Time remaining: ${formatTimer(secondsRemaining)}`}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              fontSize: '13px',
+              fontWeight: 800,
+              color: secondsRemaining < 120 ? 'var(--accent-terracotta)' : 'var(--text-charcoal)',
+              fontVariantNumeric: 'tabular-nums'
+            }}
+          >
+            <Clock size={15} color={secondsRemaining < 120 ? 'var(--accent-terracotta)' : 'var(--text-muted)'} />
             <span>{formatTimer(secondsRemaining)}</span>
           </div>
 
           <button
             type="button"
-            onClick={onCancelInterview}
+            onClick={() => setIsEndConfirmOpen(true)}
+            aria-label="End interview session early"
             style={{
-              fontSize: '11px',
+              fontSize: '12px',
+              fontWeight: 600,
               color: 'var(--text-muted)',
-              border: 'none',
-              background: 'none',
+              border: '1px solid var(--border-beige-light)',
+              borderRadius: 'var(--radius-pill)',
+              backgroundColor: 'var(--bg-warm-cream)',
               cursor: 'pointer',
-              padding: '2px 6px'
+              padding: '4px 10px',
+              minHeight: '32px'
             }}
           >
             End
@@ -157,18 +214,42 @@ export const ActiveInterview = ({
         </div>
       </div>
 
-      {/* Main Question Card */}
+      {/* Progress Bar */}
+      <div 
+        role="progressbar"
+        aria-valuenow={questionIndex + 1}
+        aria-valuemin={1}
+        aria-valuemax={session.totalQuestions}
+        style={{
+          width: '100%',
+          height: '4px',
+          backgroundColor: 'var(--border-beige-light)',
+          borderRadius: 'var(--radius-pill)',
+          marginBottom: '16px',
+          overflow: 'hidden'
+        }}
+      >
+        <div style={{
+          width: `${progressPercent}%`,
+          height: '100%',
+          backgroundColor: 'var(--accent-terracotta)',
+          transition: 'width 250ms ease'
+        }} />
+      </div>
+
+      {/* Main Question & Answer Card */}
       <div 
         className="card-white"
         style={{
-          padding: '22px 24px',
-          marginBottom: '16px',
+          padding: '24px',
+          marginBottom: '18px',
           backgroundColor: '#FFFFFF',
           border: '1.5px solid var(--border-beige)'
         }}
       >
+        {/* Domain & Topic Chip */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+          <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
             {currentQuestion.topic || currentQuestion.category}
           </span>
           <span style={{
@@ -179,60 +260,61 @@ export const ActiveInterview = ({
             backgroundColor: 'var(--bg-warm-cream-alt)',
             color: 'var(--text-secondary)'
           }}>
-            {currentQuestion.difficulty}
+            {currentQuestion.difficulty || session.difficulty}
           </span>
         </div>
 
-        <h2 style={{
-          fontSize: '16.5px',
-          fontWeight: 800,
-          color: 'var(--text-charcoal)',
-          lineHeight: '1.4',
-          marginBottom: '18px',
-          letterSpacing: '-0.01em'
-        }}>
+        {/* Question Title */}
+        <h2 
+          id="interview-question-heading"
+          style={{
+            fontSize: '17px',
+            fontWeight: 800,
+            color: 'var(--text-charcoal)',
+            lineHeight: '1.45',
+            marginBottom: '18px',
+            letterSpacing: '-0.01em'
+          }}
+        >
           {currentQuestion.question}
         </h2>
 
-        {/* Answer Input or Evaluated Feedback State */}
+        {/* State A: Input Mode (Before Evaluation) */}
         {!evaluationResult ? (
           <div>
+            <label htmlFor="interview-answer-textarea" style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-charcoal)', display: 'block', marginBottom: '6px' }}>
+              Your Answer / Technical Explanation:
+            </label>
+
             <textarea
+              id="interview-answer-textarea"
               value={answerText}
               onChange={(e) => setAnswerText(e.target.value)}
-              placeholder="Type your explanation here. Mention key concepts, trade-offs, and examples..."
-              rows={6}
+              placeholder="Explain your approach, core principles, edge cases, and algorithmic complexity..."
               disabled={isSubmitting}
-              style={{
-                width: '100%',
-                padding: '12px 14px',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-beige)',
-                fontSize: '13px',
-                lineHeight: '1.5',
-                outline: 'none',
-                backgroundColor: 'var(--bg-warm-cream)',
-                color: 'var(--text-charcoal)',
-                resize: 'vertical',
-                boxSizing: 'border-box',
-                marginBottom: '14px',
-                fontFamily: 'inherit'
-              }}
+              className="interview-question-textarea"
+              rows={6}
             />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', marginBottom: '14px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+              <span>{wordCount} words entered</span>
+              <span>Explain clearly with key terminology</span>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
               <button
                 type="button"
                 onClick={() => handleSubmit(true)}
                 disabled={isSubmitting}
                 style={{
-                  fontSize: '12px',
+                  fontSize: '12.5px',
                   color: 'var(--text-secondary)',
                   border: 'none',
                   background: 'none',
                   cursor: 'pointer',
-                  padding: '6px 10px',
-                  fontWeight: 600
+                  padding: '8px 12px',
+                  fontWeight: 600,
+                  minHeight: '44px'
                 }}
               >
                 Skip Question
@@ -244,59 +326,89 @@ export const ActiveInterview = ({
                 disabled={isSubmitting || answerText.trim().length === 0}
                 className="btn-primary"
                 style={{
-                  padding: '10px 22px',
-                  fontSize: '13px',
-                  opacity: answerText.trim().length === 0 ? 0.6 : 1
+                  padding: '10px 24px',
+                  fontSize: '13.5px',
+                  opacity: (isSubmitting || answerText.trim().length === 0) ? 0.6 : 1,
+                  minHeight: '44px',
+                  gap: '6px'
                 }}
               >
-                <Send size={14} />
-                <span>{isSubmitting ? 'Evaluating...' : 'Submit Answer'}</span>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 size={16} className="spin-icon" />
+                    <span>Evaluating Answer...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send size={15} />
+                    <span>Submit Answer</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
         ) : (
-          /* ===============================================================
-             QUESTION-BY-QUESTION INSTANT EVALUATION FEEDBACK
-             =============================================================== */
+          /* State B: Instant Evaluation Feedback Mode */
           <div style={{ animation: 'fadeIn 200ms ease' }}>
             {/* Score & Verdict Banner */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '12px 16px',
+              padding: '14px 18px',
               borderRadius: 'var(--radius-md)',
               backgroundColor: evaluationResult.score >= 70 ? 'var(--accent-sage-light)' : 'var(--accent-amber-light)',
-              marginBottom: '14px',
-              border: '1px solid var(--border-beige-light)'
+              marginBottom: '16px',
+              border: '1px solid var(--border-beige-light)',
+              flexWrap: 'wrap',
+              gap: '8px'
             }}>
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                   Question Score
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: 900, color: evaluationResult.score >= 70 ? 'var(--accent-sage)' : 'var(--accent-amber)' }}>
+                <div style={{ fontSize: '24px', fontWeight: 900, color: evaluationResult.score >= 70 ? 'var(--accent-sage)' : 'var(--accent-amber)' }}>
                   {evaluationResult.score}/100
                 </div>
               </div>
 
               <div style={{
-                fontSize: '12px',
+                fontSize: '13px',
                 fontWeight: 800,
                 color: evaluationResult.score >= 70 ? 'var(--accent-sage)' : 'var(--accent-amber)'
               }}>
-                {evaluationResult.score >= 80 ? 'Excellent explanation ✨' : evaluationResult.score >= 60 ? 'Good answer 👍' : 'Needs more depth 💡'}
+                {evaluationResult.score >= 80 ? 'Excellent Technical Explanation ✨' : evaluationResult.score >= 60 ? 'Good Answer 👍' : 'Needs Technical Elaboration 💡'}
+              </div>
+            </div>
+
+            {/* Preserved User's Answer */}
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                Your Answer:
+              </div>
+              <div style={{
+                padding: '10px 14px',
+                backgroundColor: 'var(--bg-warm-cream-alt)',
+                border: '1px solid var(--border-beige-light)',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '12.5px',
+                color: 'var(--text-charcoal)',
+                fontStyle: evaluationResult.isSkipped ? 'italic' : 'normal',
+                lineHeight: 1.5
+              }}>
+                {evaluationResult.isSkipped ? 'Question was skipped.' : answerText}
               </div>
             </div>
 
             {/* Strengths */}
             {evaluationResult.strengths?.length > 0 && (
-              <div style={{ marginBottom: '10px' }}>
+              <div style={{ marginBottom: '12px' }}>
                 <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent-sage)', marginBottom: '4px' }}>
                   Strong Points
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {evaluationResult.strengths.map((s, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '12px', color: 'var(--text-charcoal)' }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '12.5px', color: 'var(--text-charcoal)' }}>
                       <span style={{ color: 'var(--accent-sage)', fontWeight: 800 }}>✓</span>
                       <span>{s}</span>
                     </div>
@@ -307,13 +419,13 @@ export const ActiveInterview = ({
 
             {/* Improvements */}
             {evaluationResult.improvements?.length > 0 && (
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: '14px' }}>
                 <div style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent-terracotta)', marginBottom: '4px' }}>
-                  To Improve
+                  Actionable Improvements
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {evaluationResult.improvements.map((imp, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '12px', color: 'var(--text-charcoal)' }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '12.5px', color: 'var(--text-charcoal)' }}>
                       <span style={{ color: 'var(--accent-terracotta)', fontWeight: 800 }}>⚠</span>
                       <span>{imp}</span>
                     </div>
@@ -322,21 +434,102 @@ export const ActiveInterview = ({
               </div>
             )}
 
+            {/* Ideal Answer Reference Outline (If Available) */}
+            {evaluationResult.idealAnswerOutline && (
+              <div style={{
+                padding: '12px 14px',
+                backgroundColor: 'var(--bg-warm-cream-alt)',
+                border: '1px solid var(--border-beige)',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: '16px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                  <BookOpen size={13} color="var(--accent-terracotta)" />
+                  <span>Reference Answer Outline</span>
+                </div>
+                <p style={{ fontSize: '12px', color: 'var(--text-charcoal)', lineHeight: 1.5, margin: 0 }}>
+                  {evaluationResult.idealAnswerOutline}
+                </p>
+              </div>
+            )}
+
             {/* Next Action Button */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '10px' }}>
               <button
                 type="button"
                 onClick={handleNextQuestion}
                 className="btn-primary"
-                style={{ padding: '10px 22px', fontSize: '13px' }}
+                style={{ padding: '11px 26px', fontSize: '13.5px', minHeight: '44px', gap: '6px' }}
               >
                 <span>{isLastQuestion ? 'Complete Interview 🎯' : 'Next Question'}</span>
-                <ArrowRight size={14} />
+                <ArrowRight size={15} />
               </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal to End Interview Early */}
+      {isEndConfirmOpen && (
+        <div 
+          className="modal-overlay" 
+          onClick={() => setIsEndConfirmOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="end-interview-dialog-title"
+        >
+          <div 
+            className="modal-content-sheet"
+            onClick={(e) => e.stopPropagation()}
+            style={{ padding: '24px', maxWidth: '420px', textAlign: 'center' }}
+          >
+            <div style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--accent-terracotta-light)',
+              color: 'var(--accent-terracotta)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 14px auto'
+            }}>
+              <AlertTriangle size={24} />
+            </div>
+
+            <h3 id="end-interview-dialog-title" style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-charcoal)', marginBottom: '8px' }}>
+              End mock interview early?
+            </h3>
+
+            <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.45', marginBottom: '18px' }}>
+              Are you sure you want to end this interview? Completed questions will be preserved in your session report, but remaining questions will conclude.
+            </p>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setIsEndConfirmOpen(false)}
+                className="btn-secondary"
+                style={{ flex: 1, minHeight: '44px', fontSize: '13px' }}
+              >
+                Continue Practice
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEndConfirmOpen(false);
+                  onCancelInterview();
+                }}
+                className="btn-primary"
+                style={{ flex: 1, minHeight: '44px', fontSize: '13px', backgroundColor: 'var(--accent-terracotta)' }}
+              >
+                End Session
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

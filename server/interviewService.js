@@ -334,6 +334,7 @@ export function evaluateInterviewAnswerOnServer(userId, interviewId, questionInd
     };
   }
 
+  evaluation.idealAnswerOutline = q.idealAnswerOutline || '';
   q.userAnswer = trimmedAnswer;
   q.skipped = isSkipped;
   q.evaluation = evaluation;
@@ -482,3 +483,42 @@ function sanitizeQuestionForClient(q) {
     question: q.question
   };
 }
+
+export function getActiveInterviewSession(userId) {
+  const db = loadDb();
+  const session = db.activeInterviews?.[userId] || null;
+  if (!session) return null;
+
+  // Check if session has expired by wall-clock time
+  const startTimeMs = new Date(session.startTime).getTime();
+  const elapsedSeconds = Math.floor((Date.now() - startTimeMs) / 1000);
+  const remainingSeconds = Math.max(0, session.timeLimitSeconds - elapsedSeconds);
+
+  const currentQ = session.questions[session.currentQuestionIndex || 0];
+
+  return {
+    interviewId: session.id,
+    type: session.type,
+    difficulty: session.difficulty,
+    targetRole: session.targetRole,
+    timeLimitMinutes: session.timeLimitMinutes,
+    timeLimitSeconds: session.timeLimitSeconds,
+    remainingSeconds,
+    isExpired: remainingSeconds <= 0,
+    startTime: session.startTime,
+    totalQuestions: session.totalQuestions,
+    currentQuestionIndex: session.currentQuestionIndex || 0,
+    currentQuestion: sanitizeQuestionForClient(currentQ)
+  };
+}
+
+export function cancelInterviewSessionOnServer(userId) {
+  const db = loadDb();
+  if (db.activeInterviews && db.activeInterviews[userId]) {
+    delete db.activeInterviews[userId];
+    saveDb(db);
+    return true;
+  }
+  return false;
+}
+

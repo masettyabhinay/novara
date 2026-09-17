@@ -76,6 +76,7 @@ export const ApplicationDetailModal = () => {
     updateInterviewStage,
     deleteInterviewStage,
     setActiveTab,
+    setPendingInterviewTarget,
     showToast
   } = useApp();
 
@@ -129,6 +130,14 @@ export const ApplicationDetailModal = () => {
   };
 
   const handleStartMockInterview = () => {
+    if (setPendingInterviewTarget) {
+      setPendingInterviewTarget({
+        applicationId: app.id,
+        company: app.company,
+        role: app.role,
+        domain: 'Technical'
+      });
+    }
     setIsAppDetailsModalOpen(false);
     setActiveTab('interview');
     showToast('Mock Interview Setup 🎙️', `Configuring mock round for ${app.company} ${app.role}...`, 'sage');
