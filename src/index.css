@@ -615,3 +615,38 @@ button {
   }
 }
 
+/* Dashboard / Command Center Responsive Architecture */
+.dashboard-command-center {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+@media (max-width: 640px) {
+  .dashboard-command-center {
+    padding: 0 2px;
+  }
+  .dashboard-quick-progress-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .dashboard-primary-mission-card {
+    padding: 16px 14px !important;
+  }
+  .dashboard-revision-card,
+  .dashboard-roadmap-card,
+  .dashboard-coach-card,
+  .dashboard-calendar-card,
+  .dashboard-activity-card {
+    padding: 14px 14px !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .dashboard-quick-progress-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
