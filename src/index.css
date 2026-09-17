@@ -650,3 +650,196 @@ button {
   }
 }
 
+/* ==========================================================================
+   SETTINGS & PROFILE COMMAND CENTER ARCHITECTURE
+   ========================================================================== */
+.settings-page-wrapper {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.settings-desktop-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+@media (min-width: 840px) {
+  .settings-desktop-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+}
+
+.settings-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-beige);
+  border-radius: var(--radius-lg);
+  padding: 10px;
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 80px;
+}
+
+.settings-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  transition: all 150ms ease;
+  text-align: left;
+  width: 100%;
+}
+
+.settings-nav-btn:hover {
+  background-color: var(--bg-warm-cream-alt);
+  color: var(--text-charcoal);
+}
+
+.settings-nav-btn.active {
+  background-color: var(--accent-terracotta-light);
+  color: var(--accent-terracotta);
+  border-color: rgba(200, 90, 50, 0.2);
+  font-weight: 700;
+}
+
+.settings-nav-btn:focus-visible {
+  outline: 2px solid var(--accent-terracotta);
+  outline-offset: 2px;
+}
+
+/* Mobile horizontal tab bar */
+.settings-mobile-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.settings-mobile-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.settings-mobile-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-beige);
+  background-color: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-height: 44px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.settings-mobile-tab-btn.active {
+  background-color: var(--accent-terracotta);
+  color: #FFFFFF;
+  border-color: var(--accent-terracotta);
+  box-shadow: 0 4px 12px var(--accent-terracotta-glow);
+}
+
+.settings-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-beige);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+}
+
+@media (max-width: 640px) {
+  .settings-card {
+    padding: 16px 14px;
+  }
+}
+
+.settings-form-group {
+  margin-bottom: 18px;
+}
+
+.settings-form-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-charcoal);
+  margin-bottom: 6px;
+}
+
+.settings-form-input {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-beige);
+  background-color: var(--bg-warm-cream);
+  color: var(--text-charcoal);
+  font-size: 13.5px;
+  min-height: 44px;
+  box-sizing: border-box;
+  transition: border-color 150ms ease;
+}
+
+.settings-form-input:focus {
+  outline: none;
+  border-color: var(--accent-terracotta);
+  box-shadow: 0 0 0 3px rgba(200, 90, 50, 0.12);
+}
+
+.settings-comparison-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background-color: var(--bg-warm-cream-alt);
+  border: 1px solid var(--border-beige-light);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 480px) {
+  .settings-comparison-box {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-action-btn {
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+

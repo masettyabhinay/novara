@@ -122,6 +122,7 @@ const AppContent = () => {
       case 'progress':
         return <ProgressView />;
       case 'profile':
+      case 'settings':
         return <ProfileView />;
       default:
         return <TodayView />;

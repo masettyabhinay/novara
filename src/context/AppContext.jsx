@@ -713,17 +713,24 @@ export const AppProvider = ({ children }) => {
   // USER PROFILE UPDATES (CLOUD SYNCHRONIZED)
   // -------------------------------------------------------------------------
   const updateProfile = async (updates) => {
+    let resolved;
     setUserProfile((prev) => {
-      const resolved = typeof updates === 'function' ? updates(prev) : updates;
+      resolved = typeof updates === 'function' ? updates(prev) : updates;
       return { ...prev, ...resolved };
     });
+    setCurrentUser((prev) => (prev ? { ...prev, ...resolved } : prev));
     try {
       const payload = typeof updates === 'function' ? updates(userProfile) : updates;
       const updated = await syncUserProfile(payload);
-      if (updated) setUserProfile(updated);
+      if (updated) {
+        setUserProfile(updated);
+        setCurrentUser((prev) => (prev ? { ...prev, ...updated } : prev));
+      }
       refreshCoachAnalysis(false).catch(() => {});
+      return { success: true, profile: updated || resolved };
     } catch (e) {
       console.warn('[Sync Error]', e);
+      return { success: false, error: e.message || 'Failed to update profile.' };
     }
   };
 
@@ -1436,9 +1443,12 @@ export const AppProvider = ({ children }) => {
   const updatePreferences = async (newPrefs) => {
     setNotifPreferences((prev) => ({ ...prev, ...newPrefs }));
     try {
-      await syncNotificationPreferences(newPrefs);
+      const updated = await syncNotificationPreferences(newPrefs);
       showToast('Preferences Saved ✨', 'Your notification settings have been updated.', 'sage');
-    } catch (e) {}
+      return { success: true, preferences: updated || newPrefs };
+    } catch (e) {
+      return { success: false, error: e.message || 'Failed to update preferences.' };
+    }
   };
 
   const sendTestNotification = async (type = 'streak') => {
