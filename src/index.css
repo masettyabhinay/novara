@@ -157,6 +157,35 @@
   border-color: var(--border-beige);
 }
 
+/* Onboarding Contrast Polish & Accessibility */
+.onboarding-radio-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--border-beige-dark);
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+[data-theme="dark"] .onboarding-radio-circle {
+  border-color: var(--text-muted);
+}
+
+.onboarding-radio-circle.selected {
+  border-color: var(--accent-terracotta) !important;
+  background-color: var(--accent-terracotta) !important;
+}
+
+.onboarding-radio-circle.selected-navy {
+  border-color: var(--accent-navy) !important;
+  background-color: var(--accent-navy) !important;
+}
+
 /* Global Reset */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -329,6 +358,10 @@ button {
 }
 .card-white.interactive:active {
   transform: scale(0.985);
+}
+.card-white.interactive:focus-visible {
+  outline: 2px solid var(--accent-terracotta);
+  outline-offset: 2px;
 }
 
 /* Badges & Pills */

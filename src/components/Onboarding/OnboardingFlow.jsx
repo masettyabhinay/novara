@@ -122,7 +122,7 @@ export const OnboardingFlow = () => {
             <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--accent-terracotta)' }}>
               Step {step} of 5
             </span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
               {Math.round((step / 5) * 100)}% Completed
             </span>
           </div>
@@ -161,15 +161,27 @@ export const OnboardingFlow = () => {
                 return (
                   <div
                     key={r.id}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setFormData({ ...formData, targetRole: r.id });
+                      }
+                    }}
                     onClick={() => setFormData({ ...formData, targetRole: r.id })}
                     className="card-white interactive"
                     style={{
                       padding: '14px 16px',
-                      borderColor: isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige)',
-                      backgroundColor: isSelected ? 'var(--accent-terracotta-light)' : '#FFFFFF',
+                      minHeight: '56px',
+                      borderColor: isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)',
+                      backgroundColor: isSelected ? 'var(--accent-terracotta-light)' : 'var(--bg-card)',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-fast)'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -178,10 +190,12 @@ export const OnboardingFlow = () => {
                         height: '36px',
                         borderRadius: '10px',
                         backgroundColor: isSelected ? 'var(--accent-terracotta)' : 'var(--bg-warm-cream)',
+                        border: `1px solid ${isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
                         color: isSelected ? '#FFFFFF' : 'var(--accent-terracotta)',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        flexShrink: 0
                       }}>
                         <Icon size={18} />
                       </div>
@@ -195,17 +209,22 @@ export const OnboardingFlow = () => {
                       </div>
                     </div>
 
-                    <div style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      border: `2px solid ${isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
-                      backgroundColor: isSelected ? 'var(--accent-terracotta)' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#FFFFFF'
-                    }}>
+                    <div 
+                      aria-hidden="true"
+                      className={`onboarding-radio-circle ${isSelected ? 'selected' : ''}`}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        border: `2px solid ${isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)'}`,
+                        backgroundColor: isSelected ? 'var(--accent-terracotta)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#FFFFFF',
+                        flexShrink: 0
+                      }}
+                    >
                       {isSelected && <Check size={12} strokeWidth={3} />}
                     </div>
                   </div>
@@ -243,7 +262,16 @@ export const OnboardingFlow = () => {
                   type="date"
                   value={formData.targetDate}
                   onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
-                  style={{ border: 'none', outline: 'none', backgroundColor: 'transparent', width: '100%', fontSize: '14px', fontWeight: 600 }}
+                  style={{ 
+                    border: 'none', 
+                    outline: 'none', 
+                    backgroundColor: 'transparent', 
+                    width: '100%', 
+                    fontSize: '14px', 
+                    fontWeight: 600,
+                    color: 'var(--text-charcoal)',
+                    colorScheme: 'inherit'
+                  }}
                 />
               </div>
 
@@ -255,13 +283,19 @@ export const OnboardingFlow = () => {
                     onClick={() => setFormData({ ...formData, targetDate: presetDate })}
                     style={{
                       flex: 1,
+                      minHeight: '44px',
                       padding: '8px 4px',
                       borderRadius: 'var(--radius-pill)',
                       fontSize: '11px',
                       fontWeight: 600,
                       backgroundColor: formData.targetDate === presetDate ? 'var(--accent-terracotta)' : 'var(--bg-warm-cream-alt)',
                       color: formData.targetDate === presetDate ? '#FFFFFF' : 'var(--text-secondary)',
-                      border: '1px solid var(--border-beige)'
+                      border: `1px solid ${formData.targetDate === presetDate ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all var(--transition-fast)'
                     }}
                   >
                     {i === 0 ? '45-Day' : i === 1 ? '90-Day' : '120-Day'} Sprint
@@ -288,19 +322,44 @@ export const OnboardingFlow = () => {
                 return (
                   <div
                     key={t.hours}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setFormData({ ...formData, dailyTargetHours: t.hours });
+                      }
+                    }}
                     onClick={() => setFormData({ ...formData, dailyTargetHours: t.hours })}
                     className="card-white interactive"
                     style={{
                       padding: '14px 16px',
-                      borderColor: isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige)',
-                      backgroundColor: isSelected ? 'var(--accent-terracotta-light)' : '#FFFFFF',
+                      minHeight: '56px',
+                      borderColor: isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)',
+                      backgroundColor: isSelected ? 'var(--accent-terracotta-light)' : 'var(--bg-card)',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-fast)'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <Clock size={18} color="var(--accent-terracotta)" />
+                      <div style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '10px',
+                        backgroundColor: isSelected ? 'var(--accent-terracotta)' : 'var(--bg-warm-cream)',
+                        border: `1px solid ${isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
+                        color: isSelected ? '#FFFFFF' : 'var(--accent-terracotta)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <Clock size={18} />
+                      </div>
                       <div>
                         <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
                           {t.label}
@@ -311,17 +370,22 @@ export const OnboardingFlow = () => {
                       </div>
                     </div>
 
-                    <div style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      border: `2px solid ${isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
-                      backgroundColor: isSelected ? 'var(--accent-terracotta)' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#FFFFFF'
-                    }}>
+                    <div 
+                      aria-hidden="true"
+                      className={`onboarding-radio-circle ${isSelected ? 'selected' : ''}`}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        border: `2px solid ${isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)'}`,
+                        backgroundColor: isSelected ? 'var(--accent-terracotta)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#FFFFFF',
+                        flexShrink: 0
+                      }}
+                    >
                       {isSelected && <Check size={12} strokeWidth={3} />}
                     </div>
                   </div>
@@ -347,15 +411,27 @@ export const OnboardingFlow = () => {
                 return (
                   <div
                     key={lvl.id}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setFormData({ ...formData, prepLevel: lvl.id });
+                      }
+                    }}
                     onClick={() => setFormData({ ...formData, prepLevel: lvl.id })}
                     className="card-white interactive"
                     style={{
                       padding: '16px',
-                      borderColor: isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige)',
-                      backgroundColor: isSelected ? 'var(--accent-terracotta-light)' : '#FFFFFF',
+                      minHeight: '56px',
+                      borderColor: isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)',
+                      backgroundColor: isSelected ? 'var(--accent-terracotta-light)' : 'var(--bg-card)',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'all var(--transition-fast)'
                     }}
                   >
                     <div>
@@ -367,17 +443,22 @@ export const OnboardingFlow = () => {
                       </div>
                     </div>
 
-                    <div style={{
-                      width: '20px',
-                      height: '20px',
-                      borderRadius: '50%',
-                      border: `2px solid ${isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
-                      backgroundColor: isSelected ? 'var(--accent-terracotta)' : 'transparent',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#FFFFFF'
-                    }}>
+                    <div 
+                      aria-hidden="true"
+                      className={`onboarding-radio-circle ${isSelected ? 'selected' : ''}`}
+                      style={{
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        border: `2px solid ${isSelected ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)'}`,
+                        backgroundColor: isSelected ? 'var(--accent-terracotta)' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#FFFFFF',
+                        flexShrink: 0
+                      }}
+                    >
                       {isSelected && <Check size={12} strokeWidth={3} />}
                     </div>
                   </div>
@@ -400,8 +481,8 @@ export const OnboardingFlow = () => {
             {/* Launch Error Alert if any */}
             {launchError && (
               <div style={{
-                backgroundColor: '#FFF1EE',
-                border: '1px solid rgba(200, 90, 50, 0.3)',
+                backgroundColor: 'var(--accent-terracotta-light)',
+                border: '1px solid var(--accent-terracotta)',
                 borderRadius: 'var(--radius-md)',
                 padding: '12px 14px',
                 marginBottom: '16px',
@@ -418,7 +499,8 @@ export const OnboardingFlow = () => {
                   type="button"
                   onClick={handleLaunchDailyPlan}
                   style={{
-                    padding: '4px 10px',
+                    padding: '6px 12px',
+                    minHeight: '32px',
                     borderRadius: 'var(--radius-pill)',
                     backgroundColor: 'var(--accent-terracotta)',
                     color: '#FFFFFF',
@@ -435,19 +517,43 @@ export const OnboardingFlow = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
               <div 
+                role="radio"
+                aria-checked={formData.selectedPresetRoadmap === 'sde'}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (!isLaunching && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    setFormData({ ...formData, selectedPresetRoadmap: 'sde' });
+                  }
+                }}
                 onClick={() => !isLaunching && setFormData({ ...formData, selectedPresetRoadmap: 'sde' })}
                 className="card-white interactive"
                 style={{
                   padding: '14px 16px',
-                  borderColor: formData.selectedPresetRoadmap === 'sde' ? 'var(--accent-terracotta)' : 'var(--border-beige)',
-                  backgroundColor: formData.selectedPresetRoadmap === 'sde' ? 'var(--accent-terracotta-light)' : '#FFFFFF',
+                  minHeight: '56px',
+                  borderColor: formData.selectedPresetRoadmap === 'sde' ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)',
+                  backgroundColor: formData.selectedPresetRoadmap === 'sde' ? 'var(--accent-terracotta-light)' : 'var(--bg-card)',
                   cursor: isLaunching ? 'not-allowed' : 'pointer',
-                  opacity: isLaunching ? 0.7 : 1
+                  opacity: isLaunching ? 0.7 : 1,
+                  transition: 'all var(--transition-fast)'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <FileText size={18} color="var(--accent-terracotta)" />
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '10px',
+                      backgroundColor: formData.selectedPresetRoadmap === 'sde' ? 'var(--accent-terracotta)' : 'var(--bg-warm-cream)',
+                      border: `1px solid ${formData.selectedPresetRoadmap === 'sde' ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
+                      color: formData.selectedPresetRoadmap === 'sde' ? '#FFFFFF' : 'var(--accent-terracotta)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <FileText size={16} />
+                    </div>
                     <div>
                       <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
                         Top Tech SDE-1 Masterplan (90-Day Sprint)
@@ -457,24 +563,65 @@ export const OnboardingFlow = () => {
                       </div>
                     </div>
                   </div>
-                  {formData.selectedPresetRoadmap === 'sde' && <Check size={16} color="var(--accent-terracotta)" strokeWidth={3} />}
+                  <div 
+                    aria-hidden="true"
+                    className={`onboarding-radio-circle ${formData.selectedPresetRoadmap === 'sde' ? 'selected' : ''}`}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      border: `2px solid ${formData.selectedPresetRoadmap === 'sde' ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)'}`,
+                      backgroundColor: formData.selectedPresetRoadmap === 'sde' ? 'var(--accent-terracotta)' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FFFFFF',
+                      flexShrink: 0
+                    }}
+                  >
+                    {formData.selectedPresetRoadmap === 'sde' && <Check size={12} strokeWidth={3} />}
+                  </div>
                 </div>
               </div>
 
               <div 
+                role="radio"
+                aria-checked={formData.selectedPresetRoadmap === 'datascience'}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (!isLaunching && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    setFormData({ ...formData, selectedPresetRoadmap: 'datascience' });
+                  }
+                }}
                 onClick={() => !isLaunching && setFormData({ ...formData, selectedPresetRoadmap: 'datascience' })}
                 className="card-white interactive"
                 style={{
                   padding: '14px 16px',
-                  borderColor: formData.selectedPresetRoadmap === 'datascience' ? 'var(--accent-navy)' : 'var(--border-beige)',
-                  backgroundColor: formData.selectedPresetRoadmap === 'datascience' ? 'var(--accent-navy-light)' : '#FFFFFF',
+                  minHeight: '56px',
+                  borderColor: formData.selectedPresetRoadmap === 'datascience' ? 'var(--accent-navy)' : 'var(--border-beige-dark)',
+                  backgroundColor: formData.selectedPresetRoadmap === 'datascience' ? 'var(--accent-navy-light)' : 'var(--bg-card)',
                   cursor: isLaunching ? 'not-allowed' : 'pointer',
-                  opacity: isLaunching ? 0.7 : 1
+                  opacity: isLaunching ? 0.7 : 1,
+                  transition: 'all var(--transition-fast)'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Brain size={18} color="var(--accent-navy)" />
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '10px',
+                      backgroundColor: formData.selectedPresetRoadmap === 'datascience' ? 'var(--accent-navy)' : 'var(--bg-warm-cream)',
+                      border: `1px solid ${formData.selectedPresetRoadmap === 'datascience' ? 'var(--accent-navy)' : 'var(--border-beige)'}`,
+                      color: formData.selectedPresetRoadmap === 'datascience' ? '#FFFFFF' : 'var(--accent-navy)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <Brain size={16} />
+                    </div>
                     <div>
                       <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-charcoal)' }}>
                         Data Science & ML Placement Blueprint
@@ -484,7 +631,24 @@ export const OnboardingFlow = () => {
                       </div>
                     </div>
                   </div>
-                  {formData.selectedPresetRoadmap === 'datascience' && <Check size={16} color="var(--accent-navy)" strokeWidth={3} />}
+                  <div 
+                    aria-hidden="true"
+                    className={`onboarding-radio-circle ${formData.selectedPresetRoadmap === 'datascience' ? 'selected-navy' : ''}`}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      border: `2px solid ${formData.selectedPresetRoadmap === 'datascience' ? 'var(--accent-navy)' : 'var(--border-beige-dark)'}`,
+                      backgroundColor: formData.selectedPresetRoadmap === 'datascience' ? 'var(--accent-navy)' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#FFFFFF',
+                      flexShrink: 0
+                    }}
+                  >
+                    {formData.selectedPresetRoadmap === 'datascience' && <Check size={12} strokeWidth={3} />}
+                  </div>
                 </div>
               </div>
             </div>
@@ -502,6 +666,7 @@ export const OnboardingFlow = () => {
               style={{ 
                 padding: '10px 18px', 
                 fontSize: '13px',
+                minHeight: '44px',
                 opacity: isLaunching ? 0.5 : 1,
                 cursor: isLaunching ? 'not-allowed' : 'pointer'
               }}
@@ -521,6 +686,7 @@ export const OnboardingFlow = () => {
             style={{ 
               padding: '12px 24px', 
               fontSize: '14px',
+              minHeight: '44px',
               opacity: isLaunching ? 0.8 : 1,
               cursor: isLaunching ? 'not-allowed' : 'pointer',
               display: 'inline-flex',
