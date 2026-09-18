@@ -18,8 +18,8 @@ export default function StudyProgress({
     <div 
       className="study-progress-sticky-nav"
       style={{
-        backgroundColor: '#FFFFFF',
-        border: '1px solid #E8E2D9',
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border-beige)',
         borderRadius: '12px',
         padding: '12px 14px',
         marginBottom: '16px',
@@ -38,13 +38,13 @@ export default function StudyProgress({
         marginBottom: '8px',
         fontSize: '12px',
         fontWeight: 700,
-        color: '#64748B'
+        color: 'var(--text-muted)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-          <BookOpen size={14} color="#C85A32" />
+          <BookOpen size={14} color="var(--accent-terracotta)" />
           <span style={{ color: 'var(--text-charcoal)', fontWeight: 800, fontSize: '12.5px' }}>Study Progress</span>
         </div>
-        <span style={{ color: roundedProgress >= 100 ? 'var(--accent-sage)' : '#C85A32', fontWeight: 800, fontSize: '12.5px' }}>
+        <span style={{ color: roundedProgress >= 100 ? 'var(--accent-sage)' : 'var(--accent-terracotta)', fontWeight: 800, fontSize: '12.5px' }}>
           {roundedProgress}%
         </span>
       </div>
@@ -53,7 +53,7 @@ export default function StudyProgress({
       <div style={{
         width: '100%',
         height: '6px',
-        backgroundColor: '#F1EFEA',
+        backgroundColor: 'var(--border-beige)',
         borderRadius: '9999px',
         overflow: 'hidden',
         marginBottom: '10px'
@@ -61,7 +61,7 @@ export default function StudyProgress({
         <div style={{
           width: `${roundedProgress}%`,
           height: '100%',
-          backgroundColor: roundedProgress >= 100 ? 'var(--accent-sage)' : '#C85A32',
+          backgroundColor: roundedProgress >= 100 ? 'var(--accent-sage)' : 'var(--accent-terracotta)',
           borderRadius: '9999px',
           transition: 'width 250ms ease'
         }} />
@@ -105,9 +105,9 @@ export default function StudyProgress({
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  border: `1px solid ${isActive ? '#C85A32' : '#E2D8CC'}`,
-                  backgroundColor: isActive ? '#C85A32' : '#FAF8F5',
-                  color: isActive ? '#FFFFFF' : '#475569',
+                  border: `1px solid ${isActive ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
+                  backgroundColor: isActive ? 'var(--accent-terracotta)' : 'var(--bg-card-subtle)',
+                  color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
                   transition: 'all 150ms ease',
                   boxShadow: isActive ? '0 2px 6px rgba(200, 90, 50, 0.2)' : 'none'
                 }}

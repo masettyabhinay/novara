@@ -12,7 +12,36 @@ function getClientCacheKey(task = {}) {
   const id = task.id || task.taskId || '';
   const name = task.name || task.taskTitle || task.topic || '';
   const cat = task.category || task.taskCategory || '';
-  return `${id}_${name}_${cat}`.trim().toLowerCase();
+  const desc = task.description || task.taskDescription || '';
+  const text = `${name} ${desc} ${cat}`.toLowerCase();
+  let dom = 'gen';
+  if (text.includes('graph') || text.includes('bfs') || text.includes('dfs') || text.includes('dijkstra')) dom = 'graphs';
+  else if (text.includes('tree') || text.includes('bst')) dom = 'trees';
+  else if (text.includes('array') || text.includes('sliding') || text.includes('pointer')) dom = 'arrays';
+  else if (text.includes('sql') || text.includes('query')) dom = 'sql';
+  else if (text.includes('dbms') || text.includes('acid')) dom = 'dbms';
+  else if (text.includes('os') || text.includes('operating')) dom = 'os';
+  return `client_study_${id ? `id_${id}_` : ''}dom_${dom}_${name}`.trim().toLowerCase().replace(/\s+/g, '_');
+}
+
+/**
+ * Validates that client material is grounded to task
+ */
+export function validateClientGrounding(material, task = {}) {
+  if (!material) return false;
+  const name = (task.name || task.taskTitle || task.topic || '').toLowerCase();
+  const matTitle = (material.title || '').toLowerCase();
+  const matSubtitle = (material.subtitle || '').toLowerCase();
+  const matOverview = (material.overview || '').toLowerCase();
+  const matDomain = (material.domain || '').toLowerCase();
+
+  // If task is graph, material must not be arrays or Kadane
+  if (name.includes('graph') || name.includes('bfs') || name.includes('dfs') || name.includes('dijkstra') || name.includes('topological')) {
+    if (matDomain === 'arrays' || matTitle.includes('array') || matSubtitle.includes('sliding window') || matOverview.includes('kadane')) {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -22,11 +51,16 @@ function getClientCacheKey(task = {}) {
 export async function fetchTaskStudyMaterial(taskContext = {}) {
   const cacheKey = getClientCacheKey(taskContext);
   if (CLIENT_STUDY_MATERIAL_CACHE.has(cacheKey)) {
-    return {
-      success: true,
-      material: CLIENT_STUDY_MATERIAL_CACHE.get(cacheKey),
-      cached: true
-    };
+    const cachedMat = CLIENT_STUDY_MATERIAL_CACHE.get(cacheKey);
+    if (validateClientGrounding(cachedMat, taskContext)) {
+      return {
+        success: true,
+        material: cachedMat,
+        cached: true
+      };
+    }
+    // Evict corrupted client cache entry
+    CLIENT_STUDY_MATERIAL_CACHE.delete(cacheKey);
   }
 
   const payload = {
@@ -63,6 +97,9 @@ export async function fetchTaskStudyMaterial(taskContext = {}) {
 
     const data = await res.json();
     if (data && data.success && data.material) {
+      if (!validateClientGrounding(data.material, taskContext)) {
+        throw new Error('Received ungrounded study material from server. Discarding contaminated content.');
+      }
       CLIENT_STUDY_MATERIAL_CACHE.set(cacheKey, data.material);
       return {
         success: true,

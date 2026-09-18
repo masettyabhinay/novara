@@ -17,9 +17,9 @@ export default function AnalogyCard({ analogy }) {
     <div style={{
       padding: '14px 16px',
       borderRadius: '12px',
-      backgroundColor: '#FEFDF8',
-      border: '1px solid #F6E05E',
-      borderLeft: '4px solid #D69E2E',
+      backgroundColor: 'var(--accent-amber-light)',
+      border: '1px solid var(--accent-amber)',
+      borderLeft: '4px solid var(--accent-amber)',
       boxShadow: '0 1px 3px rgba(35, 25, 15, 0.02)',
       margin: '12px 0',
       width: '100%',
@@ -35,16 +35,16 @@ export default function AnalogyCard({ analogy }) {
         fontWeight: 800,
         textTransform: 'uppercase',
         letterSpacing: '0.04em',
-        color: '#B7791F',
+        color: 'var(--accent-amber)',
         marginBottom: '6px'
       }}>
-        <Lightbulb size={14} color="#D69E2E" />
+        <Lightbulb size={14} color="var(--accent-amber)" />
         <span>Real-World Analogy {mappedConcept ? `• ${mappedConcept}` : ''}</span>
       </div>
 
       <p style={{
         fontSize: '13px',
-        color: '#744210',
+        color: 'var(--text-charcoal)',
         lineHeight: '1.55',
         margin: '0 0 4px 0',
         fontWeight: 500
@@ -55,7 +55,7 @@ export default function AnalogyCard({ analogy }) {
       {explanation && (
         <p style={{
           fontSize: '11.5px',
-          color: '#975A16',
+          color: 'var(--text-secondary)',
           lineHeight: '1.45',
           margin: '4px 0 0 0',
           fontStyle: 'italic'

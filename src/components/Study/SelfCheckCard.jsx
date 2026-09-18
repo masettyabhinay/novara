@@ -22,7 +22,7 @@ export default function SelfCheckCard({ questions = [] }) {
         marginBottom: '10px',
         flexWrap: 'wrap'
       }}>
-        <HelpCircle size={15} color="#C85A32" style={{ flexShrink: 0 }} />
+        <HelpCircle size={15} color="var(--accent-terracotta)" style={{ flexShrink: 0 }} />
         <span>Self-Check & Concept Verification</span>
       </div>
 
@@ -44,8 +44,8 @@ function SelfCheckItem({ item, index }) {
     <div style={{
       padding: '12px 14px',
       borderRadius: '10px',
-      backgroundColor: '#FAF8F5',
-      border: '1px solid #E8E2D9',
+      backgroundColor: 'var(--bg-card)',
+      border: '1px solid var(--border-beige)',
       display: 'flex',
       flexDirection: 'column',
       gap: '6px',
@@ -64,7 +64,7 @@ function SelfCheckItem({ item, index }) {
           <span style={{
             fontSize: '11px',
             fontWeight: 800,
-            color: '#C85A32',
+            color: 'var(--accent-terracotta)',
             paddingTop: '1px'
           }}>
             Q{index + 1}:
@@ -72,7 +72,7 @@ function SelfCheckItem({ item, index }) {
           <p style={{
             fontSize: '12.5px',
             fontWeight: 700,
-            color: '#1E293B',
+            color: 'var(--text-charcoal)',
             lineHeight: '1.45',
             margin: 0
           }}>
@@ -89,9 +89,9 @@ function SelfCheckItem({ item, index }) {
               borderRadius: '4px',
               fontSize: '10.5px',
               fontWeight: 700,
-              backgroundColor: revealed ? '#FAF0EB' : '#FFFFFF',
-              color: '#C85A32',
-              border: '1px solid #E2D8CC',
+              backgroundColor: revealed ? 'var(--accent-terracotta-light)' : 'var(--bg-card-subtle)',
+              color: 'var(--accent-terracotta)',
+              border: '1px solid var(--border-beige)',
               cursor: 'pointer',
               whiteSpace: 'nowrap'
             }}
@@ -105,10 +105,10 @@ function SelfCheckItem({ item, index }) {
         <div style={{
           padding: '8px 10px',
           borderRadius: '6px',
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E2D8CC',
+          backgroundColor: 'var(--bg-card-subtle)',
+          border: '1px solid var(--border-beige)',
           fontSize: '11.5px',
-          color: '#475569',
+          color: 'var(--text-secondary)',
           lineHeight: '1.45',
           marginTop: '2px'
         }}>

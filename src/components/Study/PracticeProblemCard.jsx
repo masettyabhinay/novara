@@ -44,8 +44,8 @@ function ProblemItem({ problem, index }) {
     <div style={{
       padding: '16px',
       borderRadius: '12px',
-      backgroundColor: '#FFFFFF',
-      border: '1px solid #E8E2D9',
+      backgroundColor: 'var(--bg-card)',
+      border: '1px solid var(--border-beige)',
       boxShadow: '0 1px 3px rgba(35, 25, 15, 0.03)',
       display: 'flex',
       flexDirection: 'column',
@@ -62,8 +62,8 @@ function ProblemItem({ problem, index }) {
             width: '20px',
             height: '20px',
             borderRadius: '50%',
-            backgroundColor: '#FAF0EB',
-            color: '#C85A32',
+            backgroundColor: 'var(--accent-terracotta-light)',
+            color: 'var(--accent-terracotta)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -72,7 +72,7 @@ function ProblemItem({ problem, index }) {
           }}>
             {index + 1}
           </span>
-          <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#1E293B' }}>
+          <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
             {problem.title}
           </span>
         </div>
@@ -83,22 +83,22 @@ function ProblemItem({ problem, index }) {
           textTransform: 'uppercase',
           padding: '2px 7px',
           borderRadius: '4px',
-          backgroundColor: difficulty.toLowerCase() === 'hard' ? '#FEF2F2' : difficulty.toLowerCase() === 'medium' ? '#FFFBEB' : '#F0FDF4',
-          color: difficulty.toLowerCase() === 'hard' ? '#991B1B' : difficulty.toLowerCase() === 'medium' ? '#92400E' : '#166534',
-          border: `1px solid ${difficulty.toLowerCase() === 'hard' ? '#FECACA' : difficulty.toLowerCase() === 'medium' ? '#FDE68A' : '#BBF7D0'}`
+          backgroundColor: difficulty.toLowerCase() === 'hard' ? 'rgba(239, 68, 68, 0.12)' : difficulty.toLowerCase() === 'medium' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(34, 197, 94, 0.12)',
+          color: difficulty.toLowerCase() === 'hard' ? 'var(--accent-terracotta)' : difficulty.toLowerCase() === 'medium' ? 'var(--accent-amber)' : 'var(--accent-sage)',
+          border: `1px solid ${difficulty.toLowerCase() === 'hard' ? 'rgba(239, 68, 68, 0.25)' : difficulty.toLowerCase() === 'medium' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(34, 197, 94, 0.25)'}`
         }}>
           {difficulty}
         </span>
       </div>
 
       {problem.skillTested && (
-        <div style={{ fontSize: '11px', color: '#64748B' }}>
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
           <strong>Skill tested: </strong>{problem.skillTested}
         </div>
       )}
 
       {/* Problem Statement */}
-      <p style={{ fontSize: '12.5px', color: '#334155', lineHeight: '1.55', margin: '2px 0 6px 0' }}>
+      <p style={{ fontSize: '12.5px', color: 'var(--text-body)', lineHeight: '1.55', margin: '2px 0 6px 0' }}>
         {problem.problem || problem.description}
       </p>
 
@@ -113,9 +113,9 @@ function ProblemItem({ problem, index }) {
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 700,
-              backgroundColor: showHint ? '#FEF3C7' : '#FAF8F5',
-              color: '#92400E',
-              border: '1px solid #FCD34D',
+              backgroundColor: showHint ? 'var(--accent-amber-light)' : 'var(--bg-card-subtle)',
+              color: 'var(--accent-amber)',
+              border: '1px solid var(--accent-amber)',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
@@ -136,9 +136,9 @@ function ProblemItem({ problem, index }) {
               borderRadius: '6px',
               fontSize: '11px',
               fontWeight: 700,
-              backgroundColor: showApproach ? '#EEF2FF' : '#FAF8F5',
-              color: '#3730A3',
-              border: '1px solid #C7D2FE',
+              backgroundColor: showApproach ? 'var(--accent-terracotta-light)' : 'var(--bg-card-subtle)',
+              color: 'var(--accent-terracotta)',
+              border: '1px solid var(--border-accent)',
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
@@ -155,10 +155,10 @@ function ProblemItem({ problem, index }) {
         <div style={{
           padding: '10px 12px',
           borderRadius: '8px',
-          backgroundColor: '#FFFBEB',
-          border: '1px solid #FDE68A',
+          backgroundColor: 'var(--accent-amber-light)',
+          border: '1px solid var(--accent-amber)',
           fontSize: '11.5px',
-          color: '#92400E',
+          color: 'var(--text-charcoal)',
           lineHeight: '1.45',
           marginTop: '4px'
         }}>
@@ -170,10 +170,10 @@ function ProblemItem({ problem, index }) {
         <div style={{
           padding: '10px 12px',
           borderRadius: '8px',
-          backgroundColor: '#EEF2FF',
-          border: '1px solid #C7D2FE',
+          backgroundColor: 'var(--accent-terracotta-light)',
+          border: '1px solid var(--border-accent)',
           fontSize: '11.5px',
-          color: '#312E81',
+          color: 'var(--text-charcoal)',
           lineHeight: '1.45',
           marginTop: '4px'
         }}>

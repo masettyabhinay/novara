@@ -21,7 +21,7 @@ export default function DefinitionCard({ definitions = [] }) {
         marginBottom: '8px',
         flexWrap: 'wrap'
       }}>
-        <BookOpen size={14} color="#C85A32" style={{ flexShrink: 0 }} />
+        <BookOpen size={14} color="var(--accent-terracotta)" style={{ flexShrink: 0 }} />
         <span>Essential Terminology & Definitions</span>
       </div>
 
@@ -39,8 +39,8 @@ export default function DefinitionCard({ definitions = [] }) {
             style={{
               padding: '12px 14px',
               borderRadius: '10px',
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #E8E2D9',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-beige)',
               boxShadow: '0 1px 3px rgba(35, 25, 15, 0.02)',
               minWidth: 0,
               maxWidth: '100%',
@@ -48,7 +48,7 @@ export default function DefinitionCard({ definitions = [] }) {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
                 {item.term || item.name}
               </span>
               {item.context && (
@@ -57,14 +57,14 @@ export default function DefinitionCard({ definitions = [] }) {
                   fontWeight: 700,
                   padding: '1px 6px',
                   borderRadius: '4px',
-                  backgroundColor: '#F1F5F9',
-                  color: '#475569'
+                  backgroundColor: 'var(--bg-card-subtle)',
+                  color: 'var(--text-muted)'
                 }}>
                   {item.context}
                 </span>
               )}
             </div>
-            <p style={{ fontSize: '12px', color: '#475569', lineHeight: '1.45', margin: 0 }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.45', margin: 0 }}>
               {item.definition || item.explanation}
             </p>
           </div>

@@ -21,7 +21,7 @@ export default function FormulaCard({ formulas = [] }) {
         marginBottom: '8px',
         flexWrap: 'wrap'
       }}>
-        <Sigma size={14} color="#C85A32" style={{ flexShrink: 0 }} />
+        <Sigma size={14} color="var(--accent-terracotta)" style={{ flexShrink: 0 }} />
         <span>Core Formulas & Recurrences</span>
       </div>
 
@@ -32,8 +32,8 @@ export default function FormulaCard({ formulas = [] }) {
             style={{
               padding: '12px 16px',
               borderRadius: '10px',
-              backgroundColor: '#FAF8F5',
-              border: '1px solid #E8E2D9',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-beige)',
               display: 'flex',
               flexDirection: 'column',
               gap: '4px',
@@ -44,7 +44,7 @@ export default function FormulaCard({ formulas = [] }) {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
-              <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#1E293B' }}>
+              <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
                 {item.name || item.title}
               </span>
             </div>
@@ -53,11 +53,11 @@ export default function FormulaCard({ formulas = [] }) {
               fontFamily: 'JetBrains Mono, monospace',
               fontSize: '13.5px',
               fontWeight: 800,
-              color: '#C85A32',
-              backgroundColor: '#FFFFFF',
+              color: 'var(--accent-terracotta)',
+              backgroundColor: 'var(--bg-card-subtle)',
               padding: '8px 12px',
               borderRadius: '6px',
-              border: '1px solid #E2D8CC',
+              border: '1px solid var(--border-beige)',
               margin: '4px 0',
               overflowX: 'auto',
               maxWidth: '100%',
@@ -68,13 +68,13 @@ export default function FormulaCard({ formulas = [] }) {
             </div>
 
             {item.variables && (
-              <div style={{ fontSize: '11px', color: '#64748B' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 <strong>Variables: </strong>{item.variables}
               </div>
             )}
 
             {item.intuition && (
-              <div style={{ fontSize: '11px', color: '#475569', fontStyle: 'italic' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
                 💡 {item.intuition}
               </div>
             )}

@@ -49,6 +49,7 @@
   --shadow-terracotta: 0 8px 24px rgba(200, 90, 50, 0.22);
   --shadow-floating: 0 16px 40px rgba(28, 33, 31, 0.12);
   --bottom-nav-bg: rgba(255, 255, 255, 0.96);
+  --modal-sheet-overlay: rgba(255, 255, 255, 0.96);
 
   /* Border Radii */
   --radius-sm: 10px;
@@ -75,6 +76,7 @@
   --bg-card: #1E2421;
   --bg-card-subtle: #252C28;
   --bottom-nav-bg: rgba(30, 36, 33, 0.94);
+  --modal-sheet-overlay: rgba(20, 23, 22, 0.96);
 
   /* Accent: Muted Terracotta */
   --accent-terracotta: #E06D44;
@@ -623,7 +625,7 @@ button {
   .focus-study-left-col {
     overflow-y: visible !important;
     border-right: none !important;
-    border-bottom: 1px solid #E8E2D9 !important;
+    border-bottom: 1px solid var(--border-beige) !important;
     padding: 16px !important;
     flex-shrink: 0 !important;
   }

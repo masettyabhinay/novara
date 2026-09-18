@@ -28,8 +28,8 @@ export default function StudyInteractiveActions({
     <div style={{
       padding: '14px 16px',
       borderRadius: '12px',
-      backgroundColor: '#FAF8F5',
-      border: '1px solid #E8E2D9',
+      backgroundColor: 'var(--bg-card)',
+      border: '1px solid var(--border-beige)',
       margin: '18px 0',
       display: 'flex',
       flexDirection: 'column',
@@ -46,8 +46,8 @@ export default function StudyInteractiveActions({
         flexWrap: 'wrap',
         gap: '6px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#64748B' }}>
-          <Sparkles size={13} color="#C85A32" style={{ flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)' }}>
+          <Sparkles size={13} color="var(--accent-terracotta)" style={{ flexShrink: 0 }} />
           <span>Interactive AI Study Tools</span>
         </div>
       </div>
@@ -67,9 +67,9 @@ export default function StudyInteractiveActions({
             borderRadius: '9999px',
             fontSize: '11.5px',
             fontWeight: 700,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #CBD5E1',
-            color: '#334155',
+            backgroundColor: 'var(--bg-card-subtle)',
+            border: '1px solid var(--border-beige)',
+            color: 'var(--text-charcoal)',
             cursor: 'pointer',
             display: 'inline-flex',
             alignItems: 'center',
@@ -78,7 +78,7 @@ export default function StudyInteractiveActions({
             boxShadow: '0 1px 2px rgba(35, 25, 15, 0.03)'
           }}
         >
-          <Zap size={13} color="#D97706" />
+          <Zap size={13} color="var(--accent-amber)" />
           <span>Explain simpler</span>
         </button>
 
@@ -92,8 +92,8 @@ export default function StudyInteractiveActions({
               borderRadius: '9999px',
               fontSize: '11.5px',
               fontWeight: 800,
-              backgroundColor: '#C85A32',
-              border: '1px solid #C85A32',
+              backgroundColor: 'var(--accent-terracotta)',
+              border: '1px solid var(--accent-terracotta)',
               color: '#FFFFFF',
               cursor: 'pointer',
               display: 'inline-flex',
@@ -113,10 +113,10 @@ export default function StudyInteractiveActions({
         <div style={{
           padding: '10px 12px',
           borderRadius: '8px',
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E2D8CC',
+          backgroundColor: 'var(--bg-card-subtle)',
+          border: '1px solid var(--border-beige)',
           fontSize: '12px',
-          color: '#1E293B',
+          color: 'var(--text-charcoal)',
           lineHeight: '1.5',
           marginTop: '4px',
           display: 'flex',
@@ -124,13 +124,13 @@ export default function StudyInteractiveActions({
           gap: '6px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <strong style={{ color: '#C85A32' }}>💡 Plain-English Summary:</strong>
+            <strong style={{ color: 'var(--accent-terracotta)' }}>💡 Plain-English Summary:</strong>
             <button
               type="button"
               onClick={() => setActiveModal(null)}
               style={{
                 fontSize: '10px',
-                color: '#64748B',
+                color: 'var(--text-muted)',
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer'

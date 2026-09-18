@@ -205,8 +205,9 @@ export default function DeepStudyDocument({
         <div style={{
           padding: '16px 18px',
           borderRadius: '12px',
-          backgroundColor: '#FFFFFF',
-          border: '1px solid #E8E2D9',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-beige)',
+          color: 'var(--text-body)',
           fontSize: '13.5px',
           lineHeight: '1.65',
           boxShadow: '0 1px 3px rgba(35, 25, 15, 0.02)',
@@ -233,8 +234,8 @@ export default function DeepStudyDocument({
           <div style={{
             padding: '12px 14px',
             borderRadius: '10px',
-            backgroundColor: '#FAF0EB',
-            border: '1px solid #F2D7CA',
+            backgroundColor: 'var(--accent-terracotta-light)',
+            border: '1px solid var(--border-accent)',
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
             gap: '8px',
@@ -242,8 +243,8 @@ export default function DeepStudyDocument({
             width: '100%'
           }}>
             {material.learningObjectives.map((obj, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '12px', color: '#8B361B' }}>
-                <BookmarkCheck size={14} color="#2E7D32" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '12px', color: 'var(--text-charcoal)' }}>
+                <BookmarkCheck size={14} color="var(--accent-sage)" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <span>{obj}</span>
               </div>
             ))}
@@ -284,8 +285,8 @@ export default function DeepStudyDocument({
                   style={{
                     padding: '16px',
                     borderRadius: '12px',
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #E8E2D9',
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border-beige)',
                     boxShadow: '0 1px 3px rgba(35, 25, 15, 0.03)',
                     display: 'flex',
                     flexDirection: 'column',
@@ -294,13 +295,13 @@ export default function DeepStudyDocument({
                     width: '100%'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', fontWeight: 800, color: '#1E293B' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
                     <span style={{
                       width: '20px',
                       height: '20px',
                       borderRadius: '50%',
                       backgroundColor: 'rgba(200, 90, 50, 0.1)',
-                      color: '#C85A32',
+                      color: 'var(--accent-terracotta)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -313,7 +314,7 @@ export default function DeepStudyDocument({
                     <span>{concept.name}</span>
                   </div>
 
-                  <p style={{ fontSize: '12.5px', color: '#475569', lineHeight: '1.55', margin: 0 }}>
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.55', margin: 0 }}>
                     {concept.explanation}
                   </p>
 
@@ -321,10 +322,10 @@ export default function DeepStudyDocument({
                     <div style={{
                       padding: '8px 10px',
                       borderRadius: '6px',
-                      backgroundColor: '#FEFDF8',
-                      border: '1px solid #FEEBC8',
+                      backgroundColor: 'var(--accent-amber-light)',
+                      border: '1px solid var(--accent-amber)',
                       fontSize: '11.5px',
-                      color: '#744210',
+                      color: 'var(--text-charcoal)',
                       lineHeight: '1.45'
                     }}>
                       <strong>💡 Intuition: </strong>{concept.intuition}
@@ -337,8 +338,8 @@ export default function DeepStudyDocument({
                   )}
 
                   {concept.example && (
-                    <div style={{ fontSize: '11px', color: '#64748B', fontFamily: 'monospace', paddingTop: '4px', borderTop: '1px solid #F5EFE6' }}>
-                      <span style={{ fontFamily: 'inherit', fontWeight: 700, color: '#334155' }}>Example: </span>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace', paddingTop: '4px', borderTop: '1px solid var(--border-beige)' }}>
+                      <span style={{ fontFamily: 'inherit', fontWeight: 700, color: 'var(--text-charcoal)' }}>Example: </span>
                       {concept.example}
                     </div>
                   )}
@@ -368,23 +369,23 @@ export default function DeepStudyDocument({
               <div key={idx} style={{
                 padding: '14px 16px',
                 borderRadius: '10px',
-                backgroundColor: '#F8FAFC',
-                border: '1px solid #E2E8F0',
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-beige)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '6px',
                 boxSizing: 'border-box',
                 width: '100%'
               }}>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#1E293B' }}>{pat.name}</span>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-charcoal)' }}>{pat.name}</span>
                 {pat.whenToUse && (
-                  <div style={{ fontSize: '11.5px', color: '#475569' }}>
-                    <strong style={{ color: '#0F172A' }}>When to use: </strong>{pat.whenToUse}
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                    <strong style={{ color: 'var(--text-charcoal)' }}>When to use: </strong>{pat.whenToUse}
                   </div>
                 )}
                 {pat.howItWorks && (
-                  <div style={{ fontSize: '11.5px', color: '#475569' }}>
-                    <strong style={{ color: '#0F172A' }}>How it works: </strong>{pat.howItWorks}
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                    <strong style={{ color: 'var(--text-charcoal)' }}>How it works: </strong>{pat.howItWorks}
                   </div>
                 )}
               </div>
@@ -553,8 +554,8 @@ export default function DeepStudyDocument({
             <div style={{
               padding: '12px 14px',
               borderRadius: '10px',
-              backgroundColor: '#FEF2F2',
-              border: '1px solid #FECACA',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
               display: 'flex',
               flexDirection: 'column',
               gap: '6px',
@@ -562,7 +563,7 @@ export default function DeepStudyDocument({
               width: '100%'
             }}>
               {material.commonMistakes.map((mis, idx) => (
-                <div key={idx} style={{ fontSize: '12px', color: '#991B1B' }}>
+                <div key={idx} style={{ fontSize: '12px', color: 'var(--text-charcoal)' }}>
                   • {mis}
                 </div>
               ))}
@@ -574,14 +575,14 @@ export default function DeepStudyDocument({
         {((material.quickRecap && material.quickRecap.length > 0) || (material.keyTakeaways && material.keyTakeaways.length > 0)) && (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-charcoal)', marginBottom: '8px' }}>
-              <BookmarkCheck size={14} color="#059669" />
+              <BookmarkCheck size={14} color="var(--accent-sage)" />
               <span>High-Yield Recap & Takeaways</span>
             </div>
             <div style={{
               padding: '12px 14px',
               borderRadius: '10px',
-              backgroundColor: '#F0FDF4',
-              border: '1px solid #BBF7D0',
+              backgroundColor: 'var(--accent-sage-light)',
+              border: '1px solid var(--accent-sage)',
               display: 'flex',
               flexDirection: 'column',
               gap: '6px',
@@ -589,7 +590,7 @@ export default function DeepStudyDocument({
               width: '100%'
             }}>
               {(material.keyTakeaways || material.quickRecap || []).map((item, idx) => (
-                <div key={idx} style={{ fontSize: '12px', color: '#166534' }}>
+                <div key={idx} style={{ fontSize: '12px', color: 'var(--text-charcoal)' }}>
                   ✓ {item}
                 </div>
               ))}

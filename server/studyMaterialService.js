@@ -231,6 +231,382 @@ export const GROUNDED_STUDY_MATERIALS = {
     domain: 'arrays'
   },
 
+  // DSA - Graphs (BFS, DFS, Dijkstra, Topological Sort)
+  'graphs': {
+    title: 'Graph Algorithms & Traversals Practice',
+    subtitle: 'BFS, DFS, Dijkstra Shortest Path & Topological Sort (DAG)',
+    overview: 'Graphs model pairwise relationships between objects using vertices (nodes) and edges. Technical interviews frequently evaluate graph traversals (BFS for shortest paths in unweighted graphs, DFS for connectivity and cycle detection), single-source shortest paths on weighted graphs (Dijkstra), and dependency resolution (Topological Sort on Directed Acyclic Graphs).',
+    learningObjectives: [
+      'Implement Breadth-First Search (BFS) using a Queue and Visited set for level-by-level shortest paths',
+      'Implement Depth-First Search (DFS) recursively or with a Stack for cycle detection and connected components',
+      'Apply Dijkstra’s algorithm using a Min-Heap / Priority Queue for non-negative weighted shortest paths in O((V + E) log V)',
+      'Execute Kahn’s algorithm (in-degree array) and DFS post-order for Topological Sort on DAGs'
+    ],
+    realWorldAnalogy: {
+      analogy: 'Think of a graph as an international airline route network: cities are vertices, direct flights are edges, flight hours are edge weights.',
+      explanation: 'BFS discovers all cities reachable in 1 layover before checking 2 layovers (minimum stops). Dijkstra finds the cheapest total ticket price across connections with varying ticket costs.',
+      mappedConcept: 'BFS vs Dijkstra Shortest Path Traversals'
+    },
+    definitions: [
+      { term: 'Adjacency List', definition: 'A representation where each vertex stores an array/list of its adjacent neighboring vertices and optional edge weights, using optimal O(V + E) space.', context: 'Graph Representation' },
+      { term: 'Directed Acyclic Graph (DAG)', definition: 'A directed graph with no cycles, strictly required for topological sorting, scheduling prerequisites, and build dependency resolution.', context: 'Graph Theory' },
+      { term: 'In-Degree & Out-Degree', definition: 'In-degree is the number of incoming edges pointing into a node; Out-degree is the number of edges originating from it.', context: 'Topological Sort' }
+    ],
+    formulas: [
+      { name: 'BFS / DFS Complexity', formula: 'Time = O(V + E), Space = O(V)', variables: 'V = number of vertices, E = number of edges', intuition: 'Every vertex is pushed to queue/stack once, and each edge is traversed once (directed) or twice (undirected).' },
+      { name: 'Dijkstra with Min-Heap', formula: 'Time = O((V + E) log V), Space = O(V)', variables: 'V = vertices, E = edges, binary heap operations', intuition: 'Extracting min takes O(log V) across V vertices; edge relaxations take O(E log V).' },
+      { name: 'Handshaking Lemma', formula: 'Sum(deg(v)) = 2 * |E|', variables: 'deg(v) is degree of vertex v', intuition: 'Every edge contributes exactly 2 to the sum of vertex degrees in an undirected graph.' }
+    ],
+    concepts: [
+      {
+        name: 'Breadth-First Search (BFS)',
+        explanation: 'Traverses a graph layer by layer using a FIFO queue. Ideal for finding the shortest path (fewest edges) in an unweighted graph.',
+        intuition: 'Pushes neighboring unvisited nodes into the queue and marks them visited immediately upon enqueueing to prevent redundant processing.',
+        example: 'Finding the minimum steps in a word ladder or minimum knight moves on a chessboard.'
+      },
+      {
+        name: 'Depth-First Search (DFS)',
+        explanation: 'Explores as deep as possible along each branch before backtracking using recursion or an explicit stack.',
+        intuition: 'Perfect for path existence, counting connected components (islands), bipartite graph testing, and detecting back-edges in cycle detection.',
+        example: 'Number of Islands (LeetCode #200) or Clone Graph (LeetCode #133).'
+      },
+      {
+        name: "Dijkstra's Algorithm",
+        explanation: 'Finds single-source shortest paths in a directed or undirected graph with non-negative edge weights using a greedy min-heap priority queue.',
+        intuition: 'Always finalizes the unvisited node with the smallest cumulative distance. Edge relaxations update candidate distances to neighbors.',
+        example: 'Network Delay Time (LeetCode #743) or Cheapest Flights within K Stops.'
+      },
+      {
+        name: "Topological Sort (Kahn's Algorithm)",
+        explanation: 'Produces a linear ordering of vertices in a DAG such that for every directed edge u -> v, u appears before v.',
+        intuition: 'Computes in-degree for all vertices. Enqueues vertices with in-degree 0. As vertices are processed, decrement in-degree of neighbors; when a neighbor hits 0, enqueue it.',
+        example: 'Course Schedule I & II (LeetCode #207, #210).'
+      }
+    ],
+    diagrams: [
+      {
+        id: 'diag_graph_bfs',
+        conceptName: 'Breadth-First Search (BFS)',
+        title: 'BFS Level-by-Level Graph Traversal',
+        purpose: 'Demonstrate queue ordering and visited set tracking during BFS',
+        type: 'graph',
+        description: 'Level 0 is Node A. Level 1 contains B and C. Level 2 contains D and E.',
+        elements: [
+          { id: 'el_A', label: 'Node A', sublabel: 'Root (Level 0)', type: 'graph_node', highlight: true },
+          { id: 'el_B', label: 'Node B', sublabel: 'Level 1', type: 'graph_node' },
+          { id: 'el_C', label: 'Node C', sublabel: 'Level 1', type: 'graph_node' },
+          { id: 'el_D', label: 'Node D', sublabel: 'Level 2', type: 'graph_node' },
+          { id: 'el_E', label: 'Node E', sublabel: 'Level 2', type: 'graph_node' }
+        ],
+        connections: [
+          { from: 'el_A', to: 'el_B', label: 'Edge A->B' },
+          { from: 'el_A', to: 'el_C', label: 'Edge A->C' },
+          { from: 'el_B', to: 'el_D', label: 'Edge B->D' },
+          { from: 'el_C', to: 'el_E', label: 'Edge C->E' }
+        ],
+        steps: [
+          {
+            step: 1,
+            title: 'Initialize Queue with Source Node',
+            description: 'Queue = [A], Visited = {A}. Distance = 0.',
+            activeElementIds: ['el_A'],
+            pointerState: { queue: '[A]', visited: '{A}' }
+          },
+          {
+            step: 2,
+            title: 'Expand Level 1 Neighbors',
+            description: 'Dequeue A. Inspect edges (A, B) and (A, C). Add B and C to Queue and Visited.',
+            activeElementIds: ['el_B', 'el_C'],
+            pointerState: { queue: '[B, C]', visited: '{A, B, C}' }
+          },
+          {
+            step: 3,
+            title: 'Expand Level 2 Neighbors',
+            description: 'Dequeue B -> Enqueue D. Dequeue C -> Enqueue E. All nodes visited at optimal minimum distance!',
+            activeElementIds: ['el_D', 'el_E'],
+            pointerState: { queue: '[]', visited: '{A, B, C, D, E}' }
+          }
+        ]
+      }
+    ],
+    patterns: [
+      {
+        name: 'BFS Multi-Source / Level-by-Level',
+        whenToUse: 'Unweighted shortest path, nearest distance to 0 matrix, or infection/spreading models (Rotting Oranges).',
+        howItWorks: 'Add all initial sources to queue at distance 0, then expand outwards level by level in lockstep.',
+        example: 'Rotting Oranges (LeetCode #994), 01 Matrix (LeetCode #542)'
+      },
+      {
+        name: 'Kahn’s In-Degree Dependency Resolution',
+        whenToUse: 'Any problem with prerequisites, task scheduling, or verifying if an order exists in a DAG.',
+        howItWorks: 'Build adjacency list and in-degree array. Push in-degree 0 nodes to queue. If processed count < V, a cycle exists!',
+        example: 'Course Schedule II (LeetCode #210), Alien Dictionary'
+      }
+    ],
+    stepByStep: [
+      '1. Identify graph representation: Given edge list? Build Map<Node, List<Node>> adjacency list and tracking arrays.',
+      '2. Detect directed vs undirected: Undirected graphs require bidirectional edges (adj[u].push(v); adj[v].push(u)).',
+      '3. Choose algorithm: Unweighted shortest path -> BFS; Path existence / cycle / components -> DFS; Weighted non-negative shortest path -> Dijkstra; Prerequisites / order -> Topological Sort.',
+      '4. Maintain visited state: CRITICAL: Mark nodes as visited immediately upon pushing to Queue in BFS, NOT when popping (prevents duplicate insertions and TLE).',
+      '5. Handle disconnected components: If the graph may have multiple components, loop for node = 0 to V-1 and trigger traversal if unvisited.',
+      '6. State complexity explicitly: Time O(V + E) for BFS/DFS, Space O(V + E) for adjacency list and visited set.'
+    ],
+    codeExamples: [
+      {
+        title: 'BFS Shortest Path in Unweighted Graph',
+        language: 'javascript',
+        code: `function bfsShortestPath(numNodes, edges, startNode, endNode) {
+  const adj = Array.from({ length: numNodes }, () => []);
+  for (const [u, v] of edges) {
+    adj[u].push(v);
+    adj[v].push(u); // undirected
+  }
+
+  const queue = [[startNode, 0]]; // [node, distance]
+  const visited = new Set([startNode]);
+
+  while (queue.length > 0) {
+    const [current, dist] = queue.shift();
+    if (current === endNode) return dist;
+
+    for (const neighbor of adj[current]) {
+      if (!visited.has(neighbor)) {
+        visited.add(neighbor); // Mark visited immediately on enqueue!
+        queue.push([neighbor, dist + 1]);
+      }
+    }
+  }
+  return -1; // Unreachable
+}`,
+        explanation: 'Level-order expansion guarantees first time destination is popped is the minimum distance.',
+        complexity: {
+          time: 'O(V + E)',
+          space: 'O(V + E)'
+        }
+      },
+      {
+        title: "Kahn's Topological Sort (Cycle Detection & Order)",
+        language: 'javascript',
+        code: `function findOrder(numCourses, prerequisites) {
+  const inDegree = new Array(numCourses).fill(0);
+  const adj = Array.from({ length: numCourses }, () => []);
+
+  for (const [course, prereq] of prerequisites) {
+    adj[prereq].push(course);
+    inDegree[course]++;
+  }
+
+  const queue = [];
+  for (let i = 0; i < numCourses; i++) {
+    if (inDegree[i] === 0) queue.push(i);
+  }
+
+  const order = [];
+  while (queue.length > 0) {
+    const node = queue.shift();
+    order.push(node);
+
+    for (const nextCourse of adj[node]) {
+      inDegree[nextCourse]--;
+      if (inDegree[nextCourse] === 0) {
+        queue.push(nextCourse);
+      }
+    }
+  }
+
+  // If order length != numCourses, graph contains a cycle!
+  return order.length === numCourses ? order : [];
+}`,
+        explanation: 'Resolves dependencies in O(V + E) time while reliably detecting circular dependency cycles.',
+        complexity: {
+          time: 'O(V + E)',
+          space: 'O(V + E)'
+        }
+      }
+    ],
+    workedExamples: [
+      {
+        title: 'Course Schedule (LeetCode #207)',
+        problem: 'There are numCourses courses labeled from 0 to numCourses - 1. You are given an array prerequisites where prerequisites[i] = [a, b] indicates you must take b before a. Return true if you can finish all courses.',
+        approach: "Model as a directed graph. The problem is equivalent to checking if the graph has a cycle. Use Kahn's algorithm or 3-color DFS (0=unvisited, 1=visiting, 2=visited).",
+        solution: "Count resolved courses with inDegree = 0. If total resolved equals numCourses, return true; else false (cycle detected). Runs in O(V + E) time and O(V + E) space."
+      }
+    ],
+    practiceProblems: [
+      {
+        title: 'Course Schedule II',
+        problem: 'Given prerequisites for numCourses, return the ordering of courses you should take to finish all courses. If impossible, return empty array.',
+        difficulty: 'Medium',
+        skillTested: "Topological Sort (Kahn's Algorithm)",
+        hint: 'Keep track of in-degrees and build the result order array as nodes are dequeued.',
+        approach: 'Initialize queue with nodes of in-degree 0. As each node is dequeued, decrement in-degrees of successors. Push successors that hit in-degree 0. Return order if length == numCourses.'
+      },
+      {
+        title: 'Number of Provinces / Connected Components',
+        problem: 'Given an n x n adjacency matrix isConnected where isConnected[i][j] = 1 if city i and city j are directly connected, return the total number of provinces.',
+        difficulty: 'Medium',
+        skillTested: 'DFS / BFS / Disjoint Set Union (DSU)',
+        hint: 'Iterate through all cities. If city i has not been visited, increment province counter and trigger DFS/BFS to visit all connected cities.',
+        approach: 'Maintain a boolean visited array of size n. For each unvisited node, run DFS/BFS marking all reachable nodes. Time O(N²), space O(N).'
+      }
+    ],
+    selfCheckQuestions: [
+      {
+        question: 'Why does Dijkstra’s algorithm fail when negative edge weights are present?',
+        answerSummary: 'Dijkstra permanently settles node distances upon dequeuing from the priority queue under the greedy assumption that existing paths cannot become shorter. A negative edge weight can decrease an already finalized distance, which Dijkstra cannot handle (use Bellman-Ford instead).',
+        prompt: 'Can you explain why Dijkstra assumes non-negative edge weights?'
+      },
+      {
+        question: 'What is the critical difference between visited marking in Tree BFS vs Graph BFS?',
+        answerSummary: 'Trees are acyclic, so a visited set is not needed (or only parent pointer check in undirected trees). Graphs may contain cycles and multiple paths to the same node, requiring an explicit Visited set marked immediately upon pushing to the queue to avoid duplicate processing and infinite loops.',
+        prompt: 'Why must we mark nodes as visited at the moment of queue enqueueing in graph BFS?'
+      }
+    ],
+    commonMistakes: [
+      'Marking nodes as visited upon popping from the queue instead of upon pushing to the queue (causes exponential duplicate insertions and TLE).',
+      'Forgetting that undirected graphs require edges in both directions in the adjacency list.',
+      'Applying Dijkstra’s algorithm to a graph with negative edge weights instead of Bellman-Ford or SPFA.',
+      'Using an O(V²) adjacency matrix when V is 10^5 and E is 10^5 (causes Out of Memory or TLE; always use Adjacency List Map/Array).'
+    ],
+    interviewTips: [
+      'Clarify whether the graph is directed or undirected, and whether it can have disconnected components or self-loops.',
+      'State whether edge weights are unweighted (BFS), non-negative weighted (Dijkstra), or can contain negative weights (Bellman-Ford).',
+      'For cycle detection, explain both Kahn’s in-degree approach and DFS with 3-color states (unvisited, in-progress, completed).'
+    ],
+    practiceGuidance: [
+      'Solve LeetCode #200 (Number of Islands)',
+      'Solve LeetCode #207 (Course Schedule)',
+      'Solve LeetCode #743 (Network Delay Time)',
+      'Solve LeetCode #210 (Course Schedule II)'
+    ],
+    quickRecap: [
+      'Unweighted shortest path -> BFS layer-by-layer O(V + E)',
+      'Connectivity, cycles, back-edges -> DFS O(V + E)',
+      'Weighted non-negative shortest path -> Dijkstra with Min-Heap O((V + E) log V)',
+      'Prerequisites and DAG order -> Topological Sort (Kahn’s algorithm)'
+    ],
+    keyTakeaways: [
+      'Mark visited immediately upon queue insertion',
+      'Kahn’s algorithm: in-degree 0 queue tracks dependencies and detects cycles',
+      'Adjacency List O(V + E) is optimal for sparse graphs'
+    ],
+    placementRelevance: 'Graph problems are present in over 70% of product company coding rounds (Amazon, Google, Microsoft, Uber). Interviewers test graph modeling, edge cases (disconnected graphs, self-loops), and complexity analysis.',
+    domain: 'graphs'
+  },
+
+  // DSA - Trees & Binary Search Trees
+  'trees': {
+    title: 'Tree Data Structures & Traversal Algorithms',
+    subtitle: 'Binary Trees, BST Properties, Traversals, LCA & Height Balance',
+    overview: 'Trees are hierarchical acyclic graph structures essential for coding rounds. Technical interviews focus on binary tree traversals (Inorder, Preorder, Postorder, Level-Order), validating Binary Search Tree invariants (Left < Root < Right), finding Lowest Common Ancestors (LCA), and computing height-balanced tree properties.',
+    learningObjectives: [
+      'Master recursive and iterative DFS tree traversals (Inorder, Preorder, Postorder)',
+      'Apply BFS level-order traversal using queues',
+      'Validate Binary Search Tree invariants using range boundaries (-Infinity, +Infinity)',
+      'Find the Lowest Common Ancestor (LCA) in both general Binary Trees and BSTs'
+    ],
+    realWorldAnalogy: {
+      analogy: 'Think of a tree as an organization chart: CEO at the root, directors as children, managers as sub-children, individual contributors as leaf nodes.',
+      explanation: 'Every employee has exactly one direct manager (single parent), and there are zero circular loops in management (acyclic property).',
+      mappedConcept: 'Hierarchical Acyclic Parent-Child Relationship'
+    },
+    definitions: [
+      { term: 'Binary Search Tree (BST)', definition: 'A binary tree where for every node, all values in the left subtree are strictly less, and all values in the right subtree are strictly greater.', context: 'Tree Structures' },
+      { term: 'Lowest Common Ancestor (LCA)', definition: 'The lowest shared ancestor node of two given nodes p and q in a tree.', context: 'Tree Traversal' }
+    ],
+    formulas: [
+      { name: 'Balanced Tree Height', formula: 'Height = O(log₂ N)', variables: 'N = total nodes in balanced binary tree', intuition: 'Halving the search space at each level gives logarithmic depth.' },
+      { name: 'Maximum Nodes at Depth d', formula: 'Nodes = 2^d (root at depth 0)', variables: 'd = depth level', intuition: 'Binary branches double node capacity at each successive layer.' }
+    ],
+    concepts: [
+      {
+        name: 'Inorder Traversal on BST',
+        explanation: 'Recursively visits Left Subtree -> Root -> Right Subtree. On a valid BST, this produces elements in strictly ascending sorted order.',
+        intuition: 'Because all left nodes are smaller and all right nodes are larger, placing root in the middle naturally sorts the sequence.',
+        example: 'Validating a BST or finding the K-th smallest element in a BST.'
+      },
+      {
+        name: 'Lowest Common Ancestor (LCA)',
+        explanation: 'Traverses the tree to locate the deepest node that is an ancestor of both target nodes p and q.',
+        intuition: 'In a BST: if both p and q are smaller than root, go left; if both greater, go right; otherwise root is the split point (LCA).',
+        example: 'Lowest Common Ancestor of a Binary Search Tree (LeetCode #235).'
+      }
+    ],
+    diagrams: [],
+    patterns: [
+      {
+        name: 'Post-Order Bottom-Up Aggregation',
+        whenToUse: 'Calculating tree depth, diameter, or checking if tree is balanced.',
+        howItWorks: 'Recurse on left and right children first, receive their heights/values, then compute current node status and pass up.',
+        example: 'Maximum Depth of Binary Tree, Balanced Binary Tree'
+      }
+    ],
+    stepByStep: [
+      '1. Base case: Always handle root === null first (return 0, null, or boolean).',
+      '2. Identify top-down vs bottom-up: Need answers from subtrees? Use bottom-up post-order.',
+      '3. In BST problems: Exploit sorted order (left < root < right) to discard half the tree at each node in O(h) time.',
+      '4. Space complexity: Recursive call stack takes O(h) space, which is O(log N) for balanced trees and O(N) for skewed trees.'
+    ],
+    codeExamples: [
+      {
+        title: 'Validate Binary Search Tree (Boundary Range Pattern)',
+        language: 'javascript',
+        code: `function isValidBST(root) {
+  function validate(node, min, max) {
+    if (!node) return true;
+    if (node.val <= min || node.val >= max) return false;
+    return validate(node.left, min, node.val) && validate(node.right, node.val, max);
+  }
+  return validate(root, -Infinity, Infinity);
+}`,
+        explanation: 'Maintains valid lower and upper bounds for each node in a single O(N) pass.',
+        complexity: {
+          time: 'O(N)',
+          space: 'O(h)'
+        }
+      }
+    ],
+    workedExamples: [
+      {
+        title: 'Lowest Common Ancestor of BST (LeetCode #235)',
+        problem: 'Given a binary search tree (BST), find the lowest common ancestor (LCA) node of two given nodes in the BST.',
+        approach: 'If both p and q are less than current node val, search left subtree. If both are greater, search right subtree. If they split, current node is LCA.',
+        solution: 'O(h) time where h is tree height, O(1) iterative space.'
+      }
+    ],
+    practiceProblems: [
+      {
+        title: 'Validate Binary Search Tree',
+        problem: 'Determine if a given binary tree is a valid Binary Search Tree (BST).',
+        difficulty: 'Medium',
+        skillTested: 'BST Invariant & Inorder Traversal',
+        hint: 'Do not just compare root with left and right children directly. Pass min and max allowable boundaries down the recursion tree.',
+        approach: 'Recurse with (node, low, high). Left child must be within (low, node.val) and right child within (node.val, high).'
+      }
+    ],
+    selfCheckQuestions: [
+      {
+        question: 'Why is comparing node.val > node.left.val and node.val < node.right.val locally insufficient to validate a BST?',
+        answerSummary: 'Because all nodes in the entire right subtree must be greater than node.val (e.g. a right child can have a left grandchild smaller than the original root). Global boundary constraints (min, max) are required.',
+        prompt: 'Can you explain why local comparison is insufficient for BST validation?'
+      }
+    ],
+    commonMistakes: [
+      'Validating only immediate children instead of tracking global (min, max) ancestors in BSTs.',
+      'Assuming tree is always balanced O(log N) without mentioning worst-case skewed tree O(N) space.',
+      'Using in-order traversal on a general binary tree where elements are not sorted.'
+    ],
+    interviewTips: [
+      'Always state whether tree is guaranteed to be balanced.',
+      'Mention iterative vs recursive trade-offs (stack overflow risk on skewed trees).'
+    ],
+    practiceGuidance: ['Solve LeetCode #98 (Validate BST)', 'Solve LeetCode #236 (LCA of Binary Tree)'],
+    quickRecap: ['Inorder on BST is sorted', 'BST search/insert is O(h)', 'Pass min/max bounds to validate BST'],
+    keyTakeaways: ['Use bottom-up post-order for tree heights and balance checks', 'Exploit BST left < root < right property'],
+    placementRelevance: 'Standard question in 75%+ of technical interview rounds.',
+    domain: 'trees'
+  },
+
   // DSA - Linked Lists
   'linked_lists': {
     title: 'Linked List Pointer Manipulation',
@@ -1027,16 +1403,19 @@ DELETE /api/v1/tasks/:id      -> Delete task (204 No Content)`,
  * Returns grounded fallback study material based on deterministic domain classification.
  */
 export function getFallbackStudyMaterial(taskContextOrTopic) {
-  const domain = classifyTaskDomain(taskContextOrTopic);
+  const domain = (typeof taskContextOrTopic === 'object' && taskContextOrTopic !== null && taskContextOrTopic.domain)
+    ? taskContextOrTopic.domain
+    : classifyTaskDomain(taskContextOrTopic);
   if (domain && GROUNDED_STUDY_MATERIALS[domain]) {
     const base = GROUNDED_STUDY_MATERIALS[domain];
     const taskTitle = typeof taskContextOrTopic === 'object' && taskContextOrTopic !== null
-      ? (taskContextOrTopic.taskTitle || taskContextOrTopic.name || taskContextOrTopic.topic || base.title)
+      ? (taskContextOrTopic.taskTitle || taskContextOrTopic.taskName || taskContextOrTopic.title || taskContextOrTopic.name || taskContextOrTopic.topic || base.title)
       : (taskContextOrTopic || base.title);
 
     return {
       ...base,
       title: taskTitle,
+      topic: taskTitle,
       diagrams: Array.isArray(base.diagrams) ? base.diagrams : [],
       definitions: Array.isArray(base.definitions) ? base.definitions : [],
       formulas: Array.isArray(base.formulas) ? base.formulas : [],
@@ -1049,34 +1428,162 @@ export function getFallbackStudyMaterial(taskContextOrTopic) {
   return null;
 }
 
+export const getGroundedFallbackStudyMaterial = getFallbackStudyMaterial;
+
+/**
+ * Validates that study material strictly grounds to the requested task context.
+ * Rejects mismatched domains, cross-domain concept contamination, and contradictory titles.
+ */
+export function validateStudyMaterialGrounding(material, taskContext = {}) {
+  if (!material || typeof material !== 'object') {
+    return { valid: false, isValid: false, reason: 'Study material is missing or invalid object.' };
+  }
+
+  const taskTitle = normalizeText(taskContext.taskTitle || taskContext.taskName || taskContext.name || taskContext.topic || '');
+  const roadmapTopic = normalizeText(taskContext.roadmapTopic || taskContext.topic || taskTitle);
+  const taskDesc = normalizeText(taskContext.taskDescription || taskContext.description || '');
+  const taskContextStr = `${taskTitle} ${roadmapTopic} ${taskDesc}`.toLowerCase();
+
+  const expectedDomain = classifyTaskDomain(taskContext);
+  const docDomain = material.domain || '';
+
+  // 1. Direct Domain Mismatch Check
+  if (expectedDomain && docDomain && expectedDomain !== docDomain) {
+    return {
+      valid: false,
+      isValid: false,
+      reason: `Domain mismatch: task expected "${expectedDomain}" but material domain is "${docDomain}".`
+    };
+  }
+
+  // 2. Stringified Content Analysis for Contamination
+  const docTitle = normalizeText(material.title || '').toLowerCase();
+  const docSubtitle = normalizeText(material.subtitle || '').toLowerCase();
+  const docOverview = normalizeText(material.overview || '').toLowerCase();
+  const docConcepts = Array.isArray(material.concepts)
+    ? material.concepts.map(c => `${c.name || ''} ${c.explanation || ''}`).join(' ').toLowerCase()
+    : '';
+  const fullDocText = `${docTitle} ${docSubtitle} ${docOverview} ${docConcepts}`;
+
+  // If task is GRAPHS: reject if contaminated with Arrays (Kadane, Two Pointers, Sliding Window, Prefix Sums)
+  const isGraphTask = expectedDomain === 'graphs' ||
+    taskContextStr.includes('graph') ||
+    taskContextStr.includes('bfs') ||
+    taskContextStr.includes('dfs') ||
+    taskContextStr.includes('dijkstra') ||
+    taskContextStr.includes('topological sort');
+
+  if (isGraphTask && !taskContextStr.includes('array')) {
+    if (
+      docTitle.includes('array') ||
+      docSubtitle.includes('sliding window') ||
+      docSubtitle.includes('two pointer') ||
+      docSubtitle.includes('contiguous subarray') ||
+      docSubtitle.includes('prefix sum') ||
+      fullDocText.includes("kadane's algorithm") ||
+      fullDocText.includes('kadane') ||
+      (docConcepts.includes('two pointers') && !docConcepts.includes('graph'))
+    ) {
+      return {
+        valid: false,
+        isValid: false,
+        reason: 'Grounding violation: Graphs task received contaminated Array/Kadane/Sliding Window study material.'
+      };
+    }
+  }
+
+  // If task is ARRAYS: reject if contaminated with Graph concepts (Dijkstra, Topological Sort)
+  const isArrayTask = expectedDomain === 'arrays' ||
+    (taskContextStr.includes('array') && !taskContextStr.includes('graph') && !taskContextStr.includes('tree'));
+
+  if (isArrayTask) {
+    if (
+      docTitle.includes('graph') ||
+      docSubtitle.includes('dijkstra') ||
+      docSubtitle.includes('topological sort') ||
+      (fullDocText.includes('dijkstra') && !taskContextStr.includes('dijkstra'))
+    ) {
+      return {
+        valid: false,
+        isValid: false,
+        reason: 'Grounding violation: Arrays task received Graph/Dijkstra study material.'
+      };
+    }
+  }
+
+  // If task is TREES: reject if contaminated with Arrays
+  if (expectedDomain === 'trees' && !taskContextStr.includes('array')) {
+    if (docTitle.includes('array') || docSubtitle.includes('sliding window') || fullDocText.includes('kadane')) {
+      return {
+        valid: false,
+        isValid: false,
+        reason: 'Grounding violation: Trees task received Array study material.'
+      };
+    }
+  }
+
+  return { valid: true, isValid: true };
+}
+
 /**
  * Generates a stable fingerprint cache key for a task's study material.
+ * Authoritative: isolates by userId, taskId, classified task domain, and core task parameters.
  */
-export function getStudyMaterialCacheKey(taskContext = {}) {
+export function getStudyMaterialCacheKey(taskContext = {}, userId = null) {
+  const userPrefix = userId ? `u_${normalizeText(userId)}_` : '';
   const taskId = normalizeText(taskContext.taskId || taskContext.id || '');
+  const domain = classifyTaskDomain(taskContext) || 'general';
   const taskTitle = normalizeText(taskContext.taskTitle || taskContext.taskName || taskContext.name || '');
   const topic = normalizeText(taskContext.roadmapTopic || taskContext.topic || '');
   const desc = normalizeText(taskContext.taskDescription || taskContext.description || '');
   const duration = normalizeText(taskContext.durationMinutes || taskContext.estimatedMinutes || taskContext.duration || '');
   const objectives = normalizeText(taskContext.learningObjectives || '');
   
-  return `study_${taskId}_${taskTitle}_${topic}_${desc.slice(0, 30)}_${duration}_${objectives.slice(0, 30)}`.trim().toLowerCase().replace(/\s+/g, '_');
+  return `study_${userPrefix}${taskId ? `id_${taskId}_` : ''}dom_${domain}_${taskTitle}_${topic}_${desc.slice(0, 30)}_${duration}_${objectives.slice(0, 30)}`.trim().toLowerCase().replace(/\s+/g, '_');
 }
 
 /**
- * Retrieves cached study material if available.
+ * Retrieves cached study material if available and valid.
  */
-export function getCachedStudyMaterial(cacheKey) {
+export function getCachedStudyMaterial(cacheKey, taskContext = null) {
   if (!cacheKey) return null;
-  return STUDY_MATERIAL_CACHE.get(cacheKey) || null;
+  const cached = STUDY_MATERIAL_CACHE.get(cacheKey) || null;
+  if (cached && taskContext) {
+    const validation = validateStudyMaterialGrounding(cached, taskContext);
+    if (!validation.valid) {
+      console.warn('[studyMaterialService] Evicting contaminated cached study material:', validation.reason);
+      STUDY_MATERIAL_CACHE.delete(cacheKey);
+      return null;
+    }
+  }
+  return cached;
 }
 
 /**
- * Stores study material in cache.
+ * Stores study material in cache after verifying grounding.
  */
-export function setCachedStudyMaterial(cacheKey, material) {
+export function setCachedStudyMaterial(cacheKey, material, taskContext = null) {
   if (!cacheKey || !material) return;
+  if (taskContext) {
+    const validation = validateStudyMaterialGrounding(material, taskContext);
+    if (!validation.valid) {
+      console.warn('[studyMaterialService] Refusing to cache ungrounded study material:', validation.reason);
+      return;
+    }
+  }
   STUDY_MATERIAL_CACHE.set(cacheKey, material);
+}
+
+/**
+ * Invalidates specific or all study material cache entries.
+ */
+export function invalidateStudyMaterialCache(taskContext = null) {
+  if (!taskContext) {
+    STUDY_MATERIAL_CACHE.clear();
+    return;
+  }
+  const key = getStudyMaterialCacheKey(taskContext);
+  STUDY_MATERIAL_CACHE.delete(key);
 }
 
 /**

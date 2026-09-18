@@ -20,8 +20,8 @@ export default function StudyDocumentHeader({
     <div style={{
       padding: '16px 18px',
       borderRadius: '12px',
-      backgroundColor: '#FAF8F5',
-      border: '1px solid #E8E2D9',
+      backgroundColor: 'var(--bg-card)',
+      border: '1px solid var(--border-beige)',
       marginBottom: '16px',
       boxShadow: '0 1px 3px rgba(35, 25, 15, 0.03)',
       width: '100%',
@@ -46,9 +46,9 @@ export default function StudyDocumentHeader({
             letterSpacing: '0.04em',
             padding: '3px 8px',
             borderRadius: '9999px',
-            backgroundColor: '#FAF0EB',
-            color: '#8B361B',
-            border: '1px solid #F2D7CA'
+            backgroundColor: 'var(--accent-terracotta-light)',
+            color: 'var(--accent-terracotta)',
+            border: '1px solid var(--border-accent)'
           }}>
             {domain}
           </span>
@@ -58,9 +58,9 @@ export default function StudyDocumentHeader({
             fontWeight: 700,
             padding: '3px 8px',
             borderRadius: '9999px',
-            backgroundColor: difficulty.toLowerCase() === 'hard' ? '#FEF2F2' : difficulty.toLowerCase() === 'medium' ? '#FFFBEB' : '#F0FDF4',
-            color: difficulty.toLowerCase() === 'hard' ? '#991B1B' : difficulty.toLowerCase() === 'medium' ? '#92400E' : '#166534',
-            border: `1px solid ${difficulty.toLowerCase() === 'hard' ? '#FECACA' : difficulty.toLowerCase() === 'medium' ? '#FDE68A' : '#BBF7D0'}`
+            backgroundColor: difficulty.toLowerCase() === 'hard' ? 'rgba(239, 68, 68, 0.12)' : difficulty.toLowerCase() === 'medium' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(34, 197, 94, 0.12)',
+            color: difficulty.toLowerCase() === 'hard' ? 'var(--accent-terracotta)' : difficulty.toLowerCase() === 'medium' ? 'var(--accent-amber)' : 'var(--accent-sage)',
+            border: `1px solid ${difficulty.toLowerCase() === 'hard' ? 'rgba(239, 68, 68, 0.25)' : difficulty.toLowerCase() === 'medium' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(34, 197, 94, 0.25)'}`
           }}>
             {difficulty}
           </span>
@@ -71,7 +71,7 @@ export default function StudyDocumentHeader({
             gap: '4px',
             fontSize: '11.5px',
             fontWeight: 600,
-            color: '#64748B',
+            color: 'var(--text-muted)',
             paddingLeft: '4px'
           }}>
             <Clock size={13} />
@@ -86,13 +86,13 @@ export default function StudyDocumentHeader({
           gap: '5px',
           fontSize: '11px',
           fontWeight: 700,
-          color: '#C85A32',
-          backgroundColor: '#FFFFFF',
+          color: 'var(--accent-terracotta)',
+          backgroundColor: 'var(--bg-card-subtle)',
           padding: '2px 8px',
           borderRadius: '9999px',
-          border: '1px solid #E8E2D9'
+          border: '1px solid var(--border-beige)'
         }}>
-          <Sparkles size={11} color="#C85A32" />
+          <Sparkles size={11} color="var(--accent-terracotta)" />
           <span>Personalized study guide</span>
         </div>
       </div>
@@ -102,7 +102,7 @@ export default function StudyDocumentHeader({
         fontFamily: "'Outfit', 'Plus Jakarta Sans', sans-serif",
         fontSize: '20px',
         fontWeight: 800,
-        color: '#1E293B',
+        color: 'var(--text-charcoal)',
         letterSpacing: '-0.02em',
         margin: '0 0 4px 0',
         lineHeight: '1.3',
@@ -115,7 +115,7 @@ export default function StudyDocumentHeader({
       {subtitle && (
         <p style={{
           fontSize: '12.5px',
-          color: '#C85A32',
+          color: 'var(--accent-terracotta)',
           fontWeight: 700,
           margin: 0,
           letterSpacing: '0.01em'

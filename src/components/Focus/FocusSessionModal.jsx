@@ -199,8 +199,8 @@ export const FocusSessionModal = () => {
           flexDirection: 'column',
           padding: 0,
           borderRadius: 'var(--radius-xl)',
-          backgroundColor: '#FAF8F5',
-          border: '1px solid #E8E2D9',
+          backgroundColor: 'var(--bg-warm-cream)',
+          border: '1px solid var(--border-beige)',
           boxShadow: '0 25px 60px rgba(35, 25, 15, 0.35)',
           overflow: 'hidden'
         }}
@@ -211,8 +211,8 @@ export const FocusSessionModal = () => {
         <div className="focus-study-header-root" style={{
           display: 'flex',
           flexDirection: 'column',
-          backgroundColor: '#FAF8F5',
-          borderBottom: '1px solid #E8E2D9',
+          backgroundColor: 'var(--bg-card)',
+          borderBottom: '1px solid var(--border-beige)',
           paddingTop: 'max(8px, env(safe-area-inset-top, 8px))',
           flexShrink: 0
         }}>
@@ -305,8 +305,8 @@ export const FocusSessionModal = () => {
                 gap: '6px',
                 padding: '6px 12px',
                 borderRadius: 'var(--radius-pill)',
-                backgroundColor: timerMetrics.isPaused ? 'var(--accent-amber-light)' : '#FFFFFF',
-                border: `1px solid ${timerMetrics.isPaused ? 'var(--accent-amber)' : '#E8E2D9'}`,
+                backgroundColor: timerMetrics.isPaused ? 'var(--accent-amber-light)' : 'var(--bg-card)',
+                border: `1px solid ${timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--border-beige)'}`,
                 boxShadow: '0 1px 3px rgba(35, 25, 15, 0.04)'
               }}>
                 <Clock size={13} color={timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)'} />
@@ -333,8 +333,8 @@ export const FocusSessionModal = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'var(--text-muted)',
-                  backgroundColor: '#FFFFFF',
-                  border: '1px solid #E8E2D9',
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-beige)',
                   cursor: 'pointer'
                 }}
                 title="Exit Session"
@@ -387,8 +387,8 @@ export const FocusSessionModal = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: 'var(--text-muted)',
-                  backgroundColor: '#FFFFFF',
-                  border: '1px solid #E8E2D9',
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-beige)',
                   cursor: 'pointer'
                 }}
                 aria-label="Close session"
@@ -435,8 +435,8 @@ export const FocusSessionModal = () => {
                 gap: '5px',
                 padding: '4px 10px',
                 borderRadius: 'var(--radius-pill)',
-                backgroundColor: timerMetrics.isPaused ? 'var(--accent-amber-light)' : '#FFFFFF',
-                border: `1px solid ${timerMetrics.isPaused ? 'var(--accent-amber)' : '#E8E2D9'}`,
+                backgroundColor: timerMetrics.isPaused ? 'var(--accent-amber-light)' : 'var(--bg-card)',
+                border: `1px solid ${timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--border-beige)'}`,
                 boxShadow: '0 1px 3px rgba(35, 25, 15, 0.04)'
               }}>
                 <Clock size={12} color={timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)'} />
@@ -483,8 +483,8 @@ export const FocusSessionModal = () => {
           {/* LEFT COLUMN: TIMER, CONTROLS & SESSION OBJECTIVES              */}
           {/* --------------------------------------------------------------- */}
           <div className="focus-study-left-col" style={{
-            backgroundColor: '#FFFFFF',
-            borderRight: '1px solid #E8E2D9',
+            backgroundColor: 'var(--bg-card)',
+            borderRight: '1px solid var(--border-beige)',
             padding: '20px 18px',
             overflowY: 'auto',
             display: 'flex',
@@ -519,8 +519,8 @@ export const FocusSessionModal = () => {
             <div style={{
               padding: '18px 16px',
               borderRadius: 'var(--radius-lg)',
-              backgroundColor: timerMetrics.isPaused ? '#FFFDF8' : '#FAF8F5',
-              border: `1px solid ${timerMetrics.isPaused ? 'var(--accent-amber)' : '#E8E2D9'}`,
+              backgroundColor: timerMetrics.isPaused ? 'var(--accent-amber-light)' : 'var(--bg-warm-cream)',
+              border: `1px solid ${timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--border-beige)'}`,
               textAlign: 'center',
               boxShadow: '0 2px 10px rgba(35, 25, 15, 0.03)'
             }}>
@@ -532,14 +532,14 @@ export const FocusSessionModal = () => {
                 marginBottom: '12px',
                 padding: '6px 8px',
                 borderRadius: '8px',
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #EAE4DA'
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-beige)'
               }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Target</div>
                   <div style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text-charcoal)' }}>{activeFocusSession?.plannedMinutes || 45}m</div>
                 </div>
-                <div style={{ textAlign: 'center', borderLeft: '1px solid #EAE4DA', borderRight: '1px solid #EAE4DA' }}>
+                <div style={{ textAlign: 'center', borderLeft: '1px solid var(--border-beige)', borderRight: '1px solid var(--border-beige)' }}>
                   <div style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', color: timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--text-muted)' }}>Status</div>
                   <div style={{ fontSize: '11.5px', fontWeight: 800, color: timerMetrics.isExpired ? 'var(--accent-sage)' : timerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)' }}>
                     {timerMetrics.isExpired ? 'Goal Met' : timerMetrics.isPaused ? 'Paused' : 'Active'}
@@ -587,7 +587,7 @@ export const FocusSessionModal = () => {
                   width: '100%',
                   height: '6px',
                   borderRadius: '9999px',
-                  backgroundColor: '#E8E2D9',
+                  backgroundColor: 'var(--border-beige)',
                   overflow: 'hidden'
                 }}>
                   <div style={{
@@ -685,8 +685,8 @@ export const FocusSessionModal = () => {
               <div style={{
                 padding: '14px',
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: '#FAF8F5',
-                border: '1px solid #E8E2D9'
+                backgroundColor: 'var(--bg-card-subtle)',
+                border: '1px solid var(--border-beige)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                   <ListTodo size={14} color="var(--accent-terracotta)" />
@@ -713,7 +713,7 @@ export const FocusSessionModal = () => {
                         width: '16px',
                         height: '16px',
                         borderRadius: '4px',
-                        border: `1.5px solid ${st.done ? 'var(--accent-terracotta)' : '#C4B9A9'}`,
+                        border: `1.5px solid ${st.done ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)'}`,
                         backgroundColor: st.done ? 'var(--accent-terracotta)' : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
@@ -735,8 +735,8 @@ export const FocusSessionModal = () => {
             <div style={{
               padding: '14px',
               borderRadius: 'var(--radius-md)',
-              backgroundColor: '#FAF8F5',
-              border: '1px solid #E8E2D9'
+              backgroundColor: 'var(--bg-card-subtle)',
+              border: '1px solid var(--border-beige)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                 <FileText size={13} color="var(--text-secondary)" />
@@ -753,8 +753,8 @@ export const FocusSessionModal = () => {
                   width: '100%',
                   padding: '8px 10px',
                   borderRadius: 'var(--radius-sm)',
-                  border: '1px solid #E8E2D9',
-                  backgroundColor: '#FFFFFF',
+                  border: '1px solid var(--border-beige)',
+                  backgroundColor: 'var(--bg-card)',
                   fontSize: '12px',
                   color: 'var(--text-charcoal)',
                   outline: 'none',
@@ -771,7 +771,7 @@ export const FocusSessionModal = () => {
           <div className="focus-study-right-col" style={{
             padding: '24px 28px',
             overflowY: 'auto',
-            backgroundColor: '#FAF8F5',
+            backgroundColor: 'var(--bg-warm-cream)',
             display: 'flex',
             flexDirection: 'column',
             gap: '24px'
@@ -857,7 +857,7 @@ export const FocusSessionModal = () => {
             style={{
               position: 'absolute',
               inset: 0,
-              backgroundColor: 'rgba(255, 255, 255, 0.96)',
+              backgroundColor: 'var(--modal-sheet-overlay)',
               backdropFilter: 'blur(6px)',
               display: 'flex',
               flexDirection: 'column',
@@ -932,7 +932,7 @@ export const FocusSessionModal = () => {
             style={{
               position: 'absolute',
               inset: 0,
-              backgroundColor: 'rgba(255, 255, 255, 0.96)',
+              backgroundColor: 'var(--modal-sheet-overlay)',
               backdropFilter: 'blur(6px)',
               display: 'flex',
               flexDirection: 'column',

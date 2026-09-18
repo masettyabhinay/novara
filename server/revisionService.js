@@ -236,6 +236,104 @@ const GROUNDED_QUESTION_BANKS = {
     }
   ],
 
+  // DSA - Graphs (BFS, DFS, Dijkstra, Topological Sort)
+  'graphs': [
+    {
+      id: 'q_graph_1',
+      type: 'mcq',
+      question: 'What is the optimal time complexity of Breadth-First Search (BFS) on a graph with V vertices and E edges represented using an Adjacency List?',
+      options: [
+        'O(V + E)',
+        'O(V * E)',
+        'O(V²)',
+        'O(E log V)'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'O(V + E)',
+      explanation: 'With an adjacency list, BFS visits every vertex once (O(V)) and inspects every outgoing edge once in directed or twice in undirected graphs (O(E)), giving O(V + E).',
+      testedSubconcept: 'BFS Traversal Complexity'
+    },
+    {
+      id: 'q_graph_2',
+      type: 'mcq',
+      question: 'Why does Dijkstra’s algorithm fail to produce correct shortest paths on graphs with negative edge weights?',
+      options: [
+        'Because Dijkstra greedily marks vertices as finalized once extracted from the priority queue, assuming edge weights can never decrease path costs later',
+        'Because priority queues cannot store negative numbers',
+        'Because negative edge weights create disconnected components',
+        'Because Dijkstra only works on trees'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'Because Dijkstra greedily marks vertices as finalized once extracted from the priority queue, assuming edge weights can never decrease path costs later',
+      explanation: 'Dijkstra relies on a greedy invariant: once a node is settled, no shorter path to it exists. Negative edge weights violate this non-decreasing path length property (use Bellman-Ford instead).',
+      testedSubconcept: 'Dijkstra Invariants'
+    },
+    {
+      id: 'q_graph_3',
+      type: 'mcq',
+      question: 'Which condition is strictly required for a graph to possess a valid Topological Sort ordering?',
+      options: [
+        'The graph must be a Directed Acyclic Graph (DAG)',
+        'The graph must be strongly connected',
+        'The graph must have an equal number of vertices and edges',
+        'The graph must be undirected and bipartite'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'The graph must be a Directed Acyclic Graph (DAG)',
+      explanation: 'Topological sort requires directed edges to define precedence and zero cycles because a cycle implies circular dependency where no node can be processed first.',
+      testedSubconcept: 'Topological Sort Invariant'
+    },
+    {
+      id: 'q_graph_4',
+      type: 'mcq',
+      question: 'In Kahn’s algorithm for Topological Sort, which nodes are initially pushed into the processing queue?',
+      options: [
+        'All nodes with an in-degree of 0',
+        'All nodes with an out-degree of 0',
+        'The root node with the highest vertex ID',
+        'All leaf nodes with zero children'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'All nodes with an in-degree of 0',
+      explanation: 'Nodes with in-degree 0 have no incoming prerequisites/dependencies and can be processed immediately.',
+      testedSubconcept: 'Kahns Algorithm In-degree'
+    }
+  ],
+
+  // DSA - Trees & Binary Search Trees
+  'trees': [
+    {
+      id: 'q_tree_1',
+      type: 'mcq',
+      question: 'Which depth-first traversal of a valid Binary Search Tree (BST) produces the keys in strictly non-decreasing sorted order?',
+      options: [
+        'Inorder Traversal (Left, Root, Right)',
+        'Preorder Traversal (Root, Left, Right)',
+        'Postorder Traversal (Left, Right, Root)',
+        'Level-Order Traversal (Breadth-First)'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'Inorder Traversal (Left, Root, Right)',
+      explanation: 'By the BST property (Left < Root < Right), visiting Left subtree, then current Root, then Right subtree outputs elements in ascending sorted order.',
+      testedSubconcept: 'BST Inorder Property'
+    },
+    {
+      id: 'q_tree_2',
+      type: 'mcq',
+      question: 'What is the definition of a Height-Balanced Binary Tree (AVL condition)?',
+      options: [
+        'For every node, the absolute difference in height between its left and right subtrees is at most 1',
+        'All leaf nodes must be at the exact same depth',
+        'The tree has exactly 2^h - 1 nodes',
+        'Every internal node has exactly two children'
+      ],
+      correctAnswer: 0,
+      correctAnswerText: 'For every node, the absolute difference in height between its left and right subtrees is at most 1',
+      explanation: 'A binary tree is balanced if for every node, |height(left) - height(right)| <= 1, guaranteeing O(log N) operations.',
+      testedSubconcept: 'Tree Balance Invariant'
+    }
+  ],
+
   // Core CS - Operating Systems
   'operating_systems': [
     {
@@ -1005,7 +1103,11 @@ export function classifyTaskDomain(topicOrContext = '', fallbackCategory = '') {
   let text = '';
 
   if (typeof topicOrContext === 'object' && topicOrContext !== null) {
-    const topicRaw = `${topicOrContext.roadmapTopic || ''} ${topicOrContext.taskTitle || ''} ${topicOrContext.topic || ''} ${topicOrContext.name || ''}`;
+    if (topicOrContext.domain && typeof topicOrContext.domain === 'string') {
+      const explicitDomain = topicOrContext.domain.trim().toLowerCase();
+      if (explicitDomain && explicitDomain !== 'general') return explicitDomain;
+    }
+    const topicRaw = `${topicOrContext.roadmapTopic || ''} ${topicOrContext.taskTitle || ''} ${topicOrContext.taskName || ''} ${topicOrContext.title || ''} ${topicOrContext.topic || ''} ${topicOrContext.name || ''}`;
     topicOnly = normalizeText(topicRaw).toLowerCase();
     cat = normalizeText(topicOrContext.taskCategory || topicOrContext.category || fallbackCategory || '').toLowerCase();
     const desc = normalizeText(topicOrContext.taskDescription || topicOrContext.description || '').toLowerCase();
@@ -1017,6 +1119,46 @@ export function classifyTaskDomain(topicOrContext = '', fallbackCategory = '') {
   }
 
   // 1. PRIMARY: Match specific curriculum topic & task title directly (Highest Precedence)
+
+  // DSA - Graphs (BFS, DFS, Dijkstra, Topological Sort, Shortest Path, etc.)
+  if (
+    topicOnly.includes('graph') ||
+    topicOnly.includes('bfs') ||
+    topicOnly.includes('dfs') ||
+    topicOnly.includes('dijkstra') ||
+    topicOnly.includes('topological sort') ||
+    topicOnly.includes('topo sort') ||
+    topicOnly.includes('shortest path') ||
+    topicOnly.includes('adjacency') ||
+    topicOnly.includes('bipartite') ||
+    topicOnly.includes('kruskal') ||
+    topicOnly.includes('prim') ||
+    topicOnly.includes('bellman') ||
+    topicOnly.includes('floyd') ||
+    topicOnly.includes('tarjan') ||
+    topicOnly.includes('mst') ||
+    topicOnly.includes('connected component') ||
+    topicOnly.includes('breadth first') ||
+    topicOnly.includes('depth first')
+  ) {
+    return 'graphs';
+  }
+
+  // DSA - Trees & Binary Search Trees
+  if (
+    topicOnly.includes('tree') ||
+    topicOnly.includes('bst') ||
+    topicOnly.includes('binary tree') ||
+    topicOnly.includes('trie') ||
+    topicOnly.includes('inorder') ||
+    topicOnly.includes('preorder') ||
+    topicOnly.includes('postorder') ||
+    topicOnly.includes('lowest common ancestor') ||
+    topicOnly.includes('lca') ||
+    topicOnly.includes('level order')
+  ) {
+    return 'trees';
+  }
 
   // DSA - Linked Lists
   if (topicOnly.includes('linked list') || topicOnly.includes('pointer manipulation') || topicOnly.includes('singly') || topicOnly.includes('doubly linked') || topicOnly.includes('linkedlist')) {
@@ -1187,6 +1329,8 @@ export function classifyTaskDomain(topicOrContext = '', fallbackCategory = '') {
   }
 
   // 2. SECONDARY: Match on detailed task description / objectives if topic was generic
+  if (text.includes('graph') || text.includes('bfs') || text.includes('dfs') || text.includes('dijkstra') || text.includes('topological sort') || text.includes('shortest path')) return 'graphs';
+  if (text.includes('tree') || text.includes('bst') || text.includes('binary tree') || text.includes('trie') || text.includes('traversal')) return 'trees';
   if (text.includes('linked list') || text.includes('pointer manipulation')) return 'linked_lists';
   if (text.includes('binary search')) return 'binary_search';
   if (text.includes('array') || text.includes('string') || text.includes('sliding window') || text.includes('two pointer') || text.includes('kadane')) return 'arrays';
@@ -1201,8 +1345,14 @@ export function classifyTaskDomain(topicOrContext = '', fallbackCategory = '') {
   if (text.includes('resume') || text.includes('star framework') || text.includes('behavioral question')) return 'resume_interview';
   if (text.includes('system design') || text.includes('cap theorem')) return 'system_design';
 
-  // 3. TERTIARY: Match category only if topic wasn't classified
-  if (cat === 'dsa') return 'arrays';
+  // 3. TERTIARY: Match category safely only if topic wasn't classified
+  if (cat === 'dsa') {
+    if (text.includes('graph') || text.includes('node') || text.includes('edge') || text.includes('vertex')) return 'graphs';
+    if (text.includes('tree') || text.includes('root') || text.includes('leaf') || text.includes('child')) return 'trees';
+    if (text.includes('list') || text.includes('pointer')) return 'linked_lists';
+    if (text.includes('search') || text.includes('sort') || text.includes('binary')) return 'binary_search';
+    return 'arrays';
+  }
   if (cat === 'sql') return 'sql';
   if (cat === 'core cs') return 'dbms';
   if (cat === 'development') return 'react';

@@ -111,10 +111,10 @@ export default function TaskStudyMaterialModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm overflow-y-auto animate-fadeIn">
-      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-[#FAF8F5] rounded-2xl shadow-2xl border border-[#E8E2D9] overflow-hidden text-[#1E293B]">
+      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-[var(--bg-card)] rounded-2xl shadow-2xl border border-[var(--border-beige)] overflow-hidden text-[var(--text-charcoal)]">
         
         {/* MODAL HEADER */}
-        <div className="sticky top-0 z-20 flex items-center justify-between px-5 sm:px-7 py-3.5 bg-[#FAF8F5]/95 backdrop-blur border-b border-[#E8E2D9]">
+        <div className="sticky top-0 z-20 flex items-center justify-between px-5 sm:px-7 py-3.5 bg-[var(--bg-card)]/95 backdrop-blur border-b border-[var(--border-beige)]">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#C85A32]/10 text-[#C85A32] shrink-0">
               <BookOpen className="w-5 h-5" />
@@ -125,12 +125,12 @@ export default function TaskStudyMaterialModal({
                   Study Document
                 </span>
                 {isCached && (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--bg-warm-cream)] text-[var(--text-muted)] border border-[var(--border-beige)]">
                     Instant Cache
                   </span>
                 )}
               </div>
-              <h2 className="text-base sm:text-lg font-bold text-[#1E293B] truncate">
+              <h2 className="text-base sm:text-lg font-bold text-[var(--text-charcoal)] truncate">
                 {task.name || task.taskTitle || task.topic || 'Curriculum Concept'}
               </h2>
             </div>
@@ -138,7 +138,7 @@ export default function TaskStudyMaterialModal({
 
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors shrink-0"
+            className="p-2 text-[var(--text-muted)] hover:text-[var(--text-charcoal)] hover:bg-[var(--bg-warm-cream)] rounded-lg transition-colors shrink-0"
             title="Close"
           >
             <X className="w-5 h-5" />
@@ -146,29 +146,29 @@ export default function TaskStudyMaterialModal({
         </div>
 
         {/* METADATA BAR */}
-        <div className="flex flex-wrap items-center gap-2 px-5 sm:px-7 py-2.5 bg-[#F4EFEA] border-b border-[#E8E2D9] text-xs">
+        <div className="flex flex-wrap items-center gap-2 px-5 sm:px-7 py-2.5 bg-[var(--bg-warm-cream)] border-b border-[var(--border-beige)] text-xs">
           {task.phase && (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-[#E0D8CE] text-slate-700 font-medium">
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-card)] border border-[var(--border-beige)] text-[var(--text-secondary)] font-medium">
               <Layers className="w-3.5 h-3.5 text-[#C85A32]" />
               {task.phase}
             </span>
           )}
           {task.topic && task.topic !== task.name && (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-[#E0D8CE] text-slate-700 font-medium">
-              <Target className="w-3.5 h-3.5 text-blue-600" />
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-card)] border border-[var(--border-beige)] text-[var(--text-secondary)] font-medium">
+              <Target className="w-3.5 h-3.5 text-blue-500" />
               {task.topic}
             </span>
           )}
           <span className={`px-2.5 py-1 rounded-md border font-medium capitalize ${diffBadgeClass}`}>
             {task.difficulty || 'Medium'}
           </span>
-          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-[#E0D8CE] text-slate-700 font-medium">
-            <Clock className="w-3.5 h-3.5 text-slate-500" />
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[var(--bg-card)] border border-[var(--border-beige)] text-[var(--text-secondary)] font-medium">
+            <Clock className="w-3.5 h-3.5 text-[var(--text-muted)]" />
             {taskDuration} mins
           </span>
           {isCurrentActive && (
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-100 border border-amber-300 text-amber-900 font-bold">
-              <Flame className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-500 font-bold">
+              <Flame className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
               In Progress
             </span>
           )}
@@ -183,20 +183,20 @@ export default function TaskStudyMaterialModal({
                 <Sparkles className="w-6 h-6 text-[#C85A32] absolute inset-0 m-auto animate-pulse" />
               </div>
               <div className="space-y-1">
-                <h3 className="font-semibold text-slate-800 text-base">
+                <h3 className="font-semibold text-[var(--text-charcoal)] text-base">
                   Preparing your personalized study guide...
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-500 max-w-sm">
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-sm">
                   Generating verified concepts, algorithmic patterns, code examples, and placement tips.
                 </p>
               </div>
             </div>
           ) : error ? (
-            <div className="py-12 px-6 rounded-xl bg-rose-50 border border-rose-200 text-center space-y-4">
+            <div className="py-12 px-6 rounded-xl bg-rose-500/10 border border-rose-500/30 text-center space-y-4">
               <AlertTriangle className="w-10 h-10 text-rose-500 mx-auto" />
               <div className="space-y-1">
-                <h4 className="font-semibold text-rose-900">Study Material Temporarily Unavailable</h4>
-                <p className="text-xs text-rose-700 max-w-md mx-auto">
+                <h4 className="font-semibold text-rose-500">Study Material Temporarily Unavailable</h4>
+                <p className="text-xs text-rose-400 max-w-md mx-auto">
                   {error || 'Study material is temporarily unavailable. Please try again.'}
                 </p>
               </div>
@@ -232,10 +232,10 @@ export default function TaskStudyMaterialModal({
         </div>
 
         {/* MODAL ACTION FOOTER (STICKY) */}
-        <div className="sticky bottom-0 z-20 flex items-center justify-between px-5 sm:px-7 py-3.5 bg-[#FAF8F5]/95 backdrop-blur border-t border-[#E8E2D9]">
+        <div className="sticky bottom-0 z-20 flex items-center justify-between px-5 sm:px-7 py-3.5 bg-[var(--bg-card)]/95 backdrop-blur border-t border-[var(--border-beige)]">
           <button
             onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-[#D5CDBD] rounded-xl transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-charcoal)] bg-[var(--bg-card)] hover:bg-[var(--bg-warm-cream)] border border-[var(--border-beige)] rounded-xl transition-all shadow-sm"
           >
             <ArrowLeft className="w-4 h-4" />
             Back

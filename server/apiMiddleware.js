@@ -79,7 +79,8 @@ import {
   getStudyMaterialCacheKey,
   getCachedStudyMaterial,
   setCachedStudyMaterial,
-  getFallbackTutorResponse
+  getFallbackTutorResponse,
+  validateStudyMaterialGrounding
 } from './studyMaterialService.js';
 
 import { verifyGoogleToken, isValidGoogleClientId } from './authGoogle.js';
@@ -1005,9 +1006,9 @@ export async function apiMiddlewareHandler(req, res, next) {
                 relevantMetadata: relevantMetadata || ''
               };
 
-              // 1. Check server-side cache
+              // 1. Check server-side cache with validation
               const cacheKey = getStudyMaterialCacheKey(taskCtx);
-              const cached = getCachedStudyMaterial(cacheKey);
+              const cached = getCachedStudyMaterial(cacheKey, taskCtx);
               if (cached) {
                 return sendJson(res, 200, { success: true, material: cached, cached: true }, req);
               }
@@ -1016,11 +1017,24 @@ export async function apiMiddlewareHandler(req, res, next) {
               if (isGeminiConfigured()) {
                 try {
                   material = await generateTaskStudyMaterial(taskCtx);
+                  if (material) {
+                    const validation = validateStudyMaterialGrounding(material, taskCtx);
+                    if (!validation.valid) {
+                      console.warn('[apiMiddleware] AI study material failed grounding validation, retrying:', validation.reason);
+                      material = await generateTaskStudyMaterial(taskCtx);
+                      const retryValidation = material ? validateStudyMaterialGrounding(material, taskCtx) : { valid: false };
+                      if (!retryValidation.valid) {
+                        console.warn('[apiMiddleware] AI retry failed grounding validation. Rejecting contaminated document:', retryValidation.reason);
+                        material = null;
+                      }
+                    }
+                  }
                 } catch (aiErr) {
                   console.warn('[apiMiddleware] Gemini study material generation failed, falling back to grounded bank:', aiErr.message);
                 }
               }
 
+              // 2. Deterministic Task-Grounded Fallback
               if (!material) {
                 material = getFallbackStudyMaterial(taskCtx);
               }
@@ -1033,8 +1047,18 @@ export async function apiMiddlewareHandler(req, res, next) {
                 }, req);
               }
 
-              // Cache the result
-              setCachedStudyMaterial(cacheKey, material);
+              // 3. Final Strict Grounding Check
+              const finalValidation = validateStudyMaterialGrounding(material, taskCtx);
+              if (!finalValidation.valid) {
+                console.error('[apiMiddleware] CRITICAL: Final study material failed grounding validation! Rejecting corrupted document:', finalValidation.reason);
+                return sendJson(res, 500, {
+                  success: false,
+                  error: 'Study material did not match the requested task domain.'
+                }, req);
+              }
+
+              // Cache the verified result
+              setCachedStudyMaterial(cacheKey, material, taskCtx);
 
               return sendJson(res, 200, { success: true, material, cached: false }, req);
             } catch (err) {

@@ -38,9 +38,9 @@ function FormattedTutorMessage({ text }) {
           const codeBody = hasLang ? lines.slice(1).join('\n') : lines.join('\n');
 
           return (
-            <div key={pIdx} style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid #E8E2D9', margin: '4px 0' }}>
+            <div key={pIdx} style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-beige)', margin: '4px 0' }}>
               {lang && (
-                <div style={{ padding: '4px 10px', fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', backgroundColor: '#FAF8F5', borderBottom: '1px solid #E8E2D9', color: 'var(--text-secondary)' }}>
+                <div style={{ padding: '4px 10px', fontSize: '10.5px', fontWeight: 700, textTransform: 'uppercase', backgroundColor: 'var(--bg-card-subtle)', borderBottom: '1px solid var(--border-beige)', color: 'var(--text-secondary)' }}>
                   {lang}
                 </div>
               )}
@@ -102,7 +102,7 @@ function FormattedTutorMessage({ text }) {
                   <span dangerouslySetInnerHTML={{
                     __html: cleanContent
                       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/`([^`]+)`/g, '<code style="background-color: #FAF0EB; color: #8B361B; padding: 2px 5px; border-radius: 4px; font-size: 11.5px; font-family: monospace;">$1</code>')
+                      .replace(/`([^`]+)`/g, '<code style="background-color: var(--bg-card-subtle); color: var(--accent-terracotta); border: 1px solid var(--border-beige); padding: 2px 5px; border-radius: 4px; font-size: 11.5px; font-family: monospace;">$1</code>')
                   }} />
                 </div>
               );
@@ -244,8 +244,8 @@ export default function StudyTutor({
       className="study-tutor-container"
       style={{
         borderRadius: 'var(--radius-lg, 14px)',
-        backgroundColor: '#FAF8F5',
-        border: '1px solid #E8E2D9',
+        backgroundColor: 'var(--bg-card)',
+        border: '1px solid var(--border-beige)',
         overflow: 'hidden',
         boxShadow: '0 2px 8px rgba(35, 25, 15, 0.04)',
         display: 'flex',
@@ -256,8 +256,8 @@ export default function StudyTutor({
       {/* 1. TUTOR HEADER */}
       <div style={{
         padding: '14px 18px',
-        backgroundColor: '#FFFFFF',
-        borderBottom: '1px solid #E8E2D9',
+        backgroundColor: 'var(--bg-card)',
+        borderBottom: '1px solid var(--border-beige)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -287,9 +287,9 @@ export default function StudyTutor({
                 fontWeight: 700,
                 padding: '1px 6px',
                 borderRadius: '4px',
-                backgroundColor: '#FAF0EB',
-                color: 'var(--accent-terracotta, #C85A32)',
-                border: '1px solid #F2D7CA'
+                backgroundColor: 'var(--accent-terracotta-light)',
+                color: 'var(--accent-terracotta)',
+                border: '1px solid var(--border-accent)'
               }}>
                 AI Tutor
               </span>
@@ -354,8 +354,8 @@ export default function StudyTutor({
         className="study-tutor-quick-actions"
         style={{
           padding: '10px 16px',
-          backgroundColor: '#FAF8F5',
-          borderBottom: messages.length > 0 ? '1px solid #E8E2D9' : 'none',
+          backgroundColor: 'var(--bg-card-subtle)',
+          borderBottom: messages.length > 0 ? '1px solid var(--border-beige)' : 'none',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
@@ -372,7 +372,7 @@ export default function StudyTutor({
           disabled={isLoading}
           onClick={() => handleSendQuery({ actionType: 'explain_simpler', displayPrompt: '✨ Explain simpler' })}
           className="btn-secondary"
-          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: '#FFFFFF', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
+          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: 'var(--bg-card)', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
         >
           <Sparkles size={13} color="var(--accent-terracotta)" />
           <span>✨ Explain simpler</span>
@@ -383,9 +383,9 @@ export default function StudyTutor({
           disabled={isLoading}
           onClick={() => handleSendQuery({ actionType: 'another_example', displayPrompt: '💡 Give another example' })}
           className="btn-secondary"
-          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: '#FFFFFF', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
+          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: 'var(--bg-card)', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
         >
-          <Lightbulb size={13} color="#D97706" />
+          <Lightbulb size={13} color="var(--accent-amber)" />
           <span>💡 Give another example</span>
         </button>
 
@@ -394,9 +394,9 @@ export default function StudyTutor({
           disabled={isLoading}
           onClick={() => handleSendQuery({ actionType: 'practice_problem', displayPrompt: '🧩 Give me a practice problem' })}
           className="btn-secondary"
-          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: '#FFFFFF', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
+          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: 'var(--bg-card)', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
         >
-          <Puzzle size={13} color="#4F46E5" />
+          <Puzzle size={13} color="var(--accent-navy)" />
           <span>🧩 Practice problem</span>
         </button>
 
@@ -405,9 +405,9 @@ export default function StudyTutor({
           disabled={isLoading}
           onClick={() => handleSendQuery({ actionType: 'step_by_step', displayPrompt: '🔍 Explain step-by-step' })}
           className="btn-secondary"
-          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: '#FFFFFF', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
+          style={{ padding: '8px 14px', fontSize: '12px', gap: '5px', borderRadius: 'var(--radius-pill, 20px)', minHeight: '44px', backgroundColor: 'var(--bg-card)', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}
         >
-          <ListOrdered size={13} color="#059669" />
+          <ListOrdered size={13} color="var(--accent-sage)" />
           <span>🔍 Step-by-step</span>
         </button>
 
@@ -447,7 +447,7 @@ export default function StudyTutor({
           gap: '14px',
           maxHeight: '420px',
           overflowY: 'auto',
-          backgroundColor: '#FAF8F5'
+          backgroundColor: 'var(--bg-card-subtle)'
         }}>
           {messages.map((msg, idx) => {
             const isUser = msg.role === 'user';
@@ -474,9 +474,9 @@ export default function StudyTutor({
                     maxWidth: '92%',
                     padding: isUser ? '10px 14px' : '14px 16px',
                     borderRadius: isUser ? '14px 14px 2px 14px' : '2px 14px 14px 14px',
-                    backgroundColor: isUser ? '#1E293B' : '#FFFFFF',
-                    color: isUser ? '#F8FAFC' : 'var(--text-charcoal, #1E293B)',
-                    border: isUser ? 'none' : '1px solid #E8E2D9',
+                    backgroundColor: isUser ? 'var(--accent-terracotta)' : 'var(--bg-card)',
+                    color: isUser ? '#FFFFFF' : 'var(--text-charcoal)',
+                    border: isUser ? 'none' : '1px solid var(--border-beige)',
                     fontSize: isUser ? '13px' : '13.5px',
                     lineHeight: '1.5',
                     boxShadow: '0 1px 3px rgba(35, 25, 15, 0.03)',
@@ -492,7 +492,7 @@ export default function StudyTutor({
                       <FormattedTutorMessage text={msg.text} />
 
                       {/* Message Actions */}
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #F5EFE6', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--border-beige)', gap: '8px' }}>
                         <button
                           type="button"
                           onClick={() => handleCopyMessage(msg.text, idx)}
@@ -512,7 +512,7 @@ export default function StudyTutor({
 
           {/* Loading Indicator */}
           {isLoading && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', backgroundColor: '#FFFFFF', border: '1px solid #E8E2D9', borderRadius: '10px', width: 'fit-content' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-beige)', borderRadius: '10px', width: 'fit-content' }}>
               <RefreshCw size={14} color="var(--accent-terracotta)" className="animate-spin" />
               <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
                 NOVARA is thinking...
@@ -525,14 +525,14 @@ export default function StudyTutor({
             <div style={{
               padding: '12px 14px',
               borderRadius: '10px',
-              backgroundColor: '#FEF2F2',
-              border: '1px solid #FECACA',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '10px',
               fontSize: '12px',
-              color: '#991B1B'
+              color: '#DC2626'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <AlertCircle size={15} color="#DC2626" />
@@ -542,7 +542,7 @@ export default function StudyTutor({
                 type="button"
                 onClick={() => handleSendQuery(lastError.retryParams)}
                 className="btn-secondary"
-                style={{ padding: '6px 10px', fontSize: '11px', gap: '4px', borderRadius: '4px', backgroundColor: '#FFFFFF', color: '#991B1B', borderColor: '#FECACA', minHeight: '32px' }}
+                style={{ padding: '6px 10px', fontSize: '11px', gap: '4px', borderRadius: '4px', backgroundColor: 'var(--bg-card)', color: '#DC2626', borderColor: 'rgba(239, 68, 68, 0.35)', minHeight: '32px' }}
               >
                 <RefreshCw size={12} />
                 <span>Retry</span>
@@ -559,8 +559,8 @@ export default function StudyTutor({
         className="study-tutor-input-row"
         style={{
           padding: '12px 16px',
-          backgroundColor: '#FFFFFF',
-          borderTop: '1px solid #E8E2D9',
+          backgroundColor: 'var(--bg-card)',
+          borderTop: '1px solid var(--border-beige)',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
@@ -583,8 +583,8 @@ export default function StudyTutor({
               minHeight: '44px',
               boxSizing: 'border-box',
               borderRadius: 'var(--radius-pill, 24px)',
-              border: '1px solid #D5CDBD',
-              backgroundColor: '#FAF8F5',
+              border: '1px solid var(--border-beige)',
+              backgroundColor: 'var(--bg-card-subtle)',
               fontSize: '13px',
               color: 'var(--text-charcoal)',
               outline: 'none',
@@ -595,7 +595,7 @@ export default function StudyTutor({
               e.target.style.boxShadow = '0 0 0 3px rgba(200, 90, 50, 0.12)';
             }}
             onBlur={(e) => {
-              e.target.style.borderColor = '#D5CDBD';
+              e.target.style.borderColor = 'var(--border-beige)';
               e.target.style.boxShadow = 'none';
             }}
           />
