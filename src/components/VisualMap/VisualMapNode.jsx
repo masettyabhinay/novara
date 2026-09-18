@@ -71,6 +71,14 @@ export default function VisualMapNode({
           badgeBg: 'var(--border-beige)',
           badgeText: 'var(--text-muted)'
         };
+      case NODE_STATUS.UNAVAILABLE:
+        return {
+          bg: 'var(--bg-card-subtle)',
+          border: 'var(--border-beige-light)',
+          text: 'var(--text-muted)',
+          badgeBg: 'var(--bg-warm-cream-alt)',
+          badgeText: 'var(--text-muted)'
+        };
       case NODE_STATUS.UPCOMING:
       default:
         return {

@@ -109,9 +109,53 @@ export const ApplicationDetailModal = () => {
   }, [app]);
 
   const handleMapNodeClick = (node) => {
-    if (node?.label && STATUS_OPTIONS.includes(node.label)) {
-      handleStatusChange(node.label);
+    if (!node) return;
+
+    // STRICT SAFETY: Application Journey Map is strictly READ-ONLY.
+    // Never mutate application status, never call updateApplication, never write DB.
+    if (node.entityType === 'interview_stage' || node.stageName === 'Interview' || node.interviewId) {
+      const targetId = node.interviewId || (interviews.length > 0 ? interviews[0].id : null);
+      if (targetId) {
+        const el = document.getElementById(`interview-item-${targetId}`) || document.getElementById('application-interviews-section');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          try {
+            el.style.transition = 'outline 0.25s ease';
+            el.style.outline = '2px solid var(--accent-terracotta)';
+            setTimeout(() => {
+              if (el) el.style.outline = '';
+            }, 1800);
+          } catch (e) {}
+        }
+        const matched = interviews.find((i) => i.id === targetId) || interviews[0];
+        const dateStr = matched.scheduledAt || matched.date;
+        showToast('Interview Details', `${matched.type || matched.title || 'Interview'} round scheduled${dateStr ? ` • ${formatDateTime(dateStr)}` : ''}`, 'sage');
+      } else {
+        const el = document.getElementById('application-interviews-section');
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        showToast('Interview Stage', `No interview rounds scheduled yet for ${app.company}. Use "+ Add Round" below.`, 'neutral');
+      }
+      return;
     }
+
+    if (node.isCurrent) {
+      showToast('Current Status', `${app.company} is currently in "${app.status}" stage.`, 'sage');
+      return;
+    }
+
+    if (node.status === 'completed') {
+      showToast('Completed Stage', `${app.company} previously completed the "${node.label}" stage.`, 'neutral');
+      return;
+    }
+
+    if (node.status === 'upcoming' || node.status === 'unavailable' || !node.isAvailable) {
+      showToast('Upcoming Stage', `${app.company} has not reached "${node.label}" yet. Use controls below to adjust status.`, 'neutral');
+      return;
+    }
+
+    showToast(`${node.label} Stage`, `Application status: ${app.status}`, 'neutral');
   };
 
   // Check for upcoming interview
@@ -304,7 +348,7 @@ export const ApplicationDetailModal = () => {
                   Application Journey Map
                 </div>
                 <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
-                  Click stage to advance status
+                  Read-only progression track
                 </span>
               </div>
               <div style={{ padding: '12px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--bg-warm-cream-alt)', border: '1px solid var(--border-beige)' }}>
@@ -336,7 +380,7 @@ export const ApplicationDetailModal = () => {
                       borderRadius: 'var(--radius-pill)',
                       fontSize: '11px',
                       fontWeight: 700,
-                      backgroundColor: app.status === statusOpt ? 'var(--text-charcoal)' : '#FFFFFF',
+                      backgroundColor: app.status === statusOpt ? 'var(--text-charcoal)' : 'var(--bg-card)',
                       color: app.status === statusOpt ? '#FFFFFF' : 'var(--text-secondary)',
                       border: `1px solid ${app.status === statusOpt ? 'var(--text-charcoal)' : 'var(--border-beige)'}`,
                       cursor: 'pointer',
@@ -468,7 +512,7 @@ export const ApplicationDetailModal = () => {
             )}
 
             {/* Interview Stages & Timeline Section */}
-            <div>
+            <div id="application-interviews-section">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
                   Interview Rounds & Timeline ({interviews.length})
@@ -490,13 +534,14 @@ export const ApplicationDetailModal = () => {
                   {interviews.map((intItem, idx) => (
                     <div
                       key={intItem.id || idx}
+                      id={`interview-item-${intItem.id || idx}`}
                       style={{
                         display: 'flex',
                         alignItems: 'flex-start',
                         justifyContent: 'space-between',
                         padding: '12px 14px',
                         borderRadius: 'var(--radius-lg)',
-                        backgroundColor: intItem.status === 'completed' ? 'var(--bg-warm-cream)' : '#FFFFFF',
+                        backgroundColor: intItem.status === 'completed' ? 'var(--bg-warm-cream)' : 'var(--bg-card)',
                         border: `1.5px solid ${intItem.status === 'scheduled' ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
                         fontSize: '12.5px',
                         gap: '10px'
@@ -512,7 +557,7 @@ export const ApplicationDetailModal = () => {
                             height: '24px',
                             borderRadius: '50%',
                             border: `2px solid ${intItem.status === 'completed' ? 'var(--accent-sage)' : 'var(--border-beige-dark)'}`,
-                            backgroundColor: intItem.status === 'completed' ? 'var(--accent-sage)' : '#FFFFFF',
+                            backgroundColor: intItem.status === 'completed' ? 'var(--accent-sage)' : 'var(--bg-card)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',

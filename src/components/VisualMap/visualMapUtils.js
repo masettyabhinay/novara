@@ -545,8 +545,9 @@ export function buildInterviewPrepMap(historyData = {}, activeSession = null, ta
 }
 
 /**
- * 7. APPLICATION JOURNEY MAP BUILDER
+ * 7. APPLICATION JOURNEY MAP BUILDER (READ-ONLY)
  * Maps: Saved → Applied → Online Assessment → Interview → Offer (or Rejected / Withdrawn)
+ * Strictly read-only: displays progression and connects to interview details without mutating status.
  */
 export function buildApplicationJourneyMap(application = {}) {
   const nodes = [];
@@ -561,6 +562,8 @@ export function buildApplicationJourneyMap(application = {}) {
 
   const pipelineStages = ['Saved', 'Applied', 'Online Assessment', 'Interview', 'Offer'];
   const currentIdx = pipelineStages.indexOf(currentStatus);
+  const interviews = application.interviews || [];
+  const upcomingInterview = interviews.find((i) => i.status === 'scheduled') || interviews[0] || null;
 
   pipelineStages.forEach((stage, idx) => {
     let status = NODE_STATUS.UPCOMING;
@@ -568,20 +571,42 @@ export function buildApplicationJourneyMap(application = {}) {
       status = NODE_STATUS.CURRENT;
     } else if (currentIdx !== -1 && idx < currentIdx) {
       status = NODE_STATUS.COMPLETED;
-    } else if (isTerminalNegative && idx === 1) {
-      // Show up to applied
+    } else if (isTerminalNegative && idx <= 1) {
+      // For terminal applications (rejected/withdrawn), show saved and applied as completed
       status = NODE_STATUS.COMPLETED;
+    } else if (isTerminalNegative && idx > 1) {
+      status = NODE_STATUS.UNAVAILABLE;
     }
+
+    const isInterviewStage = stage === 'Interview';
+    const hasExistingInterview = isInterviewStage && upcomingInterview !== null;
 
     const nodeId = `app_stage_${stage.toLowerCase().replace(/\s+/g, '_')}`;
     nodes.push({
       id: nodeId,
       label: stage,
-      sublabel: stage === currentStatus ? (application.company ? `${application.company}` : 'Current Stage') : '',
+      sublabel: stage === currentStatus 
+        ? (application.company ? `${application.company}` : 'Current Stage') 
+        : isInterviewStage && hasExistingInterview 
+          ? `${upcomingInterview.round || upcomingInterview.type || upcomingInterview.title || 'Round 1'} (${upcomingInterview.status || 'scheduled'})` 
+          : status === NODE_STATUS.COMPLETED 
+            ? 'Completed' 
+            : status === NODE_STATUS.UNAVAILABLE
+              ? 'Unavailable'
+              : 'Upcoming',
       status,
-      entityType: 'application_stage',
+      entityType: isInterviewStage && hasExistingInterview ? 'interview_stage' : 'application_stage',
       entityId: application.id,
-      badge: stage === currentStatus ? 'Active' : ''
+      applicationId: application.id,
+      interviewId: hasExistingInterview ? upcomingInterview.id : null,
+      interviewData: hasExistingInterview ? upcomingInterview : null,
+      stageName: stage,
+      isAvailable: (currentIdx !== -1 && idx <= currentIdx) || (isTerminalNegative && idx <= 1) || status === NODE_STATUS.CURRENT || status === NODE_STATUS.COMPLETED,
+      isCurrent: stage === currentStatus,
+      badge: (isInterviewStage && hasExistingInterview && upcomingInterview.status === 'scheduled')
+        ? 'Scheduled'
+        : (stage === currentStatus ? 'Active' : ''),
+      readOnly: true
     });
 
     if (idx > 0) {
@@ -600,7 +625,12 @@ export function buildApplicationJourneyMap(application = {}) {
       status: NODE_STATUS.BLOCKED,
       entityType: 'application_stage',
       entityId: application.id,
-      badge: 'Terminal'
+      applicationId: application.id,
+      stageName: currentStatus,
+      isAvailable: true,
+      isCurrent: true,
+      badge: 'Terminal',
+      readOnly: true
     });
     edges.push({ from: 'app_stage_applied', to: termId });
   }
@@ -608,7 +638,7 @@ export function buildApplicationJourneyMap(application = {}) {
   return {
     nodes,
     edges,
-    summary: `Application journey for ${application.company || 'Company'}: currently at ${currentStatus}.`
+    summary: `Application journey for ${application.company || 'Company'}: currently at ${currentStatus} (read-only track).`
   };
 }
 

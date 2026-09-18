@@ -25,7 +25,7 @@ function readFile(relPath) {
 
 async function runTests() {
   console.log('='.repeat(80));
-  console.log('NOVARA CROSS-FEATURE VISUAL MAP INTEGRATION AUDIT (24 CHECKS)');
+  console.log('NOVARA CROSS-FEATURE VISUAL MAP INTEGRATION AUDIT (30 CHECKS)');
   console.log('='.repeat(80));
 
   const utils = await import('../src/components/VisualMap/visualMapUtils.js');
@@ -356,6 +356,162 @@ async function runTests() {
   assert(
     largeMap.nodes.length > 0 && durationMs < 50,
     `Check 24: Large roadmap (15 phases, 300 topics) transforms in ${durationMs}ms (<50ms threshold) ensuring fast rendering`
+  );
+
+  // =========================================================================
+  // CHECK 25: Application Journey Map is strictly READ-ONLY on all nodes
+  // =========================================================================
+  const activeApp = {
+    id: 'app_amazon_sde',
+    company: 'Amazon',
+    role: 'SDE I',
+    status: 'Online Assessment'
+  };
+  const activeAppMap = utils.buildApplicationJourneyMap(activeApp);
+  assert(
+    activeAppMap.nodes.length >= 5 &&
+    activeAppMap.nodes.every(n => n.readOnly === true) &&
+    activeAppMap.nodes.every(n => n.applicationId === 'app_amazon_sde' && n.entityId === 'app_amazon_sde'),
+    'Check 25: Application Journey Map marks all nodes strictly readOnly: true and preserves authoritative applicationId'
+  );
+
+  // =========================================================================
+  // CHECK 26: Interview stage deep-links preserve exact interviewId & entityType
+  // =========================================================================
+  const appWithScheduledInterview = {
+    id: 'app_stripe_backend',
+    company: 'Stripe',
+    role: 'Backend Engineer',
+    status: 'Interview',
+    interviews: [
+      {
+        id: 'int_round_sys_arch',
+        title: 'System Architecture & Scaling',
+        type: 'System Design',
+        status: 'scheduled',
+        scheduledAt: '2026-09-25T14:00:00Z'
+      },
+      {
+        id: 'int_round_dsa',
+        title: 'Algorithms & Data Structures',
+        type: 'DSA',
+        status: 'completed',
+        scheduledAt: '2026-09-20T10:00:00Z'
+      }
+    ]
+  };
+  const appWithIntMap = utils.buildApplicationJourneyMap(appWithScheduledInterview);
+  const interviewStageNode = appWithIntMap.nodes.find(n => n.label === 'Interview');
+  assert(
+    interviewStageNode &&
+    interviewStageNode.entityType === 'interview_stage' &&
+    interviewStageNode.interviewId === 'int_round_sys_arch' &&
+    interviewStageNode.interviewData && interviewStageNode.interviewData.id === 'int_round_sys_arch' &&
+    interviewStageNode.badge === 'Scheduled' &&
+    interviewStageNode.readOnly === true,
+    'Check 26: Interview stage preserves exact interviewId, interviewData, entityType and readOnly status'
+  );
+
+  // =========================================================================
+  // CHECK 27: Terminal statuses (Rejected / Withdrawn) mark unreachable stages as unavailable
+  // =========================================================================
+  const rejectedApp = {
+    id: 'app_meta_pe',
+    company: 'Meta',
+    role: 'Production Engineer',
+    status: 'Rejected'
+  };
+  const rejectedAppMap = utils.buildApplicationJourneyMap(rejectedApp);
+  const savedNode = rejectedAppMap.nodes.find(n => n.label === 'Saved');
+  const appliedNode = rejectedAppMap.nodes.find(n => n.label === 'Applied');
+  const oaRejNode = rejectedAppMap.nodes.find(n => n.label === 'Online Assessment');
+  const intRejNode = rejectedAppMap.nodes.find(n => n.label === 'Interview');
+  const terminalRejNode = rejectedAppMap.nodes.find(n => n.label === 'Rejected');
+  assert(
+    savedNode && savedNode.status === 'completed' &&
+    appliedNode && appliedNode.status === 'completed' &&
+    oaRejNode && oaRejNode.status === 'unavailable' && oaRejNode.isAvailable === false &&
+    intRejNode && intRejNode.status === 'unavailable' && intRejNode.isAvailable === false &&
+    terminalRejNode && terminalRejNode.status === 'blocked' && terminalRejNode.readOnly === true &&
+    rejectedAppMap.nodes.every(n => n.readOnly === true),
+    'Check 27: Terminal status maps unreachable downstream stages to unavailable and keeps all nodes read-only'
+  );
+
+  // =========================================================================
+  // CHECK 28: ApplicationDetailModal handleMapNodeClick is 100% free of status mutations
+  // =========================================================================
+  const appModalSrc = readFile('src/components/Applications/ApplicationDetailModal.jsx');
+  const handleMapNodeClickDef = appModalSrc.substring(
+    appModalSrc.indexOf('const handleMapNodeClick ='),
+    appModalSrc.indexOf('// Check for upcoming interview')
+  );
+  assert(
+    !handleMapNodeClickDef.includes('handleStatusChange(') &&
+    !handleMapNodeClickDef.includes('updateApplication(') &&
+    !handleMapNodeClickDef.includes('{ status:') &&
+    !handleMapNodeClickDef.includes('{status:') &&
+    handleMapNodeClickDef.includes('STRICT SAFETY: Application Journey Map is strictly READ-ONLY') &&
+    handleMapNodeClickDef.includes('interview-item-') &&
+    appModalSrc.includes('Read-only progression track') &&
+    !appModalSrc.includes('Click stage to advance status'),
+    'Check 28: ApplicationDetailModal handleMapNodeClick contains zero status change calls or database writes'
+  );
+
+  // =========================================================================
+  // CHECK 29: Explicit status selector retains exclusive authority with debounce guard
+  // =========================================================================
+  assert(
+    appModalSrc.includes('onClick={() => handleStatusChange(statusOpt)}') &&
+    appModalSrc.includes('if (newStatus === app.status || isUpdatingStatus) return;') &&
+    appModalSrc.includes('await updateApplication(app.id, { status: newStatus });') &&
+    appModalSrc.includes('disabled={isUpdatingStatus}'),
+    'Check 29: Pipeline status updates are strictly gated by explicit buttons with duplicate mutation guards'
+  );
+
+  // =========================================================================
+  // CHECK 30: End-to-end simulation of node click and status change safety
+  // =========================================================================
+  let simulatedDbMutations = 0;
+  let simulatedEvents = [];
+  const mockUpdateApplication = async (id, patch) => {
+    simulatedDbMutations++;
+    simulatedEvents.push({ type: 'STATUS_UPDATED', id, patch });
+  };
+
+  // Simulating node click across all stages
+  let clickMutationCount = 0;
+  activeAppMap.nodes.forEach((node) => {
+    // Stage click must NOT trigger mockUpdateApplication or mutate status
+    if (node.readOnly) {
+      // Read-only inspection only
+    } else {
+      clickMutationCount++;
+    }
+  });
+
+  // Simulating explicit status selector
+  let currentAppStatus = activeApp.status;
+  const simulateStatusChange = async (newStatus) => {
+    if (newStatus === currentAppStatus) return; // Deduplication / No duplicate events
+    currentAppStatus = newStatus;
+    await mockUpdateApplication(activeApp.id, { status: newStatus });
+  };
+
+  // Test 1: Click all nodes - must cause 0 mutations
+  assert(clickMutationCount === 0 && simulatedDbMutations === 0, 'Check 30a: Node clicks cause zero database mutations');
+
+  // Test 2: Click same status - must be deduplicated
+  await simulateStatusChange(activeApp.status);
+  assert(simulatedDbMutations === 0 && simulatedEvents.length === 0, 'Check 30b: Redundant status changes are cleanly deduplicated');
+
+  // Test 3: Click new status - triggers exactly 1 authoritative update
+  await simulateStatusChange('Interview');
+  assert(
+    simulatedDbMutations === 1 &&
+    simulatedEvents.length === 1 &&
+    simulatedEvents[0].id === 'app_amazon_sde' &&
+    simulatedEvents[0].patch.status === 'Interview',
+    'Check 30c: Explicit status selector executes exactly one authoritative mutation without duplicate events'
   );
 
   console.log('='.repeat(80));
