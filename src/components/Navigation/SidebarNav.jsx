@@ -269,7 +269,7 @@ export const SidebarNav = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 0 0 1.5px #FFFFFF',
+                  boxShadow: '0 0 0 1.5px var(--bg-card)',
                   lineHeight: 1
                 }}
               >

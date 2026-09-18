@@ -21,13 +21,14 @@ export const TopHeader = () => {
   const unreadCount = notifications.filter(n => n.unread).length;
 
   return (
-    <header style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '12px 16px',
-      backgroundColor: 'var(--bg-warm-cream)',
-      borderBottom: '1px solid var(--border-beige-light)',
+    <header 
+      className="mobile-top-header"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 16px',
+        borderBottom: '1px solid var(--border-beige-light)',
       position: 'sticky',
       top: 0,
       zIndex: 100,
@@ -168,7 +169,7 @@ export const TopHeader = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '5px',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--bg-card)',
             border: '1px solid var(--border-beige)',
             padding: '5px 10px',
             borderRadius: 'var(--radius-pill)',
@@ -197,7 +198,7 @@ export const TopHeader = () => {
             minWidth: '36px',
             minHeight: '36px',
             borderRadius: '50%',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--bg-card)',
             border: '1px solid var(--border-beige)',
             display: 'flex',
             alignItems: 'center',
@@ -227,7 +228,7 @@ export const TopHeader = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 0 0 2px #FFFFFF',
+                boxShadow: '0 0 0 2px var(--bg-card)',
                 lineHeight: 1
               }}
             >

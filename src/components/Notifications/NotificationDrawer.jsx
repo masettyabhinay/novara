@@ -135,7 +135,7 @@ export const NotificationDrawer = () => {
           maxHeight: '90vh', 
           display: 'flex', 
           flexDirection: 'column',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: 'var(--radius-xl)',
           border: '1px solid var(--border-beige)'
         }}
@@ -284,7 +284,7 @@ export const NotificationDrawer = () => {
                 borderRadius: 'var(--radius-pill)',
                 fontSize: '12px',
                 fontWeight: 700,
-                backgroundColor: activeTab === 'notifications' ? '#FFFFFF' : 'transparent',
+                backgroundColor: activeTab === 'notifications' ? 'var(--bg-card)' : 'transparent',
                 color: activeTab === 'notifications' ? 'var(--text-charcoal)' : 'var(--text-secondary)',
                 boxShadow: activeTab === 'notifications' ? 'var(--shadow-sm)' : 'none',
                 cursor: 'pointer',
@@ -307,7 +307,7 @@ export const NotificationDrawer = () => {
                 borderRadius: 'var(--radius-pill)',
                 fontSize: '12px',
                 fontWeight: 700,
-                backgroundColor: activeTab === 'settings' ? '#FFFFFF' : 'transparent',
+                backgroundColor: activeTab === 'settings' ? 'var(--bg-card)' : 'transparent',
                 color: activeTab === 'settings' ? 'var(--text-charcoal)' : 'var(--text-secondary)',
                 boxShadow: activeTab === 'settings' ? 'var(--shadow-sm)' : 'none',
                 cursor: 'pointer',
@@ -338,7 +338,7 @@ export const NotificationDrawer = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '4px',
-                backgroundColor: '#FFFFFF',
+                backgroundColor: 'var(--bg-card)',
                 border: '1px solid var(--border-beige)',
                 borderRadius: 'var(--radius-pill)',
                 cursor: 'pointer',
@@ -457,7 +457,7 @@ export const NotificationDrawer = () => {
                             className="card-white interactive"
                             style={{
                               padding: '12px 14px',
-                              backgroundColor: notif.unread ? 'var(--accent-terracotta-light)' : '#FFFFFF',
+                              backgroundColor: notif.unread ? 'var(--accent-terracotta-light)' : 'var(--bg-card)',
                               borderColor: notif.unread ? 'rgba(200, 90, 50, 0.35)' : 'var(--border-beige)',
                               position: 'relative',
                               cursor: 'pointer',
@@ -470,7 +470,7 @@ export const NotificationDrawer = () => {
                                 width: '32px',
                                 height: '32px',
                                 borderRadius: '8px',
-                                backgroundColor: '#FFFFFF',
+                                backgroundColor: 'var(--bg-warm-cream)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -559,7 +559,7 @@ export const NotificationDrawer = () => {
                             className="card-white interactive"
                             style={{
                               padding: '12px 14px',
-                              backgroundColor: notif.unread ? 'var(--accent-terracotta-light)' : '#FFFFFF',
+                              backgroundColor: notif.unread ? 'var(--accent-terracotta-light)' : 'var(--bg-card)',
                               borderColor: notif.unread ? 'rgba(200, 90, 50, 0.35)' : 'var(--border-beige)',
                               cursor: 'pointer',
                               borderLeft: notif.unread ? '4px solid var(--accent-terracotta)' : '1px solid var(--border-beige)'
@@ -571,7 +571,7 @@ export const NotificationDrawer = () => {
                                 width: '32px',
                                 height: '32px',
                                 borderRadius: '8px',
-                                backgroundColor: '#FFFFFF',
+                                backgroundColor: 'var(--bg-warm-cream)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',

@@ -93,7 +93,7 @@ export const TaskCard = ({ task }) => {
       style={{
         marginBottom: '10px',
         padding: '14px 16px',
-        backgroundColor: task.completed ? 'var(--bg-warm-cream-alt)' : isCurrentActive ? '#FFFAF7' : '#FFFFFF',
+        backgroundColor: task.completed ? 'var(--bg-warm-cream-alt)' : isCurrentActive ? 'var(--accent-terracotta-light)' : 'var(--bg-card)',
         borderColor: isCurrentActive ? 'var(--accent-terracotta)' : 'var(--border-beige)',
         opacity: task.completed ? 0.85 : 1,
         transition: 'all 180ms ease',
@@ -136,7 +136,7 @@ export const TaskCard = ({ task }) => {
           }}
           style={{
             marginTop: '1px',
-            color: task.completed ? 'var(--accent-terracotta)' : 'var(--border-beige-dark)',
+            color: task.completed ? 'var(--accent-sage)' : 'var(--text-muted)',
             minWidth: '24px',
             minHeight: '24px',
             display: 'flex',

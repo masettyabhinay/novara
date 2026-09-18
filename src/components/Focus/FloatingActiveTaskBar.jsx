@@ -97,7 +97,7 @@ export const FloatingActiveTaskBar = () => {
           padding: '8px 14px',
           minHeight: '52px',
           borderRadius: '16px',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--bg-card)',
           border: `1.5px solid ${isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)'}`,
           boxShadow: isPaused
             ? '0 8px 24px rgba(217, 130, 43, 0.18)'

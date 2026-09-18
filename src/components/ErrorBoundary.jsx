@@ -130,7 +130,7 @@ export class ErrorBoundary extends React.Component {
             <div style={{
               marginTop: '28px',
               padding: '14px',
-              backgroundColor: '#FFF1EE',
+              backgroundColor: 'var(--accent-terracotta-light)',
               border: '1px solid rgba(200, 90, 50, 0.2)',
               borderRadius: '12px',
               maxWidth: '520px',
@@ -138,7 +138,7 @@ export class ErrorBoundary extends React.Component {
               textAlign: 'left',
               fontSize: '11px',
               fontFamily: 'monospace',
-              color: '#9C3312',
+              color: 'var(--accent-terracotta)',
               overflowX: 'auto',
               maxHeight: '180px'
             }}>

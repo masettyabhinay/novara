@@ -47,7 +47,7 @@ export const BottomNav = () => {
       <div 
         className="mobile-bottom-nav-bar"
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.96)',
+          backgroundColor: 'var(--bottom-nav-bg, rgba(255, 255, 255, 0.96))',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           border: '1px solid var(--border-beige)',
@@ -112,7 +112,7 @@ export const BottomNav = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 0 0 1.5px #FFFFFF',
+                    boxShadow: '0 0 0 1.5px var(--bg-card)',
                     pointerEvents: 'none',
                     lineHeight: '1'
                   }}>

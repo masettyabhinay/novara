@@ -94,7 +94,7 @@ export const StreakFreezeModal = ({ isOpen, onClose }) => {
 
         {/* Freeze Inventory Status Card */}
         <div style={{
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--bg-card)',
           border: '1px solid var(--border-beige)',
           borderRadius: 'var(--radius-xl)',
           padding: '18px',

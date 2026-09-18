@@ -156,7 +156,7 @@ export const StreakCard = () => {
                     ? 'var(--accent-terracotta)' 
                     : isToday 
                       ? 'rgba(200, 90, 50, 0.15)' 
-                      : '#FFFFFF',
+                      : 'var(--bg-card)',
                   border: isToday 
                     ? '2px solid var(--accent-terracotta)' 
                     : '1px solid var(--border-beige)',

@@ -332,7 +332,9 @@ export const DashboardView = () => {
               padding: '8px 14px',
               minHeight: '44px',
               borderRadius: 'var(--radius-pill)',
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--bg-card)',
+              color: 'var(--text-charcoal)',
+              border: '1px solid var(--border-beige)',
               boxShadow: 'var(--shadow-sm)'
             }}
             aria-label="Open AI Placement Coach diagnostics"
@@ -351,8 +353,6 @@ export const DashboardView = () => {
         style={{
           padding: '20px',
           marginBottom: '16px',
-          background: 'linear-gradient(135deg, #FFFFFF 0%, #FAF7F2 100%)',
-          border: '2px solid var(--accent-terracotta)',
           boxShadow: 'var(--shadow-md)',
           position: 'relative'
         }}
@@ -423,7 +423,7 @@ export const DashboardView = () => {
         {/* Next Recommended Task Highlight */}
         {nextTask ? (
           <div style={{
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--bg-card)',
             border: '1px solid var(--border-beige)',
             borderRadius: 'var(--radius-md)',
             padding: '14px 16px',
@@ -588,7 +588,6 @@ export const DashboardView = () => {
           style={{
             padding: '16px 18px',
             marginBottom: '16px',
-            backgroundColor: '#FFFFFF',
             border: `2px solid ${focusTimerMetrics.isPaused ? 'var(--accent-amber)' : 'var(--accent-terracotta)'}`,
             borderRadius: 'var(--radius-lg)',
             boxShadow: 'var(--shadow-sm)'
@@ -958,7 +957,6 @@ export const DashboardView = () => {
         style={{
           padding: '18px 20px',
           marginBottom: '16px',
-          background: 'linear-gradient(135deg, #FFFDFB 0%, #FAF6F0 100%)',
           border: '1.5px solid var(--accent-terracotta)',
           boxShadow: 'var(--shadow-sm)'
         }}
@@ -1000,7 +998,7 @@ export const DashboardView = () => {
 
             {coachAnalysis.nextBestAction && (
               <div style={{
-                backgroundColor: '#FFFFFF',
+                backgroundColor: 'var(--bg-card)',
                 borderRadius: 'var(--radius-md)',
                 padding: '12px 14px',
                 border: '1px solid var(--border-beige)',
