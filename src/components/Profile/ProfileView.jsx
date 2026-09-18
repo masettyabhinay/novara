@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   User, 
@@ -32,6 +32,7 @@ import {
   Moon,
   Monitor
 } from 'lucide-react';
+import { VisualMap, buildProfileSystemMap } from '../VisualMap';
 
 const APP_VERSION = '1.0.0';
 
@@ -76,8 +77,21 @@ export const ProfileView = () => {
     isOffline,
     themePreference,
     effectiveTheme,
-    setThemePreference
+    setThemePreference,
+    setActiveTab
   } = useApp();
+
+  const profileSystemMapData = useMemo(() => {
+    return buildProfileSystemMap(userProfile, roadmapProgress || 0);
+  }, [userProfile, roadmapProgress]);
+
+  const handleProfileMapClick = (node) => {
+    if (!node || !setActiveTab) return;
+    if (node.entityType === 'roadmap') setActiveTab('roadmap');
+    else if (node.entityType === 'today') setActiveTab('today');
+    else if (node.entityType === 'revision') setActiveTab('revision');
+    else if (node.entityType === 'applications') setActiveTab('applications');
+  };
 
   // Navigation: 7 Logical Sections
   const [activeSection, setActiveSection] = useState('profile');
@@ -965,6 +979,31 @@ export const ProfileView = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '13px' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>Minimum Daily Streak Tasks</span>
                     <span style={{ fontWeight: 600, color: 'var(--text-charcoal)' }}>{userProfile?.minTasksForStreak || 2} tasks</span>
+                  </div>
+
+                  {/* Preparation System Visual Map */}
+                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-beige-light)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Layers size={15} color="var(--accent-terracotta)" />
+                        <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                          Your Preparation System Map
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+                        Click node to navigate
+                      </span>
+                    </div>
+                    <div style={{ padding: '12px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--bg-warm-cream-alt)', border: '1px solid var(--border-beige)' }}>
+                      <VisualMap
+                        nodes={profileSystemMapData.nodes}
+                        edges={profileSystemMapData.edges}
+                        summary={profileSystemMapData.summary}
+                        direction="horizontal"
+                        onNodeClick={handleProfileMapClick}
+                        ariaLabel="Preparation System Visual Map"
+                      />
+                    </div>
                   </div>
                 </div>
               )}

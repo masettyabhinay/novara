@@ -20,6 +20,7 @@ import {
   Target,
   BarChart3
 } from 'lucide-react';
+import { VisualMap, buildNotificationRelationMap } from '../VisualMap';
 
 export const NotificationDrawer = () => {
   const { 
@@ -443,6 +444,30 @@ export const NotificationDrawer = () => {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {/* Top Active Alert Pathway Map */}
+                  {notifications.length > 0 && (
+                    <div>
+                      <div className="card-white" style={{ padding: '10px 12px', backgroundColor: 'var(--bg-warm-cream-alt)', border: '1px solid var(--border-beige)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                          <span style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                            Active Alert Pathway
+                          </span>
+                          <span style={{ fontSize: '10px', color: 'var(--accent-terracotta)', fontWeight: 700 }}>
+                            Direct Deep Link
+                          </span>
+                        </div>
+                        <VisualMap
+                          nodes={buildNotificationRelationMap(notifications[0]).nodes}
+                          edges={buildNotificationRelationMap(notifications[0]).edges}
+                          summary={`Alert link for ${notifications[0].title}`}
+                          direction="horizontal"
+                          onNodeClick={() => navigateToNotificationTarget && navigateToNotificationTarget(notifications[0])}
+                          ariaLabel="Notification Relation Visual Map"
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* TODAY GROUP */}
                   {todayNotifications.length > 0 && (
                     <div>

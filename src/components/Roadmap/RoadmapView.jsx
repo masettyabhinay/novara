@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { RoadmapUploadFlow } from './RoadmapUploadFlow';
 import { RoadmapEditorModal } from './RoadmapEditorModal';
+import { VisualMap, VisualMapMiniMap, buildRoadmapVisualMap } from '../VisualMap';
 
 export const RoadmapView = () => {
   const { 
@@ -51,6 +52,39 @@ export const RoadmapView = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'map'
+  const [selectedPhaseForMap, setSelectedPhaseForMap] = useState(null);
+
+  const roadmapMapData = useMemo(() => {
+    return buildRoadmapVisualMap(activeRoadmap, { selectedPhaseId: selectedPhaseForMap });
+  }, [activeRoadmap, selectedPhaseForMap]);
+
+  const handleMapNodeClick = (node) => {
+    if (!node) return;
+    if (node.entityType === 'topic') {
+      const topicData = node.data || {};
+      const parentPhase = activeRoadmap?.phases?.find(p => p.id === node.phaseId);
+      openTaskStudyMaterial({
+        id: node.entityId || `task_${node.id}`,
+        name: topicData.name || node.label,
+        taskTitle: topicData.name || node.label,
+        topic: topicData.name || node.label,
+        phase: parentPhase?.title || 'Roadmap Topic',
+        difficulty: topicData.difficulty || 'Medium',
+        category: topicData.category || 'DSA',
+        learningObjectives: Array.isArray(topicData.learningObjectives) && topicData.learningObjectives.length > 0
+          ? topicData.learningObjectives
+          : [`Master core principles of ${node.label}`],
+        duration: topicData.duration || '45m',
+        estimatedMinutes: 45
+      });
+    } else if (node.entityType === 'phase') {
+      setSelectedPhaseForMap(prev => (prev === node.entityId ? null : node.entityId));
+      togglePhase(node.entityId);
+    } else if (node.entityType === 'roadmap') {
+      setSelectedPhaseForMap(null);
+    }
+  };
 
   const togglePhase = (phaseId) => {
     setExpandedPhases((prev) => ({
@@ -251,6 +285,58 @@ export const RoadmapView = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* List vs Visual Map Toggle */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            backgroundColor: 'var(--bg-card)',
+            border: '1px solid var(--border-beige)',
+            borderRadius: 'var(--radius-pill)',
+            padding: '3px',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              style={{
+                padding: '6px 12px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-pill)',
+                border: 'none',
+                backgroundColor: viewMode === 'list' ? 'var(--accent-terracotta)' : 'transparent',
+                color: viewMode === 'list' ? '#FFFFFF' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                minHeight: '36px',
+                transition: 'all 150ms ease'
+              }}
+            >
+              List View
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('map')}
+              style={{
+                padding: '6px 12px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-pill)',
+                border: 'none',
+                backgroundColor: viewMode === 'map' ? 'var(--accent-terracotta)' : 'transparent',
+                color: viewMode === 'map' ? '#FFFFFF' : 'var(--text-secondary)',
+                cursor: 'pointer',
+                minHeight: '36px',
+                transition: 'all 150ms ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              <Map size={13} />
+              <span>Visual Map</span>
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => setIsEditorOpen(true)}
@@ -262,7 +348,7 @@ export const RoadmapView = () => {
               borderRadius: 'var(--radius-pill)',
               gap: '6px',
               minHeight: '44px',
-              backgroundColor: '#FFFFFF',
+              backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-beige)'
             }}
             title="Customize phases and topics"
@@ -513,9 +599,54 @@ export const RoadmapView = () => {
         )}
       </div>
 
+      {/* Dynamic Visual Map Section */}
+      {viewMode === 'map' ? (
+        <section aria-label="Visual Roadmap Diagram" style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: '10px' }}>
+            <VisualMapMiniMap
+              phases={activeRoadmap?.phases || []}
+              activePhaseId={selectedPhaseForMap}
+              onSelectPhase={(phaseId) => setSelectedPhaseForMap(prev => (prev === phaseId ? null : phaseId))}
+            />
+          </div>
+          <VisualMap
+            nodes={roadmapMapData.nodes}
+            edges={roadmapMapData.edges}
+            title="Curriculum Learning Graph"
+            subtitle="Click any topic node to open its study guide or click phases to toggle expansion"
+            orientation="horizontal"
+            compact={false}
+            interactive={true}
+            onNodeClick={handleMapNodeClick}
+            selectedNodeId={selectedPhaseForMap ? `phase_${selectedPhaseForMap}` : null}
+            showLegend={true}
+            ariaLabel="Interactive Curriculum Roadmap Graph"
+            accessibleSummary={roadmapMapData.summary}
+          />
+        </section>
+      ) : (
+        <section aria-label="Curriculum Overview Map" style={{ marginBottom: '14px' }}>
+          <VisualMap
+            nodes={roadmapMapData.nodes.slice(0, 8)}
+            edges={roadmapMapData.edges.slice(0, 7)}
+            title="Curriculum Pathway"
+            subtitle="Current learning trajectory across phases and core topics"
+            orientation="horizontal"
+            compact={true}
+            interactive={true}
+            onNodeClick={handleMapNodeClick}
+            showLegend={false}
+            ariaLabel="Curriculum Pathway Overview"
+            accessibleSummary={roadmapMapData.summary}
+          />
+        </section>
+      )}
+
       {/* ------------------------------------------------------------------ */}
-      {/* 3. SEARCH & DIFFICULTY FILTER                                      */}
+      {/* 3. SEARCH & DIFFICULTY FILTER (HIDDEN IN FULL MAP MODE)            */}
       {/* ------------------------------------------------------------------ */}
+      {viewMode === 'list' && (
+      <>
       <div style={{
         display: 'flex',
         gap: '8px',
@@ -527,7 +658,7 @@ export const RoadmapView = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--bg-card)',
           border: '1px solid var(--border-beige)',
           borderRadius: 'var(--radius-pill)',
           padding: '8px 14px',
@@ -578,7 +709,7 @@ export const RoadmapView = () => {
           onChange={(e) => setSelectedDifficulty(e.target.value)}
           aria-label="Filter by difficulty"
           style={{
-            backgroundColor: selectedDifficulty !== 'all' ? 'var(--accent-terracotta-light)' : '#FFFFFF',
+            backgroundColor: selectedDifficulty !== 'all' ? 'var(--accent-terracotta-light)' : 'var(--bg-card)',
             border: `1px solid ${selectedDifficulty !== 'all' ? 'var(--accent-terracotta)' : 'var(--border-beige)'}`,
             borderRadius: 'var(--radius-pill)',
             padding: '8px 12px',
@@ -1021,6 +1152,8 @@ export const RoadmapView = () => {
             );
           })}
         </div>
+      )}
+      </>
       )}
 
       {/* ------------------------------------------------------------------ */}

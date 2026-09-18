@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   X, 
@@ -18,10 +18,12 @@ import {
   Brain,
   Video,
   Check,
-  ChevronRight
+  ChevronRight,
+  Layers
 } from 'lucide-react';
 import { AddApplicationModal } from './AddApplicationModal';
 import { AddInterviewModal } from './AddInterviewModal';
+import { VisualMap, buildApplicationJourneyMap } from '../VisualMap';
 
 const STATUS_OPTIONS = [
   'Saved',
@@ -102,6 +104,16 @@ export const ApplicationDetailModal = () => {
   const interviews = app.interviews || [];
   const deadlineInfo = getRelativeDeadlineInfo(app.deadline);
 
+  const applicationMapData = useMemo(() => {
+    return buildApplicationJourneyMap(app);
+  }, [app]);
+
+  const handleMapNodeClick = (node) => {
+    if (node?.label && STATUS_OPTIONS.includes(node.label)) {
+      handleStatusChange(node.label);
+    }
+  };
+
   // Check for upcoming interview
   const upcomingInterview = interviews.find((i) => i.status === 'scheduled');
 
@@ -176,7 +188,7 @@ export const ApplicationDetailModal = () => {
             flexDirection: 'column',
             padding: '24px 22px',
             borderRadius: 'var(--radius-xl)',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--bg-card)',
             border: '1px solid var(--border-beige)',
             overflow: 'hidden'
           }}
@@ -285,6 +297,28 @@ export const ApplicationDetailModal = () => {
           {/* Scrollable Body */}
           <div style={{ flex: 1, overflowY: 'auto', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
             
+            {/* Application Journey Map */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                  Application Journey Map
+                </div>
+                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+                  Click stage to advance status
+                </span>
+              </div>
+              <div style={{ padding: '12px', borderRadius: 'var(--radius-lg)', backgroundColor: 'var(--bg-warm-cream-alt)', border: '1px solid var(--border-beige)' }}>
+                <VisualMap
+                  nodes={applicationMapData.nodes}
+                  edges={applicationMapData.edges}
+                  summary={applicationMapData.summary}
+                  direction="horizontal"
+                  onNodeClick={handleMapNodeClick}
+                  ariaLabel="Application Journey Visual Map"
+                />
+              </div>
+            </div>
+
             {/* Quick Status Lifecycle Selector */}
             <div>
               <div style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '6px' }}>

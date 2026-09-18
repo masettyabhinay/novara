@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   Sparkles, 
@@ -32,6 +32,7 @@ import {
   fetchActiveInterviewApi,
   cancelInterviewApi
 } from '../../services/interviewService';
+import { VisualMap, buildInterviewPrepMap } from '../VisualMap';
 
 export const InterviewView = () => {
   const { 
@@ -39,7 +40,8 @@ export const InterviewView = () => {
     showToast, 
     pendingInterviewTarget, 
     setPendingInterviewTarget,
-    refreshCoachSnapshot
+    refreshCoachSnapshot,
+    setActiveTab
   } = useApp();
 
   // Configuration State
@@ -63,6 +65,21 @@ export const InterviewView = () => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
 
   const configCardRef = useRef(null);
+
+  const interviewMapData = useMemo(() => {
+    return buildInterviewPrepMap(historyData, activeSession, userProfile?.targetRole || 'Software Engineer');
+  }, [historyData, activeSession, userProfile?.targetRole]);
+
+  const handleMapNodeClick = (node) => {
+    if (!node) return;
+    if (node.id === 'int_step_domain' || node.id === 'int_step_session') {
+      scrollToConfig();
+    } else if (node.entityType === 'revision') {
+      if (setActiveTab) setActiveTab('revision');
+    } else if (node.entityType === 'profile') {
+      if (setActiveTab) setActiveTab('profile');
+    }
+  };
 
   const supportedDomains = [
     { id: 'Technical', label: 'Technical', desc: 'Comprehensive mix of DSA, OS, and Architecture', icon: Code2 },
@@ -330,6 +347,31 @@ export const InterviewView = () => {
           </button>
         </div>
       )}
+
+      {/* Visual Interview Pathway Map */}
+      <div style={{ marginBottom: '18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Layers size={16} color="var(--accent-terracotta)" />
+            <h2 style={{ fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-terracotta)', margin: 0 }}>
+              Interview Preparation Pathway
+            </h2>
+          </div>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+            Config → Evaluation → Targeted Revision
+          </span>
+        </div>
+        <div className="card-white" style={{ padding: '16px' }}>
+          <VisualMap
+            nodes={interviewMapData.nodes}
+            edges={interviewMapData.edges}
+            summary={interviewMapData.summary}
+            direction="horizontal"
+            onNodeClick={handleMapNodeClick}
+            ariaLabel="Mock Interview Pathway Visual Map"
+          />
+        </div>
+      </div>
 
       {/* 2. INTERVIEW CONFIGURATION CARD */}
       <div 

@@ -27,6 +27,7 @@ import {
   Check
 } from 'lucide-react';
 import { calculateFocusTimerMetrics, formatFocusTime } from '../../utils/focusTimerUtils';
+import { VisualMap, buildTodayLearningPathMap, buildDashboardJourneyMap } from '../VisualMap';
 
 export const DashboardView = () => {
   const {
@@ -42,6 +43,8 @@ export const DashboardView = () => {
     isFocusModalOpen,
     setIsFocusModalOpen,
     startFocusSession,
+    openTaskStudyMaterial,
+    startTaskRevisionQuiz,
     pauseFocusSession,
     resumeFocusSession,
     focusAnalytics,
@@ -119,6 +122,48 @@ export const DashboardView = () => {
     }
     return completedMinutes;
   }, [focusAnalytics, completedMinutes]);
+
+  // Authentic Today Learning Path Map
+  const todayLearningPathMap = useMemo(() => {
+    return buildTodayLearningPathMap(todayTasks, activeFocusSession, revisionQueue);
+  }, [todayTasks, activeFocusSession, revisionQueue]);
+
+  // Authentic Overall Placement Career Journey Map
+  const careerJourneyMap = useMemo(() => {
+    return buildDashboardJourneyMap({
+      roadmapProgress,
+      todayTasks,
+      revisionQueue,
+      interviewStats: focusAnalytics,
+      appMetrics: {},
+      coachAnalysis
+    });
+  }, [roadmapProgress, todayTasks, revisionQueue, focusAnalytics, coachAnalysis]);
+
+  const handleTodayMapNodeClick = (node) => {
+    if (!node) return;
+    if (node.entityType === 'task' || node.entityType === 'focus') {
+      const task = node.data || todayTasks.find((t) => t.id === node.entityId) || nextTask;
+      if (task) startFocusSession(task);
+    } else if (node.entityType === 'study') {
+      const task = node.data || todayTasks.find((t) => t.id === node.entityId) || nextTask;
+      if (task && openTaskStudyMaterial) openTaskStudyMaterial(task);
+    } else if (node.entityType === 'quiz') {
+      const task = node.data || todayTasks.find((t) => t.id === node.entityId) || nextTask;
+      if (task) {
+        if (startTaskRevisionQuiz) startTaskRevisionQuiz(task, activeFocusSession);
+        else if (startFocusSession) startFocusSession(task);
+      }
+    } else if (node.entityType === 'revision') {
+      const revItem = node.data || revisionQueue?.[0];
+      if (revItem && setSelectedTopicDetail && setIsTopicDetailOpen) {
+        setSelectedTopicDetail(revItem);
+        setIsTopicDetailOpen(true);
+      } else {
+        setActiveTab('revision');
+      }
+    }
+  };
 
   // Due revisions from authentic queue
   const dueRevisions = useMemo(() => {
@@ -419,6 +464,25 @@ export const DashboardView = () => {
             transition: 'width 300ms ease'
           }} />
         </div>
+
+        {/* Compact Today's Learning Path Visual Map */}
+        {todayTasks.length > 0 && (
+          <div style={{ marginBottom: '14px' }}>
+            <VisualMap
+              nodes={todayLearningPathMap.nodes}
+              edges={todayLearningPathMap.edges}
+              title="Today's Learning Path"
+              subtitle="Current placement sprint flow: Focus → Study → Quiz → Revision"
+              orientation="horizontal"
+              compact={true}
+              interactive={true}
+              onNodeClick={handleTodayMapNodeClick}
+              showLegend={false}
+              ariaLabel="Today's Learning Path Flow"
+              accessibleSummary={todayLearningPathMap.summary}
+            />
+          </div>
+        )}
 
         {/* Next Recommended Task Highlight */}
         {nextTask ? (
@@ -761,6 +825,33 @@ export const DashboardView = () => {
             {coachAnalysis?.hasData ? coachAnalysis.status.replace('_', ' ').toUpperCase() : 'Roadmap needed'}
           </div>
         </div>
+      </section>
+
+      {/* =========================================================================
+          CAREER JOURNEY SUMMARY MAP
+          ========================================================================= */}
+      <section aria-label="Placement Career Journey Overview" style={{ marginBottom: '16px' }}>
+        <VisualMap
+          nodes={careerJourneyMap.nodes}
+          edges={careerJourneyMap.edges}
+          title="Career Journey"
+          subtitle="Connected preparation pipeline across curriculum, daily sprint, recall, and readiness"
+          orientation="horizontal"
+          compact={true}
+          interactive={true}
+          onNodeClick={(node) => {
+            if (!node) return;
+            if (node.entityType === 'roadmap') setActiveTab('roadmap');
+            else if (node.entityType === 'today') setActiveTab('today');
+            else if (node.entityType === 'revision') setActiveTab('revision');
+            else if (node.entityType === 'interview') setActiveTab('interview');
+            else if (node.entityType === 'applications') setActiveTab('applications');
+            else if (node.entityType === 'coach') setActiveTab('coach');
+          }}
+          showLegend={false}
+          ariaLabel="Overall placement career journey map"
+          accessibleSummary={careerJourneyMap.summary}
+        />
       </section>
 
       {/* =========================================================================

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   Sparkles, 
@@ -24,10 +24,12 @@ import {
   Play
 } from 'lucide-react';
 import { CoachAdjustmentModal } from './CoachAdjustmentModal';
+import { VisualMap, buildCoachReadinessMap } from '../VisualMap';
 
 export const CoachView = () => {
   const { 
     coachAnalysis, 
+    userProfile,
     refreshCoachAnalysis, 
     applyCoachRecommendation, 
     navigateToCoachTarget,
@@ -39,6 +41,23 @@ export const CoachView = () => {
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
   const [openWhyThisMap, setOpenWhyThisMap] = useState({});
   const [isApplyingAdjustment, setIsApplyingAdjustment] = useState(false);
+
+  const readinessMapData = useMemo(() => {
+    return buildCoachReadinessMap(coachAnalysis, userProfile);
+  }, [coachAnalysis, userProfile]);
+
+  const handleMapNodeClick = (node) => {
+    if (!node) return;
+    if (node.entityType === 'roadmap') {
+      setActiveTab('roadmap');
+    } else if (node.entityType === 'revision') {
+      setActiveTab('revision');
+    } else if (node.entityType === 'interview') {
+      setActiveTab('interview');
+    } else if (node.entityType === 'applications') {
+      setActiveTab('applications');
+    }
+  };
 
   const toggleWhyThis = (key) => {
     setOpenWhyThisMap((prev) => ({
@@ -185,7 +204,7 @@ export const CoachView = () => {
             fontSize: '11.5px',
             fontWeight: 700,
             color: 'var(--accent-terracotta)',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--bg-card)',
             border: '1px solid var(--border-beige)',
             padding: '8px 12px',
             borderRadius: 'var(--radius-pill)',
@@ -297,6 +316,33 @@ export const CoachView = () => {
       </div>
 
       {/* =========================================================================
+          SECTION 1.5: PLACEMENT READINESS MAP
+          ========================================================================= */}
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Layers size={15} color="var(--accent-terracotta)" />
+            <h2 style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-terracotta)', margin: 0 }}>
+              End-to-End Placement Pathway
+            </h2>
+          </div>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+            Click node to jump to feature
+          </span>
+        </div>
+        <div className="card-white" style={{ padding: '16px' }}>
+          <VisualMap
+            nodes={readinessMapData.nodes}
+            edges={readinessMapData.edges}
+            summary={readinessMapData.summary}
+            direction="horizontal"
+            onNodeClick={handleMapNodeClick}
+            ariaLabel="Placement Readiness Pipeline Visual Map"
+          />
+        </div>
+      </div>
+
+      {/* =========================================================================
           SECTION 2: STRENGTHS (WHAT'S GOING WELL)
           ========================================================================= */}
       <div 
@@ -305,7 +351,7 @@ export const CoachView = () => {
           padding: '18px 20px',
           marginBottom: '16px',
           borderLeft: '4px solid var(--accent-sage)',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--bg-card)',
           boxShadow: 'var(--shadow-sm)'
         }}
       >
@@ -340,7 +386,7 @@ export const CoachView = () => {
           padding: '18px 20px',
           marginBottom: '16px',
           borderLeft: '4px solid var(--accent-terracotta)',
-          backgroundColor: '#FFFFFF',
+          backgroundColor: 'var(--bg-card)',
           boxShadow: 'var(--shadow-sm)'
         }}
       >
@@ -567,7 +613,7 @@ export const CoachView = () => {
             padding: '18px 20px',
             marginBottom: '16px',
             borderLeft: '4px solid var(--accent-terracotta)',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--bg-card)',
             boxShadow: 'var(--shadow-sm)'
           }}
         >

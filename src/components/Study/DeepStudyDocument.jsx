@@ -27,6 +27,7 @@ import PracticeProblemCard from './PracticeProblemCard';
 import SelfCheckCard from './SelfCheckCard';
 import StudyInteractiveActions from './StudyInteractiveActions';
 import StudyTutor from './StudyTutor';
+import { VisualMap, buildStudyContextMap } from '../VisualMap';
 
 /**
  * DeepStudyDocument - Complete professional learning document renderer for NOVARA.
@@ -73,6 +74,22 @@ export default function DeepStudyDocument({
     { id: 'sec-ask-tutor', label: 'Ask Tutor' },
     { id: 'sec-recap', label: 'Recap' }
   ].filter(Boolean);
+
+  // Contextual Learning Flow Map
+  const studyContextMap = useMemo(() => {
+    return buildStudyContextMap(task || {}, material || {});
+  }, [task, material]);
+
+  const handleStudyMapNodeClick = (node) => {
+    if (!node) return;
+    if (node.entityType === 'quiz') {
+      if (onStartQuiz) onStartQuiz();
+    } else if (node.sectionId) {
+      handleJumpToSection(node.sectionId);
+    } else if (node.id === `study_root_${task?.id || 'curr'}`) {
+      handleJumpToSection('sec-overview');
+    }
+  };
 
   // Track authentic reading progress across ancestor scroll container
   useEffect(() => {
@@ -192,7 +209,24 @@ export default function DeepStudyDocument({
         isCached={isCached}
       />
 
-      {/* 2. READING PROGRESS & SECTION JUMP */}
+      {/* 2. CONTEXTUAL LEARNING PATH MAP */}
+      {studyContextMap.nodes.length > 1 && (
+        <VisualMap
+          nodes={studyContextMap.nodes}
+          edges={studyContextMap.edges}
+          title="Document Learning Path"
+          subtitle="Progressive concept sequence: Overview → Invariants → Practice → Quiz"
+          orientation="horizontal"
+          compact={true}
+          interactive={true}
+          onNodeClick={handleStudyMapNodeClick}
+          showLegend={false}
+          ariaLabel="Curriculum Concept Learning Map"
+          accessibleSummary={studyContextMap.summary}
+        />
+      )}
+
+      {/* 3. READING PROGRESS & SECTION JUMP */}
       <StudyProgress
         sections={sections}
         activeSection={activeSection}

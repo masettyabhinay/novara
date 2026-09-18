@@ -23,6 +23,7 @@ import {
   ListFilter
 } from 'lucide-react';
 import { AddCalendarEventModal } from './AddCalendarEventModal';
+import { VisualMap, buildCalendarDayFlowMap } from '../VisualMap';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -133,6 +134,17 @@ export const CalendarView = () => {
     if (!calendarConflicts) return [];
     return calendarConflicts.filter((c) => c.date === activeSelectedDate);
   }, [calendarConflicts, activeSelectedDate]);
+
+  const dayFlowMapData = useMemo(() => {
+    return buildCalendarDayFlowMap(activeSelectedDate, calendarEvents, calendarConflicts);
+  }, [activeSelectedDate, calendarEvents, calendarConflicts]);
+
+  const handleDayFlowClick = (node) => {
+    if (node?.data) {
+      if (setSelectedCalendarEvent) setSelectedCalendarEvent(node.data);
+      if (openCalendarEventTarget) openCalendarEventTarget(node.data);
+    }
+  };
 
   // Formatted selected date header
   const formatSelectedDateTitle = useCallback((dateStr) => {
@@ -514,7 +526,7 @@ export const CalendarView = () => {
                     minHeight: '70px',
                     borderRadius: 'var(--radius-md)',
                     padding: '6px 4px',
-                    backgroundColor: isSelected ? '#FFFFFF' : isToday ? 'var(--accent-terracotta-light)' : 'var(--bg-warm-cream)',
+                    backgroundColor: isSelected ? 'var(--bg-card)' : isToday ? 'var(--accent-terracotta-light)' : 'var(--bg-warm-cream)',
                     border: `2px solid ${isSelected ? 'var(--accent-terracotta)' : isToday ? 'rgba(200, 90, 50, 0.4)' : 'var(--border-beige-light)'}`,
                     cursor: 'pointer',
                     display: 'flex',
@@ -667,6 +679,26 @@ export const CalendarView = () => {
               <Plus size={14} />
               <span>Add to Day</span>
             </button>
+          </div>
+
+          {/* Day Flow Visual Timeline Map */}
+          <div className="card-white" style={{ padding: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                Day Flow Timeline
+              </span>
+              <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+                Chronological sequence
+              </span>
+            </div>
+            <VisualMap
+              nodes={dayFlowMapData.nodes}
+              edges={dayFlowMapData.edges}
+              summary={dayFlowMapData.summary}
+              direction="horizontal"
+              onNodeClick={handleDayFlowClick}
+              ariaLabel={`Day flow visual timeline for ${activeSelectedDate}`}
+            />
           </div>
 
           {selectedDateEvents.length > 0 ? (

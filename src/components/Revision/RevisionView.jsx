@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
   RotateCcw, 
@@ -17,6 +17,7 @@ import {
   Flame,
   AlertCircle
 } from 'lucide-react';
+import { VisualMap, buildRevisionMemoryMap } from '../VisualMap';
 
 export const RevisionView = () => {
   const { 
@@ -58,6 +59,17 @@ export const RevisionView = () => {
     strongCount: (revisionQueue || []).filter((r) => (r.retentionScore || 0) >= 80).length,
     needsReviewCount: (revisionQueue || []).filter((r) => (r.retentionScore || 0) < 65).length,
     averageRetention: 80
+  };
+
+  const revisionMapData = useMemo(() => {
+    return buildRevisionMemoryMap(filteredQueue.length > 0 ? filteredQueue : revisionQueue, metrics);
+  }, [filteredQueue, revisionQueue, metrics]);
+
+  const handleMapNodeClick = (node) => {
+    if (node?.entityType === 'revision_item' && node.data) {
+      if (setSelectedTopicDetail) setSelectedTopicDetail(node.data);
+      if (setIsTopicDetailOpen) setIsTopicDetailOpen(true);
+    }
   };
 
   return (
@@ -129,6 +141,31 @@ export const RevisionView = () => {
         </div>
       </div>
 
+      {/* Spaced Revision Memory Map */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Layers size={16} color="var(--accent-sage)" />
+            <h2 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-charcoal)' }}>
+              Memory Retention Map
+            </h2>
+          </div>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+            Click topic node to inspect retention curve
+          </span>
+        </div>
+        <div className="card-white" style={{ padding: '16px' }}>
+          <VisualMap
+            nodes={revisionMapData.nodes}
+            edges={revisionMapData.edges}
+            summary={revisionMapData.summary}
+            direction="horizontal"
+            onNodeClick={handleMapNodeClick}
+            ariaLabel="Spaced Revision Memory Decay Map"
+          />
+        </div>
+      </div>
+
       {/* Category Pills Filter */}
       <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '16px' }}>
         {categories.map((cat) => (
@@ -141,7 +178,7 @@ export const RevisionView = () => {
               borderRadius: 'var(--radius-pill)',
               fontSize: '11.5px',
               fontWeight: 700,
-              backgroundColor: filterCategory === cat ? 'var(--text-charcoal)' : '#FFFFFF',
+              backgroundColor: filterCategory === cat ? 'var(--text-charcoal)' : 'var(--bg-card)',
               color: filterCategory === cat ? '#FFFFFF' : 'var(--text-secondary)',
               border: '1px solid var(--border-beige)',
               cursor: 'pointer',
