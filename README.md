@@ -10,10 +10,10 @@ NOVARA is a full-stack placement readiness platform that bridges the gap between
 [![Vite](https://img.shields.io/badge/Vite-5.4-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?logo=postgresql&logoColor=white)](https://supabase.com/)
-[![Gemini AI](https://img.shields.io/badge/Google_Gemini-3.7_Flash-4285F4?logo=google&logoColor=white)](https://aistudio.google.com/)
+[![Gemini AI](https://img.shields.io/badge/Google_Gemini-API-4285F4?logo=google&logoColor=white)](https://aistudio.google.com/)
 [![Capacitor](https://img.shields.io/badge/Capacitor-6.2-119EFF?logo=capacitor&logoColor=white)](https://capacitorjs.com/)
 [![PWA](https://img.shields.io/badge/PWA-Installable-FF6B6B?logo=pwa&logoColor=white)](https://web.dev/progressive-web-apps/)
-[![License](https://img.shields.io/badge/Status-Production_Ready-5E8C71)]()
+[![Status](https://img.shields.io/badge/Status-Production_Ready-5E8C71)]()
 
 [Live Demo](https://novara-qzce.onrender.com) • [Android App ID: com.novara.placement](android/) • [Architecture](#system-architecture)
 
@@ -74,7 +74,7 @@ Every action updates a single shared state model. When you master a topic in a F
 | **Execute** | **Application Tracker** | Visual pipeline (`Saved → Applied → Assessment → Interview → Offer`) with interview timelines and offer metrics. |
 | | **Placement Calendar** | Interactive day-flow timeline showing scheduled sprints, mock interviews, and automated conflict warnings. |
 | | **Smart Notifications** | Proactive alert drawer for overdue revisions, upcoming rounds, and streak protections with deep-link navigation. |
-| **Platform** | **Authentication** | Dual-mode authentication via email/password (SHA-256 + salt) and official Google OAuth 2.0 Web GIS. |
+| **Platform** | **Authentication** | Dual-mode authentication via email/password (Salted PBKDF2-HMAC-SHA512) and official Google OAuth 2.0 Web GIS. |
 | | **Offline-First Storage** | Client-side IndexedDB with operation queue, automatic reconnect batch sync, and idempotency guarantees. |
 | | **Cross-Platform** | Single codebase responsive across Mobile, Tablet, Desktop, Installable PWA, and Native Android (Capacitor). |
 | | **Design System** | Mindful warm cream, terracotta, and dark obsidian aesthetic with Light, Dark, and System theme synchronizer. |
@@ -188,13 +188,13 @@ graph TD
 
 ## AI Architecture & Grounding Pipeline
 
-NOVARA's AI subsystem is built on official Google Gemini SDKs (`@google/genai` and `@google/generative-ai`) and operates server-side with multi-stage verification:
+NOVARA's AI subsystem is built on official Google Gemini SDKs (`@google/genai` and `@google/generative-ai`) with dynamic model selection via `GEMINI_MODEL` (defaulting to `gemini-3.7-flash` when unset) and operates server-side with multi-stage verification:
 
 ```mermaid
 flowchart TD
     A[Student / Task Request] --> B[Authoritative Context Assembly]
     B --> C[Domain Classification]
-    C --> D[Gemini 3.7 Flash Engine]
+    C --> D[Google Gemini Engine]
     D --> E[JSON Schema Validation]
     E -->|Valid JSON| F[Grounding & Anti-Contamination Check]
     E -->|Malformed JSON| G[Retry with Clean Prompt]
@@ -265,7 +265,7 @@ graph TB
     subgraph Infrastructure & External Services
         DB[(Supabase PostgreSQL<br/>Transaction Pooler + SSL CA)]
         Storage[(Supabase Storage<br/>S3-Compatible Private Bucket)]
-        Gemini[Google Gemini API<br/>gemini-3.7-flash]
+        Gemini[Google Gemini API<br/>Official Gen AI SDKs]
         GoogleOAuth[Google Identity Services<br/>OAuth 2.0 GIS]
 
         AuthSvc --> GoogleOAuth
@@ -434,8 +434,8 @@ Server Acknowledges Sync; Client Purges Processed Queue
 
 NOVARA implements enterprise security standards validated through automated security audits:
 
-- **JWT Session Security**: Cryptographically signed HMAC SHA-256 session tokens with server-side validation.
-- **Salted Password Hashing**: Passwords stored using SHA-256 with unique per-user cryptographic salts.
+- **Session Token Security**: Cryptographically generated bearer tokens (`crypto.randomBytes`) validated on every protected API endpoint with expiration tracking.
+- **Production Password Hashing**: Salted PBKDF2-HMAC-SHA512 password hashing with 100,000 iterations, a random 16-byte salt, a 64-byte derived key, and constant-time comparison (`crypto.timingSafeEqual`), with transparent on-login upgrading of legacy SHA-256 hashes.
 - **Strict In-Transit Encryption**: Enforces TLS 1.3/HTTPS in production with certificate verification.
 - **IDOR Protection**: Every CRUD mutation validates that the target resource belongs to the requesting authenticated user.
 - **Input Sanitization**: Boundary validation on emails, passwords, dates, and durations; oversized payloads (>100kb) are rejected before parsing.
@@ -476,7 +476,7 @@ NOVARA is built mobile-first and scales fluidly from small handsets to 4K deskto
 
 ## Testing & Quality Assurance
 
-NOVARA is covered by a suite of 30+ automated regression suites validating behavior across all workflows:
+NOVARA is covered by automated regression suites and integration tests validating behavior across all workflows:
 
 ```bash
 # Run Gemini AI & Study Material Integration Tests
@@ -493,8 +493,8 @@ npm run build
 
 | Test Suite | Command / File | Coverage & Assertions |
 | :--- | :--- | :--- |
-| **Gemini AI Service** | `scratch/test_gemini_ai_service.cjs` | Tutor grounding, STAR anti-contamination, objective normalization, fallback handling. |
-| **Roadmap Pipeline** | `scratch/test_roadmap_pdf_pipeline.cjs` | Scanned PDF detection, DOCX fallback, 6-phase extraction, anti-consolidation safeguards. |
+| **Gemini AI Service** | `scratch/test_gemini_ai_service.cjs` | Tutor grounding across 10 curriculum domains, STAR anti-contamination, objective normalization, fallback handling. |
+| **Roadmap Pipeline** | `scratch/test_roadmap_pdf_pipeline.cjs` | 6 regression checks: Scanned PDF detection, DOCX fallback, 6-phase extraction, anti-consolidation safeguards. |
 | **Revision Engine** | `scratch/test_revision_engine.cjs` | SM-2 ladder transitions, interval scaling, retention decay scoring, rescheduling. |
 | **Security Audit** | `scratch/test_security_audit.cjs` | 20 security tests: auth tokens, IDOR, input boundaries, protocol sanitization, user isolation. |
 | **Release Smoke Test** | `scratch/test_final_smoke_test.cjs` | 16-step end-to-end verification from user registration to offline sync and data persistence. |
@@ -584,10 +584,10 @@ NOVARA is architected to deploy to managed cloud infrastructure:
 [ Supabase PostgreSQL ]  [ Supabase Storage ]
 ```
 
-### Deployment Status Note
-- **Local Source State**: Verified on branch `main` with all regression suites passing.
-- **Git Remote**: Maintained at `https://github.com/masettyabhinay/novara.git`.
-- **Production Cloud State**: Production web service hosted on Render at `https://novara-qzce.onrender.com` backed by Supabase.
+### Deployment & Environment Status
+- **Local Repository State**: Active working branch `main` containing the latest local commits (including the read-only Application Journey safety fix and technical documentation refinements) verified against all automated test suites.
+- **Git Remote (`origin/main`)**: Remote repository at `https://github.com/masettyabhinay/novara.git`. Local commits are not automatically pushed.
+- **Deployed Production Cloud State**: Live production deployment is hosted on Render at `https://novara-qzce.onrender.com` backed by Supabase (PostgreSQL + S3 Storage). Only commits that have been pushed to `origin/main` and deployed via Render's build pipeline are active on the live environment. Local commits not yet pushed remain strictly local.
 
 ---
 
